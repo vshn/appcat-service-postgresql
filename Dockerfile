@@ -8,6 +8,7 @@ RUN \
     tzdata
 
 ENTRYPOINT ["provider-postgresql"]
+CMD ["operator"]
 COPY provider-postgresql /usr/bin/
 
 USER 65536:0

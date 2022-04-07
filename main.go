@@ -64,7 +64,7 @@ func newApp() (context.Context, context.CancelFunc, *cli.App) {
 			},
 		},
 		Commands: []*cli.Command{
-			newExampleCommand(),
+			newOperatorCommand(),
 		},
 		ExitErrHandler: func(context *cli.Context, err error) {
 			if err != nil {
