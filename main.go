@@ -19,13 +19,11 @@ var (
 	commit  = "-dirty-"
 	date    = time.Now().Format("2006-01-02")
 
-	// TODO: Adjust app name
-	appName     = "go-bootstrap"
-	appLongName = "a generic bootstrapping project"
+	appName     = "provider-postgresql"
+	appLongName = "a Crossplane provider for AppCat managed PostgreSQL instances"
 
-	// TODO: Adjust or clear env var prefix
 	// envPrefix is the global prefix to use for the keys in environment variables
-	envPrefix = "BOOTSTRAP"
+	envPrefix = "PROVIDER"
 )
 
 func main() {
@@ -66,7 +64,7 @@ func newApp() (context.Context, context.CancelFunc, *cli.App) {
 			},
 		},
 		Commands: []*cli.Command{
-			newExampleCommand(),
+			newOperatorCommand(),
 		},
 		ExitErrHandler: func(context *cli.Context, err error) {
 			if err != nil {

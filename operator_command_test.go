@@ -13,19 +13,11 @@ func TestExampleCommand_Validate(t *testing.T) {
 		expectedError    string
 	}{
 		// TODO: test cases
-		"GivenEmptyFlag_ThenExpectError": {
-			expectedError: "option needs at least 3 characters: flag",
-		},
-		"GivenValidConfig_ThenExpectNoError": {
-			givenExampleFlag: "test",
-		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			// arrange...
-			command := exampleCommand{
-				ExampleFlag: tt.givenExampleFlag,
-			}
+			command := operatorCommand{}
 			ctx := newAppContext(t)
 
 			// act...

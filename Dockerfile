@@ -7,8 +7,8 @@ RUN \
     ca-certificates \
     tzdata
 
-# TODO: Adjust binary file name
-ENTRYPOINT ["go-bootstrap"]
-COPY go-bootstrap /usr/bin/
+ENTRYPOINT ["provider-postgresql"]
+CMD ["operator"]
+COPY provider-postgresql /usr/bin/
 
 USER 65536:0
