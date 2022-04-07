@@ -1,6 +1,5 @@
-# TODO: Adjust project meta
-name: go-bootstrap
-title: Go Bootstrap
+name: appcat-service-postgresql
+title: AppCat Service PostgreSQL
 version: master
 start_page: ROOT:index.adoc
 nav:
