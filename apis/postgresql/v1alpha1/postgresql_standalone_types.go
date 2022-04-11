@@ -11,12 +11,22 @@ import (
 
 // PostgresqlStandaloneParameters are the configurable fields of a PostgresqlStandalone.
 type PostgresqlStandaloneParameters struct {
-	ConfigurableField string `json:"configurableField"`
+	//+kubebuilder:validation:Enum=Chart
+	//+kubebuilder:default=Chart
+
+	// DeploymentStrategy identifies how the Postgresql instance is deployed.
+	DeploymentStrategy string `json:"deploymentStrategy,omitempty"`
+	// Chart is a DeploymentStrategy that uses Helm chart to deploy PostgresqlStandalone instance.
+	Chart                     *ChartMeta `json:"chart,omitempty"`
+	BackupEnabledInstance     `json:",inline"`
+	MonitoringEnabledInstance `json:",inline"`
+	DelayableMaintenance      `json:",inline"`
 }
 
 // PostgresqlStandaloneObservation are the observable fields of a PostgresqlStandalone.
 type PostgresqlStandaloneObservation struct {
-	ObservableField string `json:"observableField,omitempty"`
+	// Chart is the Helm chart meta that is last observed on a deployed instance.
+	Chart *ChartMeta `json:"chart,omitempty"`
 }
 
 // A PostgresqlStandaloneSpec defines the desired state of a PostgresqlStandalone.
@@ -28,7 +38,7 @@ type PostgresqlStandaloneSpec struct {
 // A PostgresqlStandaloneStatus represents the observed state of a PostgresqlStandalone.
 type PostgresqlStandaloneStatus struct {
 	xpv1.ResourceStatus `json:",inline"`
-	ObservedGeneration  int64                           `json:"observedGeneration,omitempty"`
+	GenerationStatus    `json:",inline"`
 	AtProvider          PostgresqlStandaloneObservation `json:"atProvider,omitempty"`
 }
 

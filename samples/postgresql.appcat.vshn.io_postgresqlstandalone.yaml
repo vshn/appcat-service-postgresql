@@ -6,10 +6,27 @@ metadata:
   name: standalone
 spec:
   forProvider:
-    configurableField: sample
+    backup:
+      enabled: true
+    chart:
+      name: postgres
+      repository: https://charts.bitnami.com/bitnami
+      version: "11.1.22"
+    monitoring:
+      sla: BestEffort
+    updatePolicy:
+      maintenanceWindow:
+        start:
+          hour: 15
+          weekday: Wednesday
+      version:
+        major: "14"
+        minor: "2"
   providerConfigRef:
     name: provider-config
 status:
   atProvider:
-    observableField: sample
-  observedGeneration: 1
+    chart:
+      name: postgres
+      repository: https://charts.bitnami.com/bitnami
+      version: "11.1.22"

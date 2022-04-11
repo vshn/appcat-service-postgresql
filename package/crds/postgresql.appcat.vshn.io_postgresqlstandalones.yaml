@@ -66,10 +66,113 @@ spec:
                 description: PostgresqlStandaloneParameters are the configurable fields
                   of a PostgresqlStandalone.
                 properties:
-                  configurableField:
+                  backup:
+                    description: Backup controls the backup settings of an instance.
+                    properties:
+                      enabled:
+                        default: true
+                        description: Enabled controls whether to activate backups.
+                        type: boolean
+                    required:
+                    - enabled
+                    type: object
+                  chart:
+                    description: Chart is a DeploymentStrategy that uses Helm chart
+                      to deploy PostgresqlStandalone instance.
+                    properties:
+                      name:
+                        description: Name is the Helm chart name within the repository.
+                        type: string
+                      repository:
+                        description: Repository is the Helm chart repository URL.
+                        type: string
+                      version:
+                        description: Version is the Helm chart version identifier.
+                        type: string
+                    required:
+                    - name
+                    - repository
+                    - version
+                    type: object
+                  deploymentStrategy:
+                    default: Chart
+                    description: DeploymentStrategy identifies how the Postgresql
+                      instance is deployed.
+                    enum:
+                    - Chart
                     type: string
+                  monitoring:
+                    description: Monitoring contains the settings that control various
+                      aspects of metrics and alerting.
+                    properties:
+                      sla:
+                        default: BestEffort
+                        description: SLA contains the SLA name under which the instance
+                          runs on.
+                        enum:
+                        - BestEffort
+                        - Guaranteed
+                        type: string
+                    required:
+                    - sla
+                    type: object
+                  updatePolicy:
+                    properties:
+                      maintenanceWindow:
+                        properties:
+                          start:
+                            properties:
+                              hour:
+                                description: "Hour defines the starting range of the
+                                  window. The window is 4h long and the exact starting
+                                  time is randomized within the 4 hours. \n Note that
+                                  this doesn't mean the maintenance will be applied
+                                  within the 4h window."
+                                maximum: 23
+                                minimum: 0
+                                type: integer
+                              weekday:
+                                description: 'Weekday is the day-of-week. It accepts
+                                  a value of this collection: [Sunday, Monday, Tuesday,
+                                  Wednesday, Thursday, Friday, Saturday].'
+                                enum:
+                                - Sunday
+                                - Monday
+                                - Tuesday
+                                - Wednesday
+                                - Thursday
+                                - Friday
+                                - Saturday
+                                type: string
+                            required:
+                            - hour
+                            - weekday
+                            type: object
+                        required:
+                        - start
+                        type: object
+                      version:
+                        description: Version chooses the version (range) in which
+                          the instance is being allowed to do automatic updates.
+                        properties:
+                          major:
+                            description: Major is the major version part.
+                            type: string
+                          minor:
+                            description: Minor is the minor version part. Some applications
+                              consider the minor version part also as part of a major
+                              version with breaking changes between minor versions.
+                            type: string
+                        required:
+                        - major
+                        type: object
+                    required:
+                    - maintenanceWindow
+                    - version
+                    type: object
                 required:
-                - configurableField
+                - monitoring
+                - updatePolicy
                 type: object
               providerConfigRef:
                 default:
@@ -123,8 +226,24 @@ spec:
                 description: PostgresqlStandaloneObservation are the observable fields
                   of a PostgresqlStandalone.
                 properties:
-                  observableField:
-                    type: string
+                  chart:
+                    description: Chart is the Helm chart meta that is last observed
+                      on a deployed instance.
+                    properties:
+                      name:
+                        description: Name is the Helm chart name within the repository.
+                        type: string
+                      repository:
+                        description: Repository is the Helm chart repository URL.
+                        type: string
+                      version:
+                        description: Version is the Helm chart version identifier.
+                        type: string
+                    required:
+                    - name
+                    - repository
+                    - version
+                    type: object
                 type: object
               conditions:
                 description: Conditions of the resource.
@@ -160,6 +279,8 @@ spec:
                   type: object
                 type: array
               observedGeneration:
+                description: ObservedGeneration is the meta.generation number this
+                  resource was last reconciled with.
                 format: int64
                 type: integer
             type: object
