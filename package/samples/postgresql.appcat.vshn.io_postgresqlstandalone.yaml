@@ -1,0 +1,15 @@
+apiVersion: postgresql.appcat.vshn.io/v1alpha1
+kind: PostgresqlStandalone
+metadata:
+  creationTimestamp: null
+  generation: 1
+  name: standalone
+spec:
+  forProvider:
+    configurableField: sample
+  providerConfigRef:
+    name: provider-config
+status:
+  atProvider:
+    observableField: sample
+  observedGeneration: 1
