@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/pkg/errors"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
@@ -86,12 +87,11 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	}
 
 	cd := pc.Spec.Credentials
-	data, err := resource.CommonCredentialExtractor(ctx, cd.Source, c.kube, cd.CommonCredentialSelectors)
-	if err != nil {
-		return nil, errors.Wrap(err, errGetCreds)
+	if cd.Source != xpv1.CredentialsSourceInjectedIdentity {
+		return nil, fmt.Errorf(errGetCreds)
 	}
 
-	svc, err := c.newServiceFn(data)
+	svc, err := c.newServiceFn([]byte{})
 	if err != nil {
 		return nil, errors.Wrap(err, errNewClient)
 	}
