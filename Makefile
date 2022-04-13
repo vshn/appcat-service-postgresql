@@ -16,6 +16,8 @@ include Makefile.vars.mk
 -include docs/antora-preview.mk docs/antora-build.mk
 # Optional kind module
 -include kind/kind.mk
+# Crossplane packaging
+-include package/package.mk
 
 .PHONY: help
 help: ## Show this help

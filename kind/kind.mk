@@ -1,4 +1,7 @@
-kind_dir ?= .kind
+kind_dir ?= $(PWD)/.kind
+
+$(kind_dir):
+	mkdir -p $@
 
 .PHONY: kind
 kind: export KUBECONFIG = $(KIND_KUBECONFIG)
@@ -24,7 +27,7 @@ kind-clean: ## Removes the kind Cluster
 	@rm -rf $(kind_dir)
 
 $(KIND_KUBECONFIG): export KUBECONFIG = $(KIND_KUBECONFIG)
-$(KIND_KUBECONFIG):
+$(KIND_KUBECONFIG): $(kind_dir)
 	$(KIND) create cluster \
 		--name $(KIND_CLUSTER) \
 		--image $(KIND_IMAGE) \
