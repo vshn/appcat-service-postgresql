@@ -11,13 +11,16 @@ BIN_FILENAME ?= provider-postgresql
 DOCKER_CMD ?= docker
 
 IMG_TAG ?= latest
-# Image URL to use all building/pushing image targets
-CONTAINER_IMG ?= local.dev/$(PROJECT_OWNER)/$(PROJECT_NAME):$(IMG_TAG)
-
+CONTAINER_REGISTRY ?= local.dev
+# Image URL to use all building image targets.
+# NOTE: the released images are defined in .goreleaser.yml via GitHub actions.
+CONTAINER_IMG ?= $(CONTAINER_REGISTRY)/$(PROJECT_OWNER)/$(PROJECT_NAME):$(IMG_TAG)
+# Crossplane image reference for packaging and pushing to registry.
+CROSSPLANE_IMG ?= $(CONTAINER_REGISTRY)/$(PROJECT_OWNER)/$(PROJECT_NAME):provider-$(IMG_TAG)
 
 ## KIND:setup
 
-# https://hub.docker.com/r/kindest/node/tags
+# see available options in https://hub.docker.com/r/kindest/node/tags
 KIND_NODE_VERSION ?= v1.23.0
 KIND_IMAGE ?= docker.io/kindest/node:$(KIND_NODE_VERSION)
 KIND ?= go run sigs.k8s.io/kind
