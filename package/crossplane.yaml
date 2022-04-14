@@ -10,6 +10,6 @@ metadata:
       VSHN-flavored managed PostgreSQL provider
 spec:
   controller:
-    image: localhost:5000/vshn/appcat-service-postgresql:latest
+    image: ghcr.io/vshn/appcat-service-postgresql:latest
   crossplane:
     version: ">=v1.7.0"

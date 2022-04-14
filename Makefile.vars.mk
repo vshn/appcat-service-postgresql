@@ -1,4 +1,6 @@
 ## These are some common variables for Make
+crossplane_sentinel = $(kind_dir)/crossplane-sentinel
+registry_sentinel = $(kind_dir)/registry_sentinel
 
 PROJECT_ROOT_DIR = .
 PROJECT_NAME ?= appcat-service-postgresql
@@ -11,12 +13,13 @@ BIN_FILENAME ?= provider-postgresql
 DOCKER_CMD ?= docker
 
 IMG_TAG ?= latest
-CONTAINER_REGISTRY ?= local.dev
+CONTAINER_REGISTRY ?= ghcr.io
 # Image URL to use all building image targets.
 # NOTE: the released images are defined in .goreleaser.yml via GitHub actions.
 CONTAINER_IMG ?= $(CONTAINER_REGISTRY)/$(PROJECT_OWNER)/$(PROJECT_NAME):$(IMG_TAG)
 # Crossplane image reference for packaging and pushing to registry.
-CROSSPLANE_IMG ?= $(CONTAINER_REGISTRY)/$(PROJECT_OWNER)/$(PROJECT_NAME):provider-$(IMG_TAG)
+CROSSPLANE_REGISTRY ?= $(CONTAINER_REGISTRY)
+CROSSPLANE_IMG ?= $(CROSSPLANE_REGISTRY)/$(PROJECT_OWNER)/$(PROJECT_NAME):provider-$(IMG_TAG)
 
 ## KIND:setup
 

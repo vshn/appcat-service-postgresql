@@ -24,10 +24,10 @@ kind-load-image: kind-setup build-docker ## Load the container image onto kind c
 kind-clean: export KUBECONFIG = $(KIND_KUBECONFIG)
 kind-clean: ## Removes the kind Cluster
 	@$(KIND) delete cluster --name $(KIND_CLUSTER) || true
-	@rm -rf $(kind_dir)
+	@rm -rf $(kind_dir)/*
 
 $(KIND_KUBECONFIG): export KUBECONFIG = $(KIND_KUBECONFIG)
-$(KIND_KUBECONFIG): $(kind_dir)
+$(KIND_KUBECONFIG):
 	$(KIND) create cluster \
 		--name $(KIND_CLUSTER) \
 		--image $(KIND_IMAGE) \

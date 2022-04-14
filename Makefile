@@ -18,6 +18,8 @@ include Makefile.vars.mk
 -include kind/kind.mk
 # Crossplane packaging
 -include package/package.mk
+# Local Env & testing
+-include test/local.mk
 
 .PHONY: help
 help: ## Show this help
@@ -75,5 +77,5 @@ run-operator:
 	go run . -v 1 operator
 
 .PHONY: clean
-clean: ## Cleans local build artifacts
-	rm -rf docs/node_modules $(docs_out_dir) dist .cache
+clean: kind-clean ## Cleans local build artifacts
+	rm -rf docs/node_modules $(docs_out_dir) dist .cache $(kind_dir)
