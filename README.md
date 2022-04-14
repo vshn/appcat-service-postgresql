@@ -12,3 +12,24 @@
 [codeclimate]: https://codeclimate.com/github/vshn/appcat-service-postgresql
 
 This service provider installs PostgreSQL instances of various architecture types using the AppCat and Crossplane frameworks.
+
+## Local Development
+
+### Requirements
+
+* `docker`
+* `go`
+* `helm`
+* `kubectl`
+* `yq`
+
+### Common make targets
+
+* `make build` to build the binary and docker image
+* `make generate` to (re)generate additional code artifacts
+* `make test` run test suite
+* `make package-install` to package the provider and install via Crossplane
+* `make install-samples` to run the provider in local cluster and apply a sample instance
+* `make run-operator` to run the code in operator mode against local cluster
+
+See all targets with `make help`

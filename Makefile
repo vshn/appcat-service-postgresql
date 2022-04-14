@@ -78,4 +78,4 @@ run-operator:
 
 .PHONY: clean
 clean: kind-clean ## Cleans local build artifacts
-	rm -rf docs/node_modules $(docs_out_dir) dist .cache $(kind_dir)
+	rm -rf docs/node_modules $(docs_out_dir) dist .cache $(kind_dir) package/*.xpkg
