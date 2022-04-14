@@ -5,7 +5,8 @@ package_dir := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
 
 crossplane_bin = $(kind_dir)/kubectl-crossplane
 
-$(crossplane_bin): ## Build kubectl-crossplane plugin
+# Build kubectl-crossplane plugin
+$(crossplane_bin):
 	@mkdir -p $(kind_dir)
 	cd $(package_dir) && go build -o $@ github.com/crossplane/crossplane/cmd/crank
 

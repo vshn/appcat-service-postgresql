@@ -1,7 +1,10 @@
 kind_dir ?= $(PWD)/.kind
+kind_bin = $(kind_dir)/kind
 
-$(kind_dir):
-	mkdir -p $@
+# Prepare kind binary
+$(kind_bin):
+	@mkdir -p $(kind_dir)
+	cd kind && go build -o $@ sigs.k8s.io/kind
 
 .PHONY: kind
 kind: export KUBECONFIG = $(KIND_KUBECONFIG)
@@ -18,17 +21,17 @@ kind-setup-ingress: kind-setup ## Install NGINX as ingress controller onto kind 
 
 .PHONY: kind-load-image
 kind-load-image: kind-setup build-docker ## Load the container image onto kind cluster
-	@$(KIND) load docker-image --name $(KIND_CLUSTER) $(CONTAINER_IMG)
+	@$(kind_bin) load docker-image --name $(KIND_CLUSTER) $(CONTAINER_IMG)
 
 .PHONY: kind-clean
 kind-clean: export KUBECONFIG = $(KIND_KUBECONFIG)
-kind-clean: ## Removes the kind Cluster
-	@$(KIND) delete cluster --name $(KIND_CLUSTER) || true
+kind-clean: $(kind_bin) ## Removes the kind Cluster
+	@$(kind_bin) delete cluster --name $(KIND_CLUSTER) || true
 	@rm -rf $(kind_dir)/*
 
 $(KIND_KUBECONFIG): export KUBECONFIG = $(KIND_KUBECONFIG)
-$(KIND_KUBECONFIG):
-	$(KIND) create cluster \
+$(KIND_KUBECONFIG): $(kind_bin)
+	$(kind_bin) create cluster \
 		--name $(KIND_CLUSTER) \
 		--image $(KIND_IMAGE) \
 		--config kind/config.yaml
