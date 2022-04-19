@@ -1,6 +1,7 @@
 # Despite the registry running in Cluster, we need to load the container image with `kind load`.
 # There were problems trying to pull container image from registry ("no such host") even though Crossplane could pull the package image...
 .PHONY: package-install
+package-install: export KUBECONFIG = $(KIND_KUBECONFIG)
 package-install: CROSSPLANE_REGISTRY = localhost:5000
 package-install: kind-load-image registry-setup crossplane-setup package-push ## Build and install Crossplane package in local cluster
 	kubectl apply -f test/provider-postgresql.yaml

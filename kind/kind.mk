@@ -2,6 +2,9 @@ kind_dir ?= $(PWD)/.kind
 kind_bin = $(kind_dir)/kind
 
 # Prepare kind binary
+# We need to set the Go arch since the binary is meant for the user's OS.
+$(kind_bin): export GOOS = $(shell go env GOOS)
+$(kind_bin): export GOARCH = $(shell go env GOARCH)
 $(kind_bin):
 	@mkdir -p $(kind_dir)
 	cd kind && go build -o $@ sigs.k8s.io/kind
@@ -20,6 +23,9 @@ kind-setup-ingress: kind-setup ## Install NGINX as ingress controller onto kind 
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
 
 .PHONY: kind-load-image
+# We fix the arch to linux/amd64 since kind runs in amd64 even on Mac/arm.
+kind-load-image: export GOOS = linux
+kind-load-image: export GOARCH = amd64
 kind-load-image: kind-setup build-docker ## Load the container image onto kind cluster
 	@$(kind_bin) load docker-image --name $(KIND_CLUSTER) $(CONTAINER_IMG)
 
