@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/ccremer/go-command-pipeline v0.15.0
 	github.com/crossplane/crossplane-runtime v0.15.1
-	github.com/crossplane/crossplane-tools v0.0.0-20220106150503-21c1d7761d68
+	github.com/crossplane/crossplane-tools v0.0.0-20220310165030-1f43fc12793e
 	github.com/go-logr/logr v1.2.3
 	github.com/go-logr/zapr v1.2.3
 	github.com/pkg/errors v0.9.1
