@@ -16,6 +16,10 @@ include Makefile.vars.mk
 -include docs/antora-preview.mk docs/antora-build.mk
 # Optional kind module
 -include kind/kind.mk
+# Crossplane packaging
+-include package/package.mk
+# Local Env & testing
+-include test/local.mk
 
 .PHONY: help
 help: ## Show this help
@@ -68,10 +72,10 @@ install-samples: generate install-crd ## Install samples into cluster
 	kubectl apply -f samples
 
 .PHONY: run-operator
-run-operator: export KUBECONFIG = $(KIND_KUBECONFIG)
-run-operator:
+run-operator: ## Run in Operator mode against your current kube context
 	go run . -v 1 operator
 
 .PHONY: clean
-clean: ## Cleans local build artifacts
-	rm -rf docs/node_modules $(docs_out_dir) dist .cache
+clean: kind-clean ## Cleans local build artifacts
+	rm -rf docs/node_modules $(docs_out_dir) dist .cache $(kind_dir) package/*.xpkg
+	docker rmi $(CONTAINER_IMG) || true

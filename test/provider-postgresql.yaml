@@ -1,0 +1,18 @@
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  labels:
+    name: provider-postgresql
+  name: provider-postgresql
+spec:
+  package: registry.registry-system.svc.cluster.local:5000/vshn/appcat-service-postgresql:provider-latest
+  controllerConfigRef:
+    name: providerconfig-postgresql
+---
+apiVersion: pkg.crossplane.io/v1alpha1
+kind: ControllerConfig
+metadata:
+  name: providerconfig-postgresql
+spec:
+  imagePullPolicy: IfNotPresent

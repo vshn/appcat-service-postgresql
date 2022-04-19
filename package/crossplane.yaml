@@ -1,0 +1,15 @@
+apiVersion: meta.pkg.crossplane.io/v1alpha1
+kind: Provider
+metadata:
+  name: appcat-service-postgresql
+  annotations:
+    meta.crossplane.io/maintainer: VSHN <info@vshn.net>
+    meta.crossplane.io/source: github.com/vshn/appcat-service-postgresql
+    meta.crossplane.io/license: BSD-3
+    meta.crossplane.io/description: |
+      VSHN-flavored managed PostgreSQL provider
+spec:
+  controller:
+    image: ghcr.io/vshn/appcat-service-postgresql:latest
+  crossplane:
+    version: ">=v1.7.0"
