@@ -59,13 +59,13 @@ generate: ## Generate additional code and artifacts
 
 .PHONY: install-crd
 install-crd: export KUBECONFIG = $(KIND_KUBECONFIG)
-install-crd: generate ## Install CRDs into cluster
+install-crd: generate kind-setup ## Install CRDs into cluster
 	kubectl apply -f package/crds
 
 .PHONY: install-samples
 install-samples: export KUBECONFIG = $(KIND_KUBECONFIG)
 install-samples: generate install-crd ## Install samples into cluster
-	kubectl apply -f package/samples
+	kubectl apply -f samples
 
 .PHONY: run-operator
 run-operator: export KUBECONFIG = $(KIND_KUBECONFIG)
