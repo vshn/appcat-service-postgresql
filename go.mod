@@ -13,7 +13,7 @@ require (
 	github.com/urfave/cli/v2 v2.4.0
 	go.uber.org/zap v1.21.0
 	k8s.io/apimachinery v0.23.5
-	k8s.io/client-go v0.23.5
+	k8s.io/client-go v1.5.2
 	sigs.k8s.io/controller-runtime v0.11.2
 	sigs.k8s.io/controller-tools v0.8.0
 )
