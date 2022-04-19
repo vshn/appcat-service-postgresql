@@ -27,7 +27,7 @@ build: build-bin build-docker ## All-in-one build
 .PHONY: build-bin
 build-bin: export CGO_ENABLED = 0
 build-bin: fmt vet ## Build binary
-	@go build -o $(BIN_FILENAME) ./...
+	@go build -o $(BIN_FILENAME) .
 
 .PHONY: build-docker
 build-docker: build-bin ## Build docker image
@@ -56,6 +56,21 @@ lint: fmt vet generate ## All-in-one linting
 .PHONY: generate
 generate: ## Generate additional code and artifacts
 	@go generate ./...
+
+.PHONY: install-crd
+install-crd: export KUBECONFIG = $(KIND_KUBECONFIG)
+install-crd: generate kind-setup ## Install CRDs into cluster
+	kubectl apply -f package/crds
+
+.PHONY: install-samples
+install-samples: export KUBECONFIG = $(KIND_KUBECONFIG)
+install-samples: generate install-crd ## Install samples into cluster
+	kubectl apply -f samples
+
+.PHONY: run-operator
+run-operator: export KUBECONFIG = $(KIND_KUBECONFIG)
+run-operator:
+	go run . -v 1 operator
 
 .PHONY: clean
 clean: ## Cleans local build artifacts
