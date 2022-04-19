@@ -72,8 +72,7 @@ install-samples: generate install-crd ## Install samples into cluster
 	kubectl apply -f samples
 
 .PHONY: run-operator
-run-operator: export KUBECONFIG = $(KIND_KUBECONFIG)
-run-operator:
+run-operator: ## Run in Operator mode against your current kube context
 	go run . -v 1 operator
 
 .PHONY: clean

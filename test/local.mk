@@ -14,6 +14,11 @@ crossplane-setup: $(crossplane_sentinel) ## Install local Kubernetes cluster and
 .PHONY: registry-setup
 registry-setup: $(registry_sentinel) # Install docker registry in local Kubernetes cluster
 
+.PHONY: kind-run-operator
+kind-run-operator: export KUBECONFIG = $(KIND_KUBECONFIG)
+kind-run-operator: crossplane-setup ## Run in Operator mode against kind cluster (you may also need `install-crd`)
+	go run . -v 1 operator
+
 $(registry_sentinel): export KUBECONFIG = $(KIND_KUBECONFIG)
 $(registry_sentinel): $(KIND_KUBECONFIG)
 	helm repo add twuni https://helm.twun.io
