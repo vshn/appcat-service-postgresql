@@ -77,5 +77,5 @@ run-operator: ## Run in Operator mode against your current kube context
 
 .PHONY: clean
 clean: kind-clean ## Cleans local build artifacts
-	rm -rf docs/node_modules $(docs_out_dir) dist .cache $(kind_dir) package/*.xpkg
+	rm -rf docs/node_modules $(docs_out_dir) dist .cache package/*.xpkg
 	docker rmi $(CONTAINER_IMG) || true
