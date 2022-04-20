@@ -31,8 +31,9 @@ func SetupController(mgr ctrl.Manager, o controller.Options) error {
 		})
 }
 
-// +kubebuilder:rbac:groups=postgres.appcat.vshn.io,resources=postgresstandalones,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=postgres.appcat.vshn.io,resources=postgresstandalones/status;postgresstandalones/finalizers,verbs=get;update;patch
+// +kubebuilder:rbac:groups=postgresql.appcat.vshn.io,resources=postgresqlstandalones,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=postgresql.appcat.vshn.io,resources=postgresqlstandalones/status;postgresqlstandalones/finalizers,verbs=get;update;patch
+// +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;create;update
 
 type PostgresStandaloneReconciler struct {
 	client client.Client
