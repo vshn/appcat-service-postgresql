@@ -69,7 +69,7 @@ install-crd: generate kind-setup ## Install CRDs into cluster
 .PHONY: install-samples
 install-samples: export KUBECONFIG = $(KIND_KUBECONFIG)
 install-samples: generate install-crd ## Install samples into cluster
-	kubectl apply -f samples
+	yq samples/*.yaml | kubectl apply -f -
 
 .PHONY: run-operator
 run-operator: ## Run in Operator mode against your current kube context

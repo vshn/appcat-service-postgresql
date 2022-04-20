@@ -42,9 +42,10 @@ type PostgresqlStandaloneValidator struct {
 	kube client.Client
 }
 
+// ValidateCreate implements admission.CustomValidator.
 func (v *PostgresqlStandaloneValidator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
 	res := obj.(*v1alpha1.PostgresqlStandalone)
-	v.log.V(0).Info("Validate create", "name", res.Name)
+	v.log.V(1).Info("Validate create", "name", res.Name)
 	//TODO implement me
 	if res.Spec.ForProvider.ConfigurableField == "" {
 		return fmt.Errorf(".spec.forProvider.configurableField cannot be empty")
@@ -52,16 +53,18 @@ func (v *PostgresqlStandaloneValidator) ValidateCreate(ctx context.Context, obj 
 	return nil
 }
 
+// ValidateUpdate implements admission.CustomValidator.
 func (v *PostgresqlStandaloneValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
 	res := newObj.(*v1alpha1.PostgresqlStandalone)
-	v.log.V(0).Info("Validate update", "name", res.Name)
+	v.log.V(1).Info("Validate update", "name", res.Name)
 	//TODO implement me
 	return nil
 }
 
+// ValidateDelete implements admission.CustomValidator.
 func (v *PostgresqlStandaloneValidator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
 	res := obj.(*v1alpha1.PostgresqlStandalone)
-	v.log.V(0).Info("Validate delete", "name", res.Name)
+	v.log.V(1).Info("Validate delete", "name", res.Name)
 	//TODO implement me
 	return nil
 }

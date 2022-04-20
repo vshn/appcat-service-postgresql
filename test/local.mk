@@ -37,7 +37,7 @@ $(crossplane_sentinel): $(KIND_KUBECONFIG)
 		--create-namespace --namespace crossplane-system \
 		--set "args[0]='--debug'" \
 		--set "args[1]='--enable-composition-revisions'" \
-		--set webhooks.enabled=true
+		--set webhooks.enabled=true \
 		--wait
 	kubectl apply -f test/provider-helm.yaml
 	kubectl wait --for condition=Healthy provider.pkg.crossplane.io/provider-helm --timeout 60s

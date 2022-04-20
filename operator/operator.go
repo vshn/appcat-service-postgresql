@@ -7,8 +7,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 )
 
-// SetupControllers creates all Template controllers with the supplied logger and adds them to
-// the supplied manager.
+// SetupControllers creates all Postgresql controllers with the supplied logger and adds them to the supplied manager.
 func SetupControllers(mgr ctrl.Manager, o controller.Options) error {
 	for _, setup := range []func(ctrl.Manager, controller.Options) error{
 		config.Setup,
@@ -21,6 +20,7 @@ func SetupControllers(mgr ctrl.Manager, o controller.Options) error {
 	return nil
 }
 
+// SetupWebhooks creates all Postgresql webhooks with the supplied logger and adds them to the supplied manager.
 func SetupWebhooks(mgr ctrl.Manager, o controller.Options) error {
 	for _, setup := range []func(ctrl.Manager, controller.Options) error{
 		standalone.SetupWebhook,

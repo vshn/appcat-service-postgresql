@@ -44,7 +44,7 @@ func newOperatorCommand() *cli.Command {
 				Destination: &command.LeaderElectionEnabled,
 			},
 			&cli.StringFlag{Name: "webhook-tls-cert-dir", EnvVars: []string{"WEBHOOK_TLS_CERT_DIR"}, // Env var is set by Crossplane
-				Usage:       "Directory containing the certificates for the webhook server",
+				Usage:       "Directory containing the certificates for the webhook server. If empty, the webhook server is not started.",
 				Destination: &command.WebhookCertDir,
 			},
 		},
@@ -105,13 +105,10 @@ func (c *operatorCommand) execute(ctx *cli.Context) error {
 	})
 	p.AddStep(pipeline.ToStep("setup webhook server",
 		func(ctx context.Context) error {
-			log.Info("about to configure server")
 			ws := c.manager.GetWebhookServer()
 			ws.CertDir = c.WebhookCertDir
 			ws.TLSMinVersion = "1.3"
-			o := controller.Options{
-				Log: log,
-			}
+			o := controller.Options{Log: log}
 			return operator.SetupWebhooks(c.manager, o)
 		},
 		pipeline.Bool(c.WebhookCertDir != "")))
