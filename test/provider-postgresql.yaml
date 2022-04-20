@@ -7,6 +7,7 @@ metadata:
   name: provider-postgresql
 spec:
   package: registry.registry-system.svc.cluster.local:5000/vshn/appcat-service-postgresql:provider-latest
+  packagePullPolicy: Always
   controllerConfigRef:
     name: providerconfig-postgresql
 ---
@@ -16,3 +17,9 @@ metadata:
   name: providerconfig-postgresql
 spec:
   imagePullPolicy: IfNotPresent
+  args:
+    - --log-level=10
+    - operator
+  metadata:
+    annotations:
+      local.dev/installed: $date

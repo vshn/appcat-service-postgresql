@@ -1,5 +1,5 @@
 ## These are some common variables for Make
-crossplane_sentinel = $(kind_dir)/crossplane-sentinel
+crossplane_sentinel = $(kind_dir)/crossplane_sentinel
 registry_sentinel = $(kind_dir)/registry_sentinel
 
 PROJECT_ROOT_DIR = .

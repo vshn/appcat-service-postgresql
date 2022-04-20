@@ -2,7 +2,7 @@
 // +build generate
 
 // Clean samples dir
-//go:generate rm -rf samples
+//go:generate rm -rf samples/*.yaml
 
 // Generate sample files
 //go:generate go run gen_sample.go samples

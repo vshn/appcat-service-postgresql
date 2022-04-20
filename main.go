@@ -69,12 +69,6 @@ func newApp() (context.Context, context.CancelFunc, *cli.App) {
 		Commands: []*cli.Command{
 			newOperatorCommand(),
 		},
-		ExitErrHandler: func(context *cli.Context, err error) {
-			if err != nil {
-				AppLogger(context).Error(err, "fatal error")
-				cli.HandleExitCoder(cli.Exit("", 1))
-			}
-		},
 	}
 	hasSubcommands := len(app.Commands) > 0
 	app.Action = rootAction(hasSubcommands)

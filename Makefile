@@ -69,7 +69,7 @@ install-crd: generate kind-setup ## Install CRDs into cluster
 .PHONY: install-samples
 install-samples: export KUBECONFIG = $(KIND_KUBECONFIG)
 install-samples: generate install-crd ## Install samples into cluster
-	kubectl apply -f samples
+	yq samples/*.yaml | kubectl apply -f -
 
 .PHONY: run-operator
 run-operator: ## Run in Operator mode against your current kube context
@@ -77,5 +77,5 @@ run-operator: ## Run in Operator mode against your current kube context
 
 .PHONY: clean
 clean: kind-clean ## Cleans local build artifacts
-	rm -rf docs/node_modules $(docs_out_dir) dist .cache $(kind_dir) package/*.xpkg
+	rm -rf docs/node_modules $(docs_out_dir) dist .cache package/*.xpkg
 	docker rmi $(CONTAINER_IMG) || true

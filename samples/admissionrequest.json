@@ -1,0 +1,40 @@
+{
+  "apiVersion": "admission.k8s.io/v1",
+  "kind": "AdmissionReview",
+  "request": {
+    "uid": "705ab4f5-6393-11e8-b7cc-42010a800002",
+    "kind": {"group":"postgresql.appcat.vshn.io","version":"v1alpha1","kind":"PostgresqlStandalone"},
+    "resource": {"group":"postgresql.appcat.vshn.io","version":"v1alpha1","resource":"PostgresqlStandalone"},
+    "requestKind": {"group":"postgresql.appcat.vshn.io","version":"v1alpha1","kind":"PostgresqlStandalone"},
+    "requestResource": {"group":"postgresql.appcat.vshn.io","version":"v1alpha1","resource":"PostgresqlStandalone"},
+    "name": "standalone1",
+    "operation": "CREATE",
+    "userInfo": {
+      "username": "admin",
+      "uid": "014fbff9a07c",
+      "groups": ["system:authenticated"]
+    },
+    "object": {
+      "apiVersion": "postgresql.appcat.vshn.io/v1alpha1",
+      "kind": "PostgresqlStandalone",
+      "metadata": {
+          "annotations": {
+              "crossplane.io/external-name": "standalone"
+          },
+          "name": "standalone1"
+      },
+      "spec": {
+          "deletionPolicy": "Delete",
+          "forProvider": {
+              "configurableField": "sample"
+          },
+          "providerConfigRef": {
+              "name": "provider-config"
+          }
+      }
+    },
+    "oldObject": null,
+    "options": {},
+    "dryRun": false
+  }
+}
