@@ -5,16 +5,15 @@ import (
 	"fmt"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
+	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/pkg/errors"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/crossplane/crossplane-runtime/pkg/event"
-	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	providerv1alpha1 "github.com/vshn/appcat-service-postgresql/apis/provider/v1alpha1"
@@ -36,8 +35,8 @@ var (
 	newNoOpService = func(_ []byte) (interface{}, error) { return &NoOpService{}, nil }
 )
 
-// Setup adds a controller that reconciles MyType managed resources.
-func Setup(mgr ctrl.Manager, o controller.Options) error {
+// SetupController adds a controller that reconciles v1alpha1.PostgresqlStandalone managed resources.
+func SetupController(mgr ctrl.Manager, o controller.Options) error {
 	name := managed.ControllerName(v1alpha1.PostgresStandaloneGroupKind)
 
 	cps := []managed.ConnectionPublisher{managed.NewAPISecretPublisher(mgr.GetClient(), mgr.GetScheme())}
@@ -108,13 +107,13 @@ type external struct {
 }
 
 func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
-	cr, ok := mg.(*v1alpha1.PostgresqlStandalone)
+	_, ok := mg.(*v1alpha1.PostgresqlStandalone)
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errNotMyType)
 	}
 
 	// These fmt statements should be removed in the real implementation.
-	fmt.Printf("Observing: %+v", cr)
+	//fmt.Printf("Observing: %+v", cr)
 
 	return managed.ExternalObservation{
 		// Return false when the external resource does not exist. This lets
@@ -134,12 +133,12 @@ func (c *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 }
 
 func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
-	cr, ok := mg.(*v1alpha1.PostgresqlStandalone)
+	_, ok := mg.(*v1alpha1.PostgresqlStandalone)
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotMyType)
 	}
 
-	fmt.Printf("Creating: %+v", cr)
+	//fmt.Printf("Creating: %+v", cr)
 
 	return managed.ExternalCreation{
 		// Optionally return any details that may be required to connect to the
@@ -149,12 +148,12 @@ func (c *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 }
 
 func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
-	cr, ok := mg.(*v1alpha1.PostgresqlStandalone)
+	_, ok := mg.(*v1alpha1.PostgresqlStandalone)
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errNotMyType)
 	}
 
-	fmt.Printf("Updating: %+v", cr)
+	//fmt.Printf("Updating: %+v", cr)
 
 	return managed.ExternalUpdate{
 		// Optionally return any details that may be required to connect to the
@@ -164,12 +163,12 @@ func (c *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 }
 
 func (c *external) Delete(ctx context.Context, mg resource.Managed) error {
-	cr, ok := mg.(*v1alpha1.PostgresqlStandalone)
+	_, ok := mg.(*v1alpha1.PostgresqlStandalone)
 	if !ok {
 		return errors.New(errNotMyType)
 	}
 
-	fmt.Printf("Deleting: %+v", cr)
+	//fmt.Printf("Deleting: %+v", cr)
 
 	return nil
 }

@@ -7,12 +7,23 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 )
 
-// Setup creates all Template controllers with the supplied logger and adds them to
+// SetupControllers creates all Template controllers with the supplied logger and adds them to
 // the supplied manager.
-func Setup(mgr ctrl.Manager, o controller.Options) error {
+func SetupControllers(mgr ctrl.Manager, o controller.Options) error {
 	for _, setup := range []func(ctrl.Manager, controller.Options) error{
 		config.Setup,
-		standalone.Setup,
+		standalone.SetupController,
+	} {
+		if err := setup(mgr, o); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func SetupWebhooks(mgr ctrl.Manager, o controller.Options) error {
+	for _, setup := range []func(ctrl.Manager, controller.Options) error{
+		standalone.SetupWebhook,
 	} {
 		if err := setup(mgr, o); err != nil {
 			return err
