@@ -31,6 +31,9 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: WEBHOOK_TLS_CERT_DIR
+              value: /webhook/tls
           ports:
             - name: webhook
               containerPort: 9443
@@ -45,6 +48,14 @@ spec:
           #     port: webhook
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: webhook-tls
+              readOnly: true
+              mountPath: /webhook/tls
+      volumes:
+        - name: webhook-tls
+          secret:
+            secretName: {{ include "provider-postgresql.fullname" . }}-webhook-tls
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

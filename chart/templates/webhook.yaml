@@ -1,0 +1,29 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    caBundle: {{ .Values.webhook.caBundle }}
+    service:
+      name: {{ include "provider-postgresql.fullname" . }}
+      namespace: {{ .Release.Namespace }}
+      path: /validate-postgresql-appcat-vshn-io-v1alpha1-postgresqlstandalone
+  failurePolicy: Fail
+  name: postgresqlstandalones.postgresql.appcat.vshn.io
+  rules:
+  - apiGroups:
+    - postgresql.appcat.vshn.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+    resources:
+    - postgresqlstandalones
+  sideEffects: None

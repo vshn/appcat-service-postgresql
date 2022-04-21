@@ -41,6 +41,14 @@ service:
   type: ClusterIP
   port: 80
 
+webhook:
+  # -- certificate in PEM format for the ValidatingWebhookConfiguration.
+  caBundle: ""
+  # -- certificate in PEM format for the TLS secret.
+  certificate: ""
+  # -- private key in PEM format for the TLS secret.
+  privateKey: ""
+
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
