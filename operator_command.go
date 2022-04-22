@@ -5,7 +5,6 @@ import (
 	"time"
 
 	pipeline "github.com/ccremer/go-command-pipeline"
-	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/urfave/cli/v2"
 	"github.com/vshn/appcat-service-postgresql/apis"
 	"github.com/vshn/appcat-service-postgresql/operator"
@@ -98,8 +97,7 @@ func (c *operatorCommand) execute(ctx *cli.Context) error {
 	})
 	p.AddStepFromFunc("setup controllers", func(ctx context.Context) error {
 		o := controller.Options{
-			Log:         log,
-			RateLimiter: ratelimiter.NewDefaultProviderRateLimiter(1000),
+			Log: log,
 		}
 		return operator.SetupControllers(c.manager, o)
 	})

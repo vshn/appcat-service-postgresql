@@ -1,5 +1,5 @@
-webhook_key = $(kind_dir)/webhook.key
-webhook_cert = $(kind_dir)/webhook.crt
+webhook_key = $(kind_dir)/tls.key
+webhook_cert = $(kind_dir)/tls.crt
 webhook_service_name = provider-postgresql.postgresql-system.svc
 webhook_values = $(kind_dir)/webhook-values.yaml
 
@@ -24,8 +24,8 @@ package-install: kind-load-image install-crd webhook-cert ## Install Operator in
 
 .PHONY: kind-run-operator
 kind-run-operator: export KUBECONFIG = $(KIND_KUBECONFIG)
-kind-run-operator: kind-setup ## Run in Operator mode against kind cluster (you may also need `install-crd`)
-	go run . -v 1 operator
+kind-run-operator: kind-setup webhook-cert ## Run in Operator mode against kind cluster (you may also need `install-crd`)
+	go run . -v 1 operator --webhook-tls-cert-dir .kind
 
 .PHONY: webhook-cert
 webhook-cert: $(webhook_values)

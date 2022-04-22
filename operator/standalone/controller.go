@@ -2,8 +2,8 @@ package standalone
 
 import (
 	"context"
+	"strings"
 
-	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/go-logr/logr"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -19,7 +19,7 @@ const finalizer = "finalizer"
 
 // SetupController adds a controller that reconciles v1alpha1.PostgresqlStandalone managed resources.
 func SetupController(mgr ctrl.Manager, o controller.Options) error {
-	name := managed.ControllerName(v1alpha1.PostgresStandaloneGroupKind)
+	name := strings.ToLower(v1alpha1.PostgresStandaloneGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).

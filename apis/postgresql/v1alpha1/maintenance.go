@@ -3,8 +3,6 @@ package v1alpha1
 import (
 	"fmt"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -60,28 +58,28 @@ const (
 	TypeInMaintenance = "InMaintenance"
 )
 
-func InMaintenance() xpv1.Condition {
-	return xpv1.Condition{
+func InMaintenance() metav1.Condition {
+	return metav1.Condition{
 		Type:               TypeInMaintenance,
-		Status:             corev1.ConditionTrue,
+		Status:             metav1.ConditionTrue,
 		LastTransitionTime: metav1.Now(),
 		Reason:             ReasonMaintenanceProgressing,
 	}
 }
 
-func MaintenanceSuccess() xpv1.Condition {
-	return xpv1.Condition{
+func MaintenanceSuccess() metav1.Condition {
+	return metav1.Condition{
 		Type:               TypeInMaintenance,
-		Status:             corev1.ConditionFalse,
+		Status:             metav1.ConditionFalse,
 		LastTransitionTime: metav1.Now(),
 		Reason:             ReasonMaintenanceSuccess,
 	}
 }
 
-func MaintenanceFailed(message string) xpv1.Condition {
-	return xpv1.Condition{
+func MaintenanceFailed(message string) metav1.Condition {
+	return metav1.Condition{
 		Type:               TypeInMaintenance,
-		Status:             corev1.ConditionFalse,
+		Status:             metav1.ConditionFalse,
 		LastTransitionTime: metav1.Now(),
 		Reason:             ReasonMaintenanceFailure,
 		Message:            message,

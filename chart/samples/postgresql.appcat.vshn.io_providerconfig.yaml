@@ -3,7 +3,5 @@ kind: ProviderConfig
 metadata:
   creationTimestamp: null
   name: provider-config
-spec:
-  credentials:
-    source: InjectedIdentity
+spec: {}
 status: {}

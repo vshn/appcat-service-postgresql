@@ -18,8 +18,6 @@ include Makefile.vars.mk
 -include docs/antora-preview.mk docs/antora-build.mk
 # Optional kind module
 -include kind/kind.mk
-# Crossplane packaging
--include package/package.mk
 # Local Env & testing
 -include test/local.mk
 
@@ -78,7 +76,7 @@ install-crd: generate kind-setup ## Install CRDs into cluster
 .PHONY: install-samples
 install-samples: export KUBECONFIG = $(KIND_KUBECONFIG)
 install-samples: generate install-crd ## Install samples into cluster
-	yq samples/*.yaml | kubectl apply -f -
+	yq chart/samples/*.yaml | kubectl apply -f -
 
 .PHONY: run-operator
 run-operator: ## Run in Operator mode against your current kube context
