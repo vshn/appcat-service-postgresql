@@ -8,8 +8,6 @@ MAKEFLAGS += --no-builtin-variables
 .SECONDARY:
 .DEFAULT_GOAL := help
 
-webhook_gen_result = chart/templates/manifests.yaml
-
 # General variables
 include Makefile.vars.mk
 
@@ -18,6 +16,8 @@ include Makefile.vars.mk
 -include docs/antora-preview.mk docs/antora-build.mk
 # Optional kind module
 -include kind/kind.mk
+# Chart-related
+-include chart/Makefile
 # Local Env & testing
 -include test/local.mk
 
@@ -58,15 +58,14 @@ lint: fmt vet generate ## All-in-one linting
 	git diff --exit-code
 
 .PHONY: generate
-generate: ## Generate additional code and artifacts
+generate: generate-go generate-helm ## All-in-one code generation
+
+.PHONY: generate-go
+generate-go: ## Generate Go artifacts
 	@go generate ./...
-	@yq -i e '.metadata.name="{{ include \"provider-postgresql.fullname\" . }}"' $(webhook_gen_result)
-	@yq -i e '.metadata.labels.replace="LABELS"' $(webhook_gen_result)
-	@yq -i e '.webhooks[0].clientConfig.caBundle="{{ .Values.webhook.caBundle }}"' $(webhook_gen_result)
-	@yq -i e '.webhooks[0].clientConfig.service.name="{{ include \"provider-postgresql.fullname\" . }}"' $(webhook_gen_result)
-	@yq -i e '.webhooks[0].clientConfig.service.namespace="{{ .Release.Namespace }}"' $(webhook_gen_result)
-	@sed -i -e 's/replace: LABELS/{{- include "provider-postgresql.labels" . | nindent 4 }}/g' $(webhook_gen_result)
-	@mv $(webhook_gen_result) chart/templates/webhook.yaml
+
+.PHONY: generate-helm
+generate-helm: generate-go $(webhook_gen_result) $(rbac_gen_result)  ## 'Helmifys' artifacts that Kubebuilder generates
 
 .PHONY: install-crd
 install-crd: export KUBECONFIG = $(KIND_KUBECONFIG)
@@ -75,7 +74,7 @@ install-crd: generate kind-setup ## Install CRDs into cluster
 
 .PHONY: install-samples
 install-samples: export KUBECONFIG = $(KIND_KUBECONFIG)
-install-samples: generate install-crd ## Install samples into cluster
+install-samples: generate-go install-crd ## Install samples into cluster
 	yq chart/samples/*.yaml | kubectl apply -f -
 
 .PHONY: run-operator

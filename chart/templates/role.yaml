@@ -2,36 +2,37 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  creationTimestamp: null
-  name: manager-role
+  name: '{{ include "provider-postgresql.fullname" . }}'
+  labels:
+    {{- include "provider-postgresql.labels" . | nindent 4 }}
 rules:
-- apiGroups:
-  - coordination.k8s.io
-  resources:
-  - leases
-  verbs:
-  - create
-  - get
-  - list
-  - update
-- apiGroups:
-  - postgresql.appcat.vshn.io
-  resources:
-  - postgresqlstandalones
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - postgresql.appcat.vshn.io
-  resources:
-  - postgresqlstandalones/finalizers
-  - postgresqlstandalones/status
-  verbs:
-  - get
-  - patch
-  - update
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - create
+      - get
+      - list
+      - update
+  - apiGroups:
+      - postgresql.appcat.vshn.io
+    resources:
+      - postgresqlstandalones
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - postgresql.appcat.vshn.io
+    resources:
+      - postgresqlstandalones/finalizers
+      - postgresqlstandalones/status
+    verbs:
+      - get
+      - patch
+      - update
