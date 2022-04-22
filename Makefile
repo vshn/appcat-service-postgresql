@@ -8,6 +8,8 @@ MAKEFLAGS += --no-builtin-variables
 .SECONDARY:
 .DEFAULT_GOAL := help
 
+webhook_gen_result = chart/templates/manifests.yaml
+
 # General variables
 include Makefile.vars.mk
 
@@ -60,6 +62,13 @@ lint: fmt vet generate ## All-in-one linting
 .PHONY: generate
 generate: ## Generate additional code and artifacts
 	@go generate ./...
+	@yq -i e '.metadata.name="{{ include \"provider-postgresql.fullname\" . }}"' $(webhook_gen_result)
+	@yq -i e '.metadata.labels.replace="LABELS"' $(webhook_gen_result)
+	@yq -i e '.webhooks[0].clientConfig.caBundle="{{ .Values.webhook.caBundle }}"' $(webhook_gen_result)
+	@yq -i e '.webhooks[0].clientConfig.service.name="{{ include \"provider-postgresql.fullname\" . }}"' $(webhook_gen_result)
+	@yq -i e '.webhooks[0].clientConfig.service.namespace="{{ .Release.Namespace }}"' $(webhook_gen_result)
+	@sed -i -e 's/replace: LABELS/{{- include "provider-postgresql.labels" . | nindent 4 }}/g' $(webhook_gen_result)
+	@mv $(webhook_gen_result) chart/templates/webhook.yaml
 
 .PHONY: install-crd
 install-crd: export KUBECONFIG = $(KIND_KUBECONFIG)
@@ -78,4 +87,4 @@ run-operator: ## Run in Operator mode against your current kube context
 .PHONY: clean
 clean: kind-clean ## Cleans local build artifacts
 	rm -rf docs/node_modules $(docs_out_dir) dist .cache package/*.xpkg
-	docker rmi $(CONTAINER_IMG) || true
+	$(DOCKER_CMD) rmi $(CONTAINER_IMG) || true
