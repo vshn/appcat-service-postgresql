@@ -53,39 +53,10 @@ func generatePostgresStandaloneSample() {
 		},
 		ObjectMeta: metav1.ObjectMeta{Name: "standalone", Generation: 1},
 		Spec: v1alpha1.PostgresqlStandaloneSpec{
-			ForProvider: v1alpha1.PostgresqlStandaloneParameters{
-				DeploymentStrategy: "",
-				Chart: &v1alpha1.ChartMeta{
-					Repository: "https://charts.bitnami.com/bitnami",
-					Version:    "12.0",
-					Name:       "postgres",
-				},
-				BackupEnabledInstance: v1alpha1.BackupEnabledInstance{
-					Backup: v1alpha1.Backup{Enabled: true},
-				},
-				MonitoringEnabledInstance: v1alpha1.MonitoringEnabledInstance{
-					Monitoring: v1alpha1.Monitoring{
-						SLA: v1alpha1.SlaBestEffort.String(),
-					},
-				},
-				DelayableMaintenance: v1alpha1.DelayableMaintenance{
-					UpdatePolicy: v1alpha1.UpdatePolicy{
-						Version: v1alpha1.VersionSelector{Major: "14", Minor: "0"},
-						MaintenanceWindow: v1alpha1.MaintenanceWindow{
-							Start: v1alpha1.MaintenanceWindowSelector{Weekday: "Wednesday", Hour: 15},
-						},
-					},
-				},
-			},
+			ForProvider: v1alpha1.PostgresqlStandaloneParameters{},
 		},
 		Status: v1alpha1.PostgresqlStandaloneStatus{
-			AtProvider: v1alpha1.PostgresqlStandaloneObservation{
-				Chart: &v1alpha1.ChartMeta{
-					Repository: "https://charts.bitnami.com/bitnami",
-					Version:    "12.0",
-					Name:       "postgres",
-				},
-			},
+			AtProvider: v1alpha1.PostgresqlStandaloneObservation{},
 		},
 	}
 	serialize(spec)
