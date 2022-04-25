@@ -35,11 +35,13 @@ func SetupController(mgr ctrl.Manager, o controller.Options) error {
 // +kubebuilder:rbac:groups=postgresql.appcat.vshn.io,resources=postgresqlstandalones/status;postgresqlstandalones/finalizers,verbs=get;update;patch
 // +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;create;update
 
+// PostgresStandaloneReconciler reconciles v1alpha1.PostgresqlStandalone.
 type PostgresStandaloneReconciler struct {
 	client client.Client
 	log    logr.Logger
 }
 
+// Reconcile implements reconcile.Reconciler.
 func (r *PostgresStandaloneReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	obj := &v1alpha1.PostgresqlStandalone{}
 	r.log.V(1).Info("Reconciling", "res", request.Name)
@@ -61,6 +63,7 @@ func (r *PostgresStandaloneReconciler) Reconcile(ctx context.Context, request re
 	return r.Update(ctx, obj)
 }
 
+// Create creates the given instance.
 func (r *PostgresStandaloneReconciler) Create(ctx context.Context, instance *v1alpha1.PostgresqlStandalone) (reconcile.Result, error) {
 	controllerutil.AddFinalizer(instance, finalizer)
 
@@ -75,6 +78,7 @@ func (r *PostgresStandaloneReconciler) Create(ctx context.Context, instance *v1a
 	return reconcile.Result{}, err
 }
 
+// Delete prepares the given instance for deletion.
 func (r *PostgresStandaloneReconciler) Delete(ctx context.Context, instance *v1alpha1.PostgresqlStandalone) (reconcile.Result, error) {
 	// we don't need to delete it by ourselves, since the deletion timestamp is already set.
 	// Just remove all finalizers
@@ -84,6 +88,7 @@ func (r *PostgresStandaloneReconciler) Delete(ctx context.Context, instance *v1a
 	return reconcile.Result{}, err
 }
 
+// Update saves the given spec in Kubernetes.
 func (r *PostgresStandaloneReconciler) Update(ctx context.Context, instance *v1alpha1.PostgresqlStandalone) (reconcile.Result, error) {
 	r.log.Info("Updating", "res", instance.Name)
 	// ensure status conditions are up-to-date.

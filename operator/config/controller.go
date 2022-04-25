@@ -15,14 +15,22 @@ import (
 func Setup(mgr ctrl.Manager, o controller.Options) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.ProviderConfig{}).
-		Complete(&ProviderConfigReconciler{})
+		Complete(&ProviderConfigReconciler{
+			log:    o.Log,
+			client: mgr.GetClient(),
+		})
 }
 
+// +kubebuilder:rbac:groups=postgresql.appcat.vshn.io,resources=providerconfigs,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=postgresql.appcat.vshn.io,resources=providerconfigs/status;providerconfigs/finalizers,verbs=get;update;patch
+
+// ProviderConfigReconciler reconciles v1alpha1.ProviderConfig.
 type ProviderConfigReconciler struct {
 	client client.Client
 	log    logr.Logger
 }
 
+// Reconcile implements reconcile.Reconciler.
 func (r *ProviderConfigReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	obj := &v1alpha1.ProviderConfig{}
 	r.log.V(1).Info("Reconciling", "res", obj.Name)

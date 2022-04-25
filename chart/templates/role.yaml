@@ -36,3 +36,24 @@ rules:
       - get
       - patch
       - update
+  - apiGroups:
+      - postgresql.appcat.vshn.io
+    resources:
+      - providerconfigs
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - postgresql.appcat.vshn.io
+    resources:
+      - providerconfigs/finalizers
+      - providerconfigs/status
+    verbs:
+      - get
+      - patch
+      - update

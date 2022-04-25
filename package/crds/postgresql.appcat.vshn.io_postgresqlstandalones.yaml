@@ -16,7 +16,7 @@ spec:
     listKind: PostgresqlStandaloneList
     plural: postgresqlstandalones
     singular: postgresqlstandalone
-  scope: Cluster
+  scope: Namespaced
   versions:
   - additionalPrinterColumns:
     - jsonPath: .status.conditions[?(@.type=='Ready')].status
