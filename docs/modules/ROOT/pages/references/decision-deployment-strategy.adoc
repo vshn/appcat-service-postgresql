@@ -158,3 +158,24 @@ Data needs to be migrated from the previous instance to the new instance.
 Proposal 2: Helm with in-place upgrades and handle breaking changes.
 
 == Rationale
+
+Although Helm charts may also break and have their limitations, there are a lot less moving parts when going the Helm path compared to foreign Operators.
+In the end Helm is a client-side application that leaves any resource alone if not interacted using Helm.
+This keeps the dependency on 3rd party technologies manageable.
+
+The only reliable and future-proof option to isolate CRD changes in PGO is to separate them in service clusters.
+This results in an inherently more complex system overall.
+Moreover that is also going to be more expensive in regards to compute resources that would have to be passed on the paying customer.
+
+== Abandoned Ideas
+
+=== vcluster
+
+There exists a project called https://github.com/loft-sh/vcluster[virtual cluster] that could help isolating CRDs per major version.
+However this method doesn't really work.
+
+The pods scheduled in vcluster are all scheduled in the same namespace on the host as vcluster is in.
+Considering dozens of instances in vcluster even separated in namespaces, there could be hundreds of pods in a single namespace on the host cluster.
+This is not only an operational nightmare, but also they're not isolated enough for multi-tenancy.
+
+Deploying vcluster per instance creates an insane amount of pods, since each vcluster also runs 5-6 pods for its internal services (API server, DNS etc.)
