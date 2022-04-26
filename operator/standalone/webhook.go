@@ -2,7 +2,6 @@ package standalone
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -47,9 +46,6 @@ func (v *PostgresqlStandaloneValidator) ValidateCreate(ctx context.Context, obj 
 	res := obj.(*v1alpha1.PostgresqlStandalone)
 	v.log.V(1).Info("Validate create", "name", res.Name)
 	//TODO implement me
-	if res.Spec.ForProvider.ConfigurableField == "" {
-		return fmt.Errorf(".spec.forProvider.configurableField cannot be empty")
-	}
 	return nil
 }
 

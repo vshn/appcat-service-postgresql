@@ -2,10 +2,10 @@
 // +build generate
 
 // Clean samples dir
-//go:generate rm -rf samples/*.yaml
+//go:generate rm -rf chart/samples/*.yaml
 
 // Generate sample files
-//go:generate go run gen_sample.go samples
+//go:generate go run gen_sample.go chart/samples
 
 package main
 
@@ -17,7 +17,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/vshn/appcat-service-postgresql/apis"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
 	providerv1alpha1 "github.com/vshn/appcat-service-postgresql/apis/provider/v1alpha1"
@@ -37,15 +36,11 @@ func main() {
 func generateProviderConfigSample() {
 	spec := &providerv1alpha1.ProviderConfig{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: providerv1alpha1.ProviderConfigUsageGroupVersionKind.GroupVersion().String(),
+			APIVersion: providerv1alpha1.ProviderConfigGroupVersionKind.GroupVersion().String(),
 			Kind:       providerv1alpha1.ProviderConfigKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{Name: "provider-config"},
-		Spec: providerv1alpha1.ProviderConfigSpec{
-			Credentials: providerv1alpha1.ProviderCredentials{
-				Source: xpv1.CredentialsSourceInjectedIdentity,
-			},
-		},
+		Spec:       providerv1alpha1.ProviderConfigSpec{},
 	}
 	serialize(spec)
 }
@@ -58,20 +53,10 @@ func generatePostgresStandaloneSample() {
 		},
 		ObjectMeta: metav1.ObjectMeta{Name: "standalone", Generation: 1},
 		Spec: v1alpha1.PostgresqlStandaloneSpec{
-			ForProvider: v1alpha1.PostgresqlStandaloneParameters{
-				ConfigurableField: "sample",
-			},
-			ResourceSpec: xpv1.ResourceSpec{
-				ProviderConfigReference: &xpv1.Reference{
-					Name: "provider-config",
-				},
-			},
+			ForProvider: v1alpha1.PostgresqlStandaloneParameters{},
 		},
 		Status: v1alpha1.PostgresqlStandaloneStatus{
-			ObservedGeneration: 1,
-			AtProvider: v1alpha1.PostgresqlStandaloneObservation{
-				ObservableField: "sample",
-			},
+			AtProvider: v1alpha1.PostgresqlStandaloneObservation{},
 		},
 	}
 	serialize(spec)

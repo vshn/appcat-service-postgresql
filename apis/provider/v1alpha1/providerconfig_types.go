@@ -5,29 +5,14 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 )
 
 // A ProviderConfigSpec defines the desired state of a ProviderConfig.
 type ProviderConfigSpec struct {
-	// Credentials required to authenticate to this provider.
-	Credentials ProviderCredentials `json:"credentials"`
-}
-
-// ProviderCredentials required to authenticate.
-type ProviderCredentials struct {
-	//+kubebuilder:validation:Enum=None;Secret;InjectedIdentity;Environment;Filesystem
-
-	// Source of the provider credentials.
-	Source xpv1.CredentialsSource `json:"source"`
-
-	xpv1.CommonCredentialSelectors `json:",inline"`
 }
 
 // A ProviderConfigStatus reflects the observed state of a ProviderConfig.
 type ProviderConfigStatus struct {
-	xpv1.ProviderConfigStatus `json:",inline"`
 }
 
 // +kubebuilder:object:root=true

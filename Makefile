@@ -16,8 +16,8 @@ include Makefile.vars.mk
 -include docs/antora-preview.mk docs/antora-build.mk
 # Optional kind module
 -include kind/kind.mk
-# Crossplane packaging
--include package/package.mk
+# Chart-related
+-include chart/Makefile
 # Local Env & testing
 -include test/local.mk
 
@@ -58,8 +58,14 @@ lint: fmt vet generate ## All-in-one linting
 	git diff --exit-code
 
 .PHONY: generate
-generate: ## Generate additional code and artifacts
+generate: generate-go generate-helm ## All-in-one code generation
+
+.PHONY: generate-go
+generate-go: ## Generate Go artifacts
 	@go generate ./...
+
+.PHONY: generate-helm
+generate-helm: generate-go $(webhook_gen_result) $(rbac_gen_result)  ## 'Helmifys' artifacts that Kubebuilder generates
 
 .PHONY: install-crd
 install-crd: export KUBECONFIG = $(KIND_KUBECONFIG)
@@ -68,8 +74,8 @@ install-crd: generate kind-setup ## Install CRDs into cluster
 
 .PHONY: install-samples
 install-samples: export KUBECONFIG = $(KIND_KUBECONFIG)
-install-samples: generate install-crd ## Install samples into cluster
-	yq samples/*.yaml | kubectl apply -f -
+install-samples: generate-go install-crd ## Install samples into cluster
+	yq chart/samples/*.yaml | kubectl apply -f -
 
 .PHONY: run-operator
 run-operator: ## Run in Operator mode against your current kube context
@@ -78,4 +84,4 @@ run-operator: ## Run in Operator mode against your current kube context
 .PHONY: clean
 clean: kind-clean ## Cleans local build artifacts
 	rm -rf docs/node_modules $(docs_out_dir) dist .cache package/*.xpkg
-	docker rmi $(CONTAINER_IMG) || true
+	$(DOCKER_CMD) rmi $(CONTAINER_IMG) || true
