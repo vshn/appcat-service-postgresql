@@ -9,7 +9,7 @@
 
 .Technical reference
 * Decisions
-** xref:references/decision-deployment-strategy.adoc[Deployment Strategy Standalone]
+** xref:references/decision-deployment-strategy.adoc[Deployment Strategy]
 
 .Explanation
 //* xref:explanations/example.adoc[Example Explanation]
