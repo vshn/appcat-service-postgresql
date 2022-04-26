@@ -1,0 +1,160 @@
+= Decision: Deployment Strategy For Postgresql Standalone
+
+== Problem
+
+When it comes to the actual deployment of a standalone Postgresql instance, there are different options to choose from, each with their (dis)advantages.
+The options chosen must be ready to deal with "parent decisions" that have different impact depending on the option chosen.
+See the background section for more details.
+
+This decision is essentially a "make or buy" decision.
+
+"Buying" means using upstream software for less engineering effort at the risk of encountering and dealing with upstream breaking changes (although there's still the integration effort).
+"Making" means more engineering effort on VSHN's end but any changes are under VSHN's control.
+
+=== Background
+
+The following diagram illustrates how the parent decisions affect an outcome of the chosen deployment strategy.
+
+.Decision tree
+image::decision-tree.drawio.svg[]
+
+In-place upgrade of major version::
+
+How upgrades of major versions are conducted by the user.
+In-place upgrades refer to the ability of the operator to perform an upgrade of a major version on the same instance.
+The alternative is to make the initial version selector immutable and require the user to order a new service instance with the new version and let them perform the data migration and upgrade themselves.
+This "no-upgrade" approach may be necessary anyway in case Postgresql requires where in-place upgrades can't be done without user involvement anyway.
++
+All deployment strategies expect a downtime.
+There's no requirement that says that major version upgrades are performed without downtime.
++
+In case of no-upgrade path, it may be worth considering to offer a mechanism to the user to automatically copy the data to the new instance, provided the data doesn't need to be upgraded by the user (for example schema migrations).
+But this decision is not relevant here.
+
+Handle breaking changes::
+
+If API changes should be handled in Helm charts or CRD API specs.
+The operator can handle API changes if running the next major version of Postgresql doesn't affect older running instances that aren't upgraded yet.
+Depending on deployment strategy, API changes can't be safely performed without measures that make it possible to run not-yet-upgraded instances.
+Especially CRD API changes are very difficult to manage, since only 1 version of CRD is stored in etcd, see more in this https://www.faun.dev/c/stories/dineshparvathaneni/kubernetes-crd-versioning-for-operator-developers/[blog].
+
+Deployment strategy::
+
+So far 2 strategies have been more closely looked at: Helm and foreign Postgres Operators.
++
+A foreign operator installs and maintains Postgresql deployments.
+One such operator is the https://github.com/CrunchyData/postgres-operator[Postgres Operator from Crunchy Data], but there's also https://github.com/zalando/postgres-operator[Postgres Operator from Zalando].
+While these operators might be very good at what they do, the challenge is in {appcat}'s requirement that users can choose their maintenance and upgrade window.
+It has to be anticipated that upstream breaking API changes will happen at some point in the future.
+However, multiple versions of the same CRD cannot run on the same Kubernetes API server.
++
+NOTE: From now on `PGO` is used to refer to a foreign Postgres Operator.
++
+In the Helm strategy, active upstream Helm charts are used to deploy the instance.
+The chart chosen shall fulfill all requirements that are relevant for running a VSHN-opinionated managed service.
+If none exist that are suitable, a fork or own chart may be necessary.
++
+Helm charts usually deploy native `Deployments` or `StatefulSets` and are thus much easier to handle since they're not abstracted behind an additional CRD.
+However, a chart can still do changes that are effectively backwards-incompatible, requiring manual user interaction.
+One such example would be to rename the `PersistentVolumeClaim` template in a `StatefulSet`, which would require a sophisticated data migration.
+
+=== Breaking Change Scenario Example
+
+Let's consider the deployment strategy with a foreign PGO and the worst-case.
+Starting situation is:
+
+- Suppose PGO in v1 supports Postgresql up until version 14.
+- Suppose Postgresql v15 is released that requires user to upgrade their schemas.
+- PGO in v2 is released that supports Postgresql v15, but not v14 anymore.
+
+We have effectively 3 breaking changes:
+
+. PGO v2 API spec changed
+. Postgresql v15 requires data upgrade
+. PGO v2 doesn't support Postgresql v14
+
+This means:
+
+. We can't upgrade to Postgresql v15 without upgrading PGO to v2.
+. We can't upgrade to PGO v2 without having the possibility to run Postgresql v14 for the users that aren't ready for v15's data migration.
+
+The chance of such a constellation is slim, but not impossible and VSHN already experienced such scenarios.
+Even if Postgresql v15 doesn't require a user data migration, there needs to be an answer how to deal with upstream changes that result in some kind of impasse.
+
+== Proposals
+
+=== Proposal 1
+
+Operator:: in-place upgrades, handle API changes
+
+To deal with backwards-incompatible changes, each major version supported will run on a dedicated https://kb.vshn.ch/app-catalog/reference/glossary.html#_service_location[service cluster].
+This is to ensure that the old CRD version can still run on non-upgraded Postgresql instances so that old versions can be running until their EOL date.
+However, this massively increases the running costs.
+
+Whenever the user chooses the next major version, a new deployment is started in the service cluster that runs the new version, and an automatic data import is attempted from the old service cluster to the new one.
+
+This operator ({page-component-name}) abstracts and deploys a PGO resource and possibly glues it with additional resources, for example Prometheus rules.
+
+=== Proposal 2
+
+Helm:: in-place upgrades, handle API changes
+
+To deal with backward-incompatible changes, each major version supported will run on the last working chart version for that major version.
+This allows to skip the chart upgrade on old major versions, while the next major version will feature the changed Helm chart version.
+
+In the event that a critical change needs to be backported to an older major version, it should be easily possible to switch to a fork that contains the change on the running instances.
+The same idea can be applied if there's no Postgresql major version coming up in the near future.
+
+If the upstream chart is still relevant for future major versions, it can be switched back to it from the fork, so that the fork is eventually not needed anymore.
+However, this requires some kind of migratinos that the Operator could do between the chart versions.
+
+This operator ({page-component-name}) configures Helm values and deploys a the chart using the https://github.com/crossplane-contrib/provider-helm[Crossplane Helm Provider] and possibly glues it with additional resources, for example Prometheus rules.
+
+=== Proposal 3
+
+Operator:: in-place upgrades, don't handle API changes
+
+This approach deals with backwards-incompatible changes by forcing a mandatory maintenance window upon the instances.
+It works only if the new API specs support all currently running major versions of Postgresql.
+
+In the maintenance window, the new version of the CRD is rolled out in a way so that the officially supported upgrade path is applied in an automated fashion.
+This could mean a complete backup and restore operation for every single instance until all instances are upgraded.
+
+If the new API design doesn't support a still-running major version anymore, that upgrade has to be delayed until all instances are running on a major Postgresql version that is supported by the new PGO version.
+
+=== Proposal 4
+
+Helm:: in-place upgrades, don't handle API changes
+
+This proposal is similar to Proposal 2, except it continues any forks for upcoming major versions as well, without switching back to the upstream chart.
+In other words, the upstream breaking change isn't applied.
+That means maintaining the fork in its own or constantly backport upstream changes in a way that doesn't break existing instances.
+
+=== Proposal 5
+
+Helm:: no upgrades, handle API changes
+
+Like in Proposal 2, but data needs to be migrated.
+
+=== Proposal 6
+
+Operator:: no upgrades, handle API changes
+
+Similar to Proposal 5, the major version is immutable upon first provisioning.
+And similar to Proposal 1, the instances are running on dedicated service clusters to separate different CRD versions and API.
+
+=== Proposal 7
+
+Helm:: in-place upgrades, don't handle API changes
+
+This proposal is similar to Proposal 4, except it continues any forks for upcoming major versions as well, without switching back to the upstream chart.
+In other words, the upstream breaking change isn't applied.
+That means maintaining the fork in its own or constantly backport upstream changes in a way that doesn't break existing instances.
+
+Data needs to be migrated from the previous instance to the new instance.
+
+== Decision
+
+Proposal 2: Helm with in-place upgrades and handle breaking changes.
+
+== Rationale

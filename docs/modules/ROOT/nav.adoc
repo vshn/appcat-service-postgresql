@@ -8,7 +8,8 @@
 //* xref:how-tos/example.adoc[Example How-To]
 
 .Technical reference
-//* xref:references/example.adoc[Example Reference]
+* Decisions
+** xref:references/decision-deployment-strategy.adoc[Deployment Strategy Standalone]
 
 .Explanation
 //* xref:explanations/example.adoc[Example Explanation]
