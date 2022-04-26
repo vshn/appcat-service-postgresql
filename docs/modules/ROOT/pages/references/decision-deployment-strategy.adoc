@@ -145,7 +145,7 @@ And similar to Proposal 1, the instances are running on dedicated service cluste
 
 === Proposal 7
 
-Helm:: in-place upgrades, don't handle API changes
+Helm:: no upgrades, don't handle API changes
 
 This proposal is similar to Proposal 4, except it continues any forks for upcoming major versions as well, without switching back to the upstream chart.
 In other words, the upstream breaking change isn't applied.
@@ -179,3 +179,12 @@ Considering dozens of instances in vcluster even separated in namespaces, there 
 This is not only an operational nightmare, but also they're not isolated enough for multi-tenancy.
 
 Deploying vcluster per instance creates an insane amount of pods, since each vcluster also runs 5-6 pods for its internal services (API server, DNS etc.)
+
+=== Operator without upgrade path and API handling
+
+In the diagram above there's an empty box labelled `not possible` for a leaf path.
+This method is not possible.
+Like in Proposal 3 the PGO CRD API would have to be enforced to all users simultaneously.
+However, this combination requires a new service instance, but without the user's involvement, what is the new name going to be?
+One could argue to generate a new name, but then the user is still required to configure the application to use the new credentials and endpoint.
+It's unreasonable to think that every customer will be ready to reconfigure the application in a coordinated maintenance window to reduce downtime as much as possible.
