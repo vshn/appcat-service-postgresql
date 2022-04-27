@@ -13,3 +13,4 @@
 .Explanation
 * Decisions
 ** xref:explanations/decision-deployment-strategy.adoc[Deployment Strategy]
+** xref:explanations/decision-usermanagement.adoc[User And Database Management]
