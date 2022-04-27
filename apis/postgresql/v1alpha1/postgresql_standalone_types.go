@@ -7,24 +7,22 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-// PostgresqlStandaloneParameters are the configurable fields of a PostgresqlStandalone.
-type PostgresqlStandaloneParameters struct {
-}
-
 // PostgresqlStandaloneObservation are the observable fields of a PostgresqlStandalone.
 type PostgresqlStandaloneObservation struct {
 }
 
 // A PostgresqlStandaloneSpec defines the desired state of a PostgresqlStandalone.
 type PostgresqlStandaloneSpec struct {
-	ForProvider PostgresqlStandaloneParameters `json:"forProvider"`
+	BackupEnabledInstance     `json:",inline"`
+	MonitoringEnabledInstance `json:",inline"`
+	DeferrableMaintenance     `json:",inline"`
+	Resources                 Resources `json:"resources,omitempty"`
 }
 
 // A PostgresqlStandaloneStatus represents the observed state of a PostgresqlStandalone.
 type PostgresqlStandaloneStatus struct {
 	GenerationStatus `json:",inline"`
-	Conditions       []metav1.Condition              `json:"conditions,omitempty"`
-	AtProvider       PostgresqlStandaloneObservation `json:"atProvider,omitempty"`
+	Conditions       []metav1.Condition `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -34,7 +32,7 @@ type PostgresqlStandaloneStatus struct {
 // +kubebuilder:resource:scope=Namespaced,categories={appcat,postgresql}
 // +kubebuilder:webhook:verbs=create;update;delete,path=/validate-postgresql-appcat-vshn-io-v1alpha1-postgresqlstandalone,mutating=false,failurePolicy=fail,groups=postgresql.appcat.vshn.io,resources=postgresqlstandalones,versions=v1alpha1,name=postgresqlstandalones.postgresql.appcat.vshn.io,sideEffects=None,admissionReviewVersions=v1
 
-// A PostgresqlStandalone is an example API type.
+// A PostgresqlStandalone is the user-facing and consumer-friendly API that abstracts the provisioning of standalone Postgresql service instances.
 type PostgresqlStandalone struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
