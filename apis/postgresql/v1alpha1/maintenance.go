@@ -2,8 +2,6 @@ package v1alpha1
 
 import (
 	"fmt"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // DeferrableMaintenance is a reusable type meant for API spec composition.
@@ -48,44 +46,6 @@ type MaintenanceWindowSelector struct {
 	//
 	// Note that this doesn't mean the maintenance will be applied within the 4h window.
 	Hour *int `json:"hour,omitempty"`
-}
-
-const (
-	ReasonMaintenanceProgressing = "MaintenanceProgressing"
-	ReasonMaintenanceSuccess     = "MaintenanceFinishedSuccessfully"
-	ReasonMaintenanceFailure     = "MaintenanceFinishedWithError"
-)
-
-const (
-	TypeInMaintenance = "InMaintenance"
-)
-
-func InMaintenance() metav1.Condition {
-	return metav1.Condition{
-		Type:               TypeInMaintenance,
-		Status:             metav1.ConditionTrue,
-		LastTransitionTime: metav1.Now(),
-		Reason:             ReasonMaintenanceProgressing,
-	}
-}
-
-func MaintenanceSuccess() metav1.Condition {
-	return metav1.Condition{
-		Type:               TypeInMaintenance,
-		Status:             metav1.ConditionFalse,
-		LastTransitionTime: metav1.Now(),
-		Reason:             ReasonMaintenanceSuccess,
-	}
-}
-
-func MaintenanceFailed(message string) metav1.Condition {
-	return metav1.Condition{
-		Type:               TypeInMaintenance,
-		Status:             metav1.ConditionFalse,
-		LastTransitionTime: metav1.Now(),
-		Reason:             ReasonMaintenanceFailure,
-		Message:            message,
-	}
 }
 
 // String implements fmt.Stringer.

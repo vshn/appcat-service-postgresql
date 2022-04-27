@@ -9,6 +9,8 @@ import (
 
 // PostgresqlStandaloneObservation are the observable fields of a PostgresqlStandalone.
 type PostgresqlStandaloneObservation struct {
+	DeploymentStrategy DeploymentStrategy `json:"deploymentStrategy,omitempty"`
+	HelmChart          *ChartMetaStatus   `json:"helmChart,omitempty"`
 }
 
 // A PostgresqlStandaloneSpec defines the desired state of a PostgresqlStandalone.
@@ -21,8 +23,9 @@ type PostgresqlStandaloneSpec struct {
 
 // A PostgresqlStandaloneStatus represents the observed state of a PostgresqlStandalone.
 type PostgresqlStandaloneStatus struct {
-	GenerationStatus `json:",inline"`
-	Conditions       []metav1.Condition `json:"conditions,omitempty"`
+	GenerationStatus                `json:",inline"`
+	Conditions                      []metav1.Condition `json:"conditions,omitempty"`
+	PostgresqlStandaloneObservation `json:",inline"`
 }
 
 // +kubebuilder:object:root=true

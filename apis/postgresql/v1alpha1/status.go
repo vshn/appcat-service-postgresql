@@ -1,7 +1,7 @@
 package v1alpha1
 
 import (
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type GenerationStatus struct {
@@ -10,6 +10,6 @@ type GenerationStatus struct {
 }
 
 // SetObservedGeneration sets the ObservedGeneration from the given ObjectMeta.
-func (in *GenerationStatus) SetObservedGeneration(meta v1.ObjectMeta) {
+func (in *GenerationStatus) SetObservedGeneration(meta metav1.ObjectMeta) {
 	in.ObservedGeneration = meta.Generation
 }

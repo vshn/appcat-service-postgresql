@@ -16,8 +16,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/vshn/appcat-service-postgresql/apis"
+	"github.com/vshn/appcat-service-postgresql/apis/conditions"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
 	admissionv1 "k8s.io/api/admission/v1"
 	authv1 "k8s.io/api/authentication/v1"
@@ -74,6 +76,21 @@ func generatePostgresStandaloneConfigSample() {
 
 func generatePostgresStandaloneSample() {
 	spec := newPostgresqlStandaloneSample()
+	modified := metav1.Date(2022, time.April, 27, 15, 20, 13, 0, time.UTC)
+	spec.Status = v1alpha1.PostgresqlStandaloneStatus{
+		Conditions: []metav1.Condition{conditions.Ready()},
+		PostgresqlStandaloneObservation: v1alpha1.PostgresqlStandaloneObservation{
+			DeploymentStrategy: v1alpha1.StrategyHelmChart,
+			HelmChart: &v1alpha1.ChartMetaStatus{
+				ChartMeta: v1alpha1.ChartMeta{
+					Repository: "https://charts.bitnami.com/bitnami",
+					Version:    "11.1.23",
+					Name:       "postgresql",
+				},
+				ModifiedAt: &modified,
+			},
+		},
+	}
 	serialize(spec, true)
 }
 
