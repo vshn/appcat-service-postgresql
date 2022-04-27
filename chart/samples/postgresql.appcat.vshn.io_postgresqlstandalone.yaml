@@ -5,6 +5,16 @@ metadata:
   generation: 1
   name: standalone
 spec:
-  forProvider: {}
-status:
-  atProvider: {}
+  backup:
+    enabled: false
+  monitoring:
+    sla: BestEffort
+  resources:
+    memoryLimit: 2Gi
+    size: 8Gi
+  updatePolicy:
+    maintenanceWindow:
+      start: {}
+    version:
+      major: ""
+status: {}

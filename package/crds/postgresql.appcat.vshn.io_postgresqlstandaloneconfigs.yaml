@@ -5,28 +5,25 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: providerconfigs.postgresql.appcat.vshn.io
+  name: postgresqlstandaloneconfigs.postgresql.appcat.vshn.io
 spec:
   group: postgresql.appcat.vshn.io
   names:
-    kind: ProviderConfig
-    listKind: ProviderConfigList
-    plural: providerconfigs
-    singular: providerconfig
+    kind: PostgresqlStandaloneConfig
+    listKind: PostgresqlStandaloneConfigList
+    plural: postgresqlstandaloneconfigs
+    singular: postgresqlstandaloneconfig
   scope: Cluster
   versions:
   - additionalPrinterColumns:
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
-    - jsonPath: .spec.credentials.secretRef.name
-      name: Secret-Name
-      priority: 1
-      type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: A ProviderConfig configures a Template provider.
+        description: A PostgresqlStandaloneConfig configures a PostgresqlStandalone
+          provider.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -41,10 +38,12 @@ spec:
           metadata:
             type: object
           spec:
-            description: A ProviderConfigSpec defines the desired state of a ProviderConfig.
+            description: A PostgresqlStandaloneConfigSpec defines the desired state
+              of a PostgresqlStandaloneConfig.
             type: object
           status:
-            description: A ProviderConfigStatus reflects the observed state of a ProviderConfig.
+            description: A PostgresqlStandaloneConfigStatus reflects the observed
+              state of a PostgresqlStandaloneConfig.
             type: object
         required:
         - spec
