@@ -110,20 +110,6 @@ func newPostgresqlStandaloneSample() *v1alpha1.PostgresqlStandalone {
 					Size: "8Gi",
 				},
 			},
-			MonitoringEnabledInstance: v1alpha1.MonitoringEnabledInstance{
-				Monitoring: v1alpha1.Monitoring{
-					SLA: v1alpha1.SlaBestEffort,
-				},
-			},
-			DeferrableMaintenance: v1alpha1.DeferrableMaintenance{
-				UpdatePolicy: v1alpha1.UpdatePolicy{
-					MaintenanceWindow: v1alpha1.MaintenanceWindow{
-						Start: v1alpha1.MaintenanceWindowSelector{
-							//Weekday: "Monday",
-						},
-					},
-				},
-			},
 		},
 		Status: v1alpha1.PostgresqlStandaloneStatus{},
 	}

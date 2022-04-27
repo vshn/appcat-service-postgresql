@@ -5,21 +5,12 @@ metadata:
   generation: 1
   name: standalone
 spec:
-  backup:
-    enabled: false
-  monitoring:
-    sla: BestEffort
   resources:
     memoryLimit: 2Gi
     size: 8Gi
-  updatePolicy:
-    maintenanceWindow:
-      start: {}
-    version:
-      major: ""
 status:
   conditions:
-  - lastTransitionTime: "2022-04-27T13:19:44Z"
+  - lastTransitionTime: "2022-04-27T13:21:46Z"
     message: ""
     reason: The resource is ready
     status: "True"

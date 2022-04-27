@@ -15,10 +15,7 @@ type PostgresqlStandaloneObservation struct {
 
 // A PostgresqlStandaloneSpec defines the desired state of a PostgresqlStandalone.
 type PostgresqlStandaloneSpec struct {
-	BackupEnabledInstance     `json:",inline"`
-	MonitoringEnabledInstance `json:",inline"`
-	DeferrableMaintenance     `json:",inline"`
-	Resources                 Resources `json:"resources,omitempty"`
+	Resources Resources `json:"resources,omitempty"`
 }
 
 // A PostgresqlStandaloneStatus represents the observed state of a PostgresqlStandalone.

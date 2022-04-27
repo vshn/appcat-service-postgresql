@@ -40,20 +40,6 @@
         "creationTimestamp": null
       },
       "spec": {
-        "backup": {
-          "enabled": false
-        },
-        "monitoring": {
-          "sla": "BestEffort"
-        },
-        "updatePolicy": {
-          "version": {
-            "major": ""
-          },
-          "maintenanceWindow": {
-            "start": {}
-          }
-        },
         "resources": {
           "memoryLimit": "2Gi",
           "size": "8Gi"
