@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en" prefix="og: http://ogp.me/ns/website#">
+  <head itemscope itemtype="http://schema.org/WebSite">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Decision: User And Database Management :: AppCat Service PostgreSQL</title>
+    <meta property="og:title" itemprop="name" content="Decision: User And Database Management">
+    <meta name="twitter:title" content="Decision: User And Database Management">
+    <link rel="canonical" href="https://vshn.github.io/appcat-service-postgresql/appcat-service-postgresql/explanations/decision-usermanagement.html">
+    <meta property="og:url" content="https://vshn.github.io/appcat-service-postgresql/appcat-service-postgresql/explanations/decision-usermanagement.html">
+    <meta name="generator" content="Antora 3.0.1">
+    <link rel="stylesheet" href="../../_/css/site.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="AppCat Service PostgreSQL" />
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="vshn_ch">
+    <meta property="og:locale" content="en_US" />
+    <script>var uiRootPath = '../../_'</script>
+    <script type="text/javascript" id="hs-script-loader" async defer src="//js.hs-scripts.com/7105834.js"></script>
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<link rel="apple-touch-icon" sizes="152x152" href="/_/img/favicon-152x152.png">
+<link rel="apple-touch-icon" sizes="167x167" href="/_/img/favicon-167x167.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/_/img/favicon-180x180.png">
+
+<link rel="icon" type="image/png" href="/_/img/favicon-196x196.png" sizes="196x196">
+<link rel="icon" type="image/png" href="/_/img/favicon-192x192.png" sizes="192x192">
+<link rel="icon" type="image/png" href="/_/img/favicon-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/_/img/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/_/img/favicon-32x32.png" sizes="32x32">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <div class="navbar-item">
+        <div class="vshn_logo"></div>
+        <a href="https://vshn.github.io/appcat-service-postgresql">AppCat Service PostgreSQL
+          </a>
+      </div>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">VSHN</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" target="_blank" href="https://www.vshn.ch/">Main website</a>
+            <a class="navbar-item" target="_blank" href="https://handbook.vshn.ch/">Handbook</a>
+            <a class="navbar-item" target="_blank" href="https://kb.vshn.ch/">Knowledge Base</a>
+            <a class="navbar-item" target="_blank" href="https://products.docs.vshn.ch/">Products</a>
+            <a class="navbar-item" target="_blank" href="https://legal.docs.vshn.ch/">Legal</a>
+            <a class="navbar-item" target="_blank" href="https://control.docs.vshn.ch/">Portal Help</a>
+            <a class="navbar-item" target="_blank" href="https://docs.appuio.cloud/">APPUiO Cloud Docs</a>
+            <a class="navbar-item" target="_blank" href="https://syn.tools/">Project Syn</a>
+            <a class="navbar-item" target="_blank" href="https://k8up.io/">K8up</a>
+          </div>
+        </div>
+        <div class="navbar-item">
+          <div class="search-field">
+            <input id="search-input" class="search-input" type="search" placeholder="Search">
+            <button type="submit" class="search-button">
+              <i class="fa fa-search"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="appcat-service-postgresql" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../index.html">AppCat Service PostgreSQL</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../index.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <span class="nav-text"><a href="https://github.com/vshn/appcat-service-postgresql/releases" target="_blank" rel="noopener">Changelog</a> 🔗</span>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Explanation</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Decisions</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="decision-deployment-strategy.html">Deployment Strategy</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="decision-usermanagement.html">User And Database Management</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">AppCat Service PostgreSQL</span>
+    <span class="version">master</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <a class="title" href="../index.html">AppCat Service PostgreSQL</a>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="../index.html">master</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../index.html">AppCat Service PostgreSQL</a></li>
+    <li>Explanation</li>
+    <li>Decisions</li>
+    <li><a href="decision-usermanagement.html">User And Database Management</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="https://github.com/vshn/appcat-service-postgresql/edit/master/docs/modules/ROOT/pages/explanations/decision-usermanagement.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Decision: User And Database Management</h1>
+<div class="sect1">
+<h2 id="_problem"><a class="anchor" href="#_problem"></a>Problem</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>A single PostgreSQL server instance can hold multiple roles (users) and databases.
+The problem is to decide which kind of credentials or user management options is exposed for the service consumer.
+This page investigates methods to manage those both from an API PoV as well as implementation.</p>
+</div>
+<div class="paragraph">
+<p>Also relevant is the <a href="decision-deployment-strategy.html" class="xref page">Decision: Deployment Strategy</a>, where it was decided to use a Helm-based deployment, which affects the implementation.</p>
+</div>
+<div class="sect2">
+<h3 id="_implementation_notes"><a class="anchor" href="#_implementation_notes"></a>Implementation Notes</h3>
+<div class="paragraph">
+<p>Any proposal that offers multi-user and multi-database management features have to fulfill the "reconciliation contract".
+Meaning there needs to be mechanisms that cleanup unknown and unmanaged resources.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_proposals"><a class="anchor" href="#_proposals"></a>Proposals</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_proposal_1_single_non_privileged_user_and_database"><a class="anchor" href="#_proposal_1_single_non_privileged_user_and_database"></a>Proposal 1: Single Non-Privileged User and Database</h3>
+<div class="paragraph">
+<p>The most simple and straightforward solution is to only expose a fixed set of credentials for a single, non-privileged PostgreSQL role that can access only 1 database.
+It&#8217;s not possible to add roles or database to the instance.</p>
+</div>
+<div class="paragraph">
+<p>While this solution is simple to implement, users may soon request more flexibility without having to order new service instances.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_proposal_2_exposed_superuser"><a class="anchor" href="#_proposal_2_exposed_superuser"></a>Proposal 2: Exposed Superuser</h3>
+<div class="paragraph">
+<p>This option exposes a fixed set of credentials for the <code>postgres</code> superuser.
+Users can freely manage databases and roles on their own.
+There exist also applications that manage the databases and roles on their own and actually require superuser permissions.</p>
+</div>
+<div class="paragraph">
+<p>There is a risk that users may potentially do harmful operations and break their own instance.
+Also, at the same time users may be wary of this kind of elevated permissions exactly for the same reason and for security concerns.</p>
+</div>
+<div class="paragraph">
+<p>Like Proposal 1 this should be easy to implement.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_proposal_3_manage_users_and_databases_in_the_same_cr"><a class="anchor" href="#_proposal_3_manage_users_and_databases_in_the_same_cr"></a>Proposal 3: Manage Users and Databases in the same CR</h3>
+<div class="paragraph">
+<p>The same CR that specifies the high-level parameters around the service instance (for example Backup, Monitoring, etc) also exposes fields to configure databases and roles.</p>
+</div>
+<div class="exampleblock">
+<div class="title">Example 1. API Spec illustration</div>
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: postgresql.appcat.vshn.io/v1alpha1
+kind: PostgresqlStandalone
+metadata:
+  name: my-instance
+spec:
+  users:
+    - name: my-app-user
+      passwordFromSecret: # optional, autogenerated if not provided
+        secretName: ""
+        key: ""
+  databases:
+    - name: my-app-db
+      owner: my-app-user # must be defined in the `users` list</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Special handling needs to be given in cases where databases or users are deleted.
+This method allows more elaborate use cases, for example dynamically deploy a preview of an environment and remove it afterwards.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>It may be worthwile to consider a default database and user if no user or database is defined in the spec.
+This should keep the spec simple for users that don&#8217;t require more than 1 user or database for their use case.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>It&#8217;s possible that the chosen Helm chart doesn&#8217;t support user management for more than 1 user and database.
+Therefore this proposal likely requires additional engineering to ensure that these users and databases exist when provisioning (including cleanup).
+This could be done either in a forked Helm chart or directly in code in the operator (however, code and chart must "match" for all deployed chart versions).</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_proposal_4_manage_users_and_databases_in_another_cr"><a class="anchor" href="#_proposal_4_manage_users_and_databases_in_another_cr"></a>Proposal 4: Manage Users and Databases in another CR</h3>
+<div class="paragraph">
+<p>Similar to how <a href="https://github.com/crossplane-contrib/provider-sql/tree/v0.4.1/examples/postgresql">Crossplane Provider SQL</a> does it, provide resources where the user management is declarative and outside of the service instance CRD.</p>
+</div>
+<div class="exampleblock">
+<div class="title">Example 2. API Spec illustration</div>
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: postgresql.appcat.vshn.io/v1alpha1
+kind: Database
+metadata:
+  name: my-app-db
+spec:
+  instanceRef: my-instance
+---
+apiVersion: postgresql.appcat.vshn.io/v1alpha1
+kind: Role
+metadata:
+  name: my-app-user
+spec:
+  instanceRef: my-instance
+  passwordFromSecret: # optional, autogenerated if not provided
+    secretName: ""
+    key: ""
+---
+apiVersion: postgresql.appcat.vshn.io/v1alpha1
+kind: Grant
+metadata:
+  name: grant-role-my-app-user-on-my-app-db
+spec:
+  instanceRef: my-instance
+  privileges:
+    - ALL
+  roleRef:
+    name: my-app-user
+  databaseRef:
+    name: my-app-db</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Special handling needs to be given in cases where databases or users are deleted.
+This method allows more elaborate use cases, for example dynamically deploy a preview of an environment and remove it afterwards.
+The advantage of this proposal over Proposal 3 is that the main resource doesn&#8217;t need to be altered and this API scheme allows flexible GitOps scenarios.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="ulist">
+<ul>
+<li>
+<p>It may be worthwile to consider a default database and user if no user or database is defined in the spec.
+This should keep the spec simple for users that don&#8217;t require more than 1 user or database for their use case.</p>
+</li>
+<li>
+<p>It may be worth considering to use <a href="https://github.com/crossplane-contrib/provider-sql">Provider SQL</a> as the implementation.
+However, the same versioning issues arise when using foreign CRDs as described in <a href="decision-deployment-strategy.html" class="xref page">Decision: Deployment Strategy</a>.</p>
+</li>
+</ul>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>It&#8217;s possible that the chosen Helm chart doesn&#8217;t support user management for more than 1 user and database.
+Therefore this proposal likely requires additional engineering to ensure that these users and databases exist when provisioning (including cleanup).
+This could be done either in a forked Helm chart or directly in code in the operator (however, code and chart must "match" for all deployed chart versions).</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_decision"><a class="anchor" href="#_decision"></a>Decision</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Proposal 2: Exposed Superuser</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_rationale"><a class="anchor" href="#_rationale"></a>Rationale</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The service instance shouldn&#8217;t be limited to 1 single user and database.
+For the first iteration a sophisticated multi-user and -database management is considered too early and may be added in a later iteration at the cost of migration effort.</p>
+</div>
+<div class="paragraph">
+<p>At the same time, the first iteration shouldn&#8217;t limit the user or use cases where apps bring their own management system.
+That is why the superuser is being exposed.
+The risk where users can screw up their own instance (where service engineers have to fix the instance via support request) is deemed acceptable.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+This decision currently applies to the PostgreSQL service in standalone mode.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>Copyright © VSHN 2021 – All Rights Reserved. <a href="https://vshn.ch/en/privacy-policy/">Privacy Policy</a>, <a href="https://vshn.ch/en/imprint/">Imprint</a>, and <a href="https://vshn.ch/en/contact/">Contact</a>.</p>
+</footer>
+<script src="../../_/js/site.js"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+<script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  messageStyle: "none",
+  tex2jax: {
+    inlineMath: [["\\(", "\\)"]],
+    displayMath: [["\\[", "\\]"]],
+    ignoreClass: "nostem|nolatexmath"
+  },
+  asciimath2jax: {
+    delimiters: [["\\$", "\\$"]],
+    ignoreClass: "nostem|noasciimath"
+  },
+  TeX: { equationNumbers: { autoNumber: "none" } }
+});
+</script>
+  </body>
+</html>
