@@ -11,4 +11,5 @@
 //* xref:references/example.adoc[Example Reference]
 
 .Explanation
-//* xref:explanations/example.adoc[Example Explanation]
+* Decisions
+** xref:explanations/decision-deployment-strategy.adoc[Deployment Strategy]
