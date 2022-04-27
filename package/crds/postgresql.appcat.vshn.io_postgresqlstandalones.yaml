@@ -28,7 +28,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: A PostgresqlStandalone is the user-facing and consumer-friendly
+        description: PostgresqlStandalone is the user-facing and consumer-friendly
           API that abstracts the provisioning of standalone Postgresql service instances.
         properties:
           apiVersion:
@@ -44,19 +44,46 @@ spec:
           metadata:
             type: object
           spec:
-            description: A PostgresqlStandaloneSpec defines the desired state of a
-              PostgresqlStandalone.
+            description: PostgresqlStandaloneSpec defines the desired state of a PostgresqlStandalone.
             properties:
+              enableSuperUser:
+                description: EnableSuperUser also provisions the 'postgres' superuser
+                  credentials for consumption.
+                type: boolean
+              majorVersion:
+                description: "MajorVersion is the supported major version of PostgreSQL.
+                  \n A version cannot be downgraded. Once bumped to the next version,
+                  an upgrade process is started in the background. During the upgrade
+                  the instance remains in maintenance mode until the upgrade went
+                  through successfully."
+                enum:
+                - v14
+                type: string
               resources:
+                description: Resources contain the storage and compute resources.
                 properties:
                   memoryLimit:
-                    type: string
-                  size:
-                    type: string
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: MemoryLimit defines the maximum memory limit designated
+                      for the instance. It can be freely scaled up or down within
+                      some limits.
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  storageCapacity:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: StorageCapacity is the reserved storage size for
+                      a PersistentVolume. It can only grow and never shrink. Attempt
+                      to shrink the size will throw a validation error.
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
                 type: object
             type: object
           status:
-            description: A PostgresqlStandaloneStatus represents the observed state
+            description: PostgresqlStandaloneStatus represents the observed state
               of a PostgresqlStandalone.
             properties:
               conditions:
@@ -128,12 +155,10 @@ spec:
                   type: object
                 type: array
               deploymentStrategy:
-                description: DeploymentStrategy refers to different backend implementation
-                  how the instance is being deployed in the background.
+                description: DeploymentStrategy is the observed deployed strategy.
                 type: string
               helmChart:
-                description: ChartMetaStatus contains metadata to a deployed Helm
-                  chart.
+                description: HelmChart is the observed deployed Helm chart version.
                 properties:
                   modifiedAt:
                     format: date-time

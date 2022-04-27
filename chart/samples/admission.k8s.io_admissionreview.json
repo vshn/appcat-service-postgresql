@@ -40,10 +40,9 @@
         "creationTimestamp": null
       },
       "spec": {
-        "resources": {
-          "memoryLimit": "2Gi",
-          "size": "8Gi"
-        }
+        "resources": {},
+        "majorVersion": "v14",
+        "enableSuperUser": true
       },
       "status": {}
     },

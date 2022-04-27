@@ -2,6 +2,12 @@ apiVersion: postgresql.appcat.vshn.io/v1alpha1
 kind: PostgresqlStandaloneConfig
 metadata:
   creationTimestamp: null
-  name: provider-config
-spec: {}
+  name: platform-config
+spec:
+  resourceMaxima:
+    memoryLimit: 6Gi
+    storageCapacity: 500Gi
+  resourceMinima:
+    memoryLimit: 512Mi
+    storageCapacity: 5Gi
 status: {}

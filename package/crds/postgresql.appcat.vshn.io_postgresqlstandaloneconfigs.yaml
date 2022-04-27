@@ -40,6 +40,75 @@ spec:
           spec:
             description: A PostgresqlStandaloneConfigSpec defines the desired state
               of a PostgresqlStandaloneConfig.
+            properties:
+              defaultChart:
+                description: DefaultHelmChart defines the default chart metadata if
+                  DefaultDeploymentStrategy is StrategyHelmChart.
+                properties:
+                  name:
+                    description: Name is the Helm chart name within the repository.
+                    type: string
+                  repository:
+                    description: Repository is the Helm chart repository URL.
+                    type: string
+                  version:
+                    description: Version is the Helm chart version identifier.
+                    type: string
+                required:
+                - name
+                - repository
+                - version
+                type: object
+              defaultDeploymentStrategy:
+                description: DefaultDeploymentStrategy defines the default DeploymentStrategy
+                  in case there isn't a 1:1 match.
+                type: string
+              resourceMaxima:
+                description: ResourceMaxima defines the maximum supported resources
+                  an instance can have.
+                properties:
+                  memoryLimit:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: MemoryLimit defines the maximum memory limit designated
+                      for the instance. It can be freely scaled up or down within
+                      some limits.
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  storageCapacity:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: StorageCapacity is the reserved storage size for
+                      a PersistentVolume. It can only grow and never shrink. Attempt
+                      to shrink the size will throw a validation error.
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                type: object
+              resourceMinima:
+                description: ResourceMinima defines the minimum supported resources
+                  an instance can have.
+                properties:
+                  memoryLimit:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: MemoryLimit defines the maximum memory limit designated
+                      for the instance. It can be freely scaled up or down within
+                      some limits.
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  storageCapacity:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: StorageCapacity is the reserved storage size for
+                      a PersistentVolume. It can only grow and never shrink. Attempt
+                      to shrink the size will throw a validation error.
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                type: object
             type: object
           status:
             description: A PostgresqlStandaloneConfigStatus reflects the observed
