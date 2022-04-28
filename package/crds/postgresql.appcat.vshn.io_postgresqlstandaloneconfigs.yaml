@@ -13,7 +13,7 @@ spec:
     listKind: PostgresqlStandaloneConfigList
     plural: postgresqlstandaloneconfigs
     singular: postgresqlstandaloneconfig
-  scope: Cluster
+  scope: Namespaced
   versions:
   - additionalPrinterColumns:
     - jsonPath: .metadata.creationTimestamp
@@ -23,7 +23,9 @@ spec:
     schema:
       openAPIV3Schema:
         description: A PostgresqlStandaloneConfig configures a PostgresqlStandalone
-          provider.
+          provider on a cluster level. This API isn't meant for consumers. It contains
+          defaults and platform-specific configuration values that influence how instances
+          are provisioned.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -73,7 +75,7 @@ spec:
                     - type: string
                     description: MemoryLimit defines the maximum memory limit designated
                       for the instance. It can be freely scaled up or down within
-                      some limits.
+                      the operator-configured limits.
                     pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                     x-kubernetes-int-or-string: true
                   storageCapacity:
@@ -82,7 +84,8 @@ spec:
                     - type: string
                     description: StorageCapacity is the reserved storage size for
                       a PersistentVolume. It can only grow and never shrink. Attempt
-                      to shrink the size will throw a validation error.
+                      to shrink the size will throw a validation error. Minimum and
+                      Maximum is defined on an operator level.
                     pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                     x-kubernetes-int-or-string: true
                 type: object
@@ -96,7 +99,7 @@ spec:
                     - type: string
                     description: MemoryLimit defines the maximum memory limit designated
                       for the instance. It can be freely scaled up or down within
-                      some limits.
+                      the operator-configured limits.
                     pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                     x-kubernetes-int-or-string: true
                   storageCapacity:
@@ -105,7 +108,8 @@ spec:
                     - type: string
                     description: StorageCapacity is the reserved storage size for
                       a PersistentVolume. It can only grow and never shrink. Attempt
-                      to shrink the size will throw a validation error.
+                      to shrink the size will throw a validation error. Minimum and
+                      Maximum is defined on an operator level.
                     pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                     x-kubernetes-int-or-string: true
                 type: object

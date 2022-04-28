@@ -114,12 +114,14 @@ func newPostgresqlStandaloneSample() *v1alpha1.PostgresqlStandalone {
 		},
 		ObjectMeta: metav1.ObjectMeta{Name: "standalone", Generation: 1},
 		Spec: v1alpha1.PostgresqlStandaloneSpec{
-			Resources: v1alpha1.Resources{
-				ComputeResources: v1alpha1.ComputeResources{},
-				StorageResources: v1alpha1.StorageResources{},
+			Parameters: v1alpha1.PostgresqlStandaloneParameters{
+				Resources: v1alpha1.Resources{
+					ComputeResources: v1alpha1.ComputeResources{},
+					StorageResources: v1alpha1.StorageResources{},
+				},
+				MajorVersion:    v1alpha1.PostgresqlVersion14,
+				EnableSuperUser: true,
 			},
-			MajorVersion:    v1alpha1.PostgresqlVersion14,
-			EnableSuperUser: true,
 		},
 		Status: v1alpha1.PostgresqlStandaloneStatus{},
 	}

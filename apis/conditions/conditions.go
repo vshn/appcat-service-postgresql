@@ -4,6 +4,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Reasons that give more context to conditions.
 const (
 	ReasonMaintenanceProgressing = "MaintenanceProgressing"
 	ReasonMaintenanceSuccess     = "MaintenanceFinishedSuccessfully"
@@ -12,8 +13,10 @@ const (
 )
 
 const (
+	// TypeInMaintenance identifies a condition related to maintenance.
 	TypeInMaintenance = "InMaintenance"
-	TypeReady         = "Ready"
+	// TypeReady indicates that an instance is ready to serve.
+	TypeReady = "Ready"
 )
 
 // Ready creates a condition with TypeReady, ReasonReady and empty message.

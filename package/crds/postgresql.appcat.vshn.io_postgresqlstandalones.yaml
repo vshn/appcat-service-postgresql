@@ -46,40 +46,47 @@ spec:
           spec:
             description: PostgresqlStandaloneSpec defines the desired state of a PostgresqlStandalone.
             properties:
-              enableSuperUser:
-                description: EnableSuperUser also provisions the 'postgres' superuser
-                  credentials for consumption.
-                type: boolean
-              majorVersion:
-                description: "MajorVersion is the supported major version of PostgreSQL.
-                  \n A version cannot be downgraded. Once bumped to the next version,
-                  an upgrade process is started in the background. During the upgrade
-                  the instance remains in maintenance mode until the upgrade went
-                  through successfully."
-                enum:
-                - v14
-                type: string
-              resources:
-                description: Resources contain the storage and compute resources.
+              forInstance:
+                description: Parameters defines the PostgreSQL specific settings.
                 properties:
-                  memoryLimit:
-                    anyOf:
-                    - type: integer
-                    - type: string
-                    description: MemoryLimit defines the maximum memory limit designated
-                      for the instance. It can be freely scaled up or down within
-                      some limits.
-                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                    x-kubernetes-int-or-string: true
-                  storageCapacity:
-                    anyOf:
-                    - type: integer
-                    - type: string
-                    description: StorageCapacity is the reserved storage size for
-                      a PersistentVolume. It can only grow and never shrink. Attempt
-                      to shrink the size will throw a validation error.
-                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                    x-kubernetes-int-or-string: true
+                  enableSuperUser:
+                    default: false
+                    description: EnableSuperUser also provisions the 'postgres' superuser
+                      credentials for consumption.
+                    type: boolean
+                  majorVersion:
+                    default: v14
+                    description: "MajorVersion is the supported major version of PostgreSQL.
+                      \n A version cannot be downgraded. Once bumped to the next version,
+                      an upgrade process is started in the background. During the
+                      upgrade the instance remains in maintenance mode until the upgrade
+                      went through successfully."
+                    enum:
+                    - v14
+                    type: string
+                  resources:
+                    description: Resources contain the storage and compute resources.
+                    properties:
+                      memoryLimit:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: MemoryLimit defines the maximum memory limit
+                          designated for the instance. It can be freely scaled up
+                          or down within the operator-configured limits.
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      storageCapacity:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: StorageCapacity is the reserved storage size
+                          for a PersistentVolume. It can only grow and never shrink.
+                          Attempt to shrink the size will throw a validation error.
+                          Minimum and Maximum is defined on an operator level.
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                    type: object
                 type: object
             type: object
           status:

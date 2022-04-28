@@ -27,9 +27,11 @@ type PostgresqlStandaloneConfigStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
-// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:resource:scope=Namespaced
 
-// A PostgresqlStandaloneConfig configures a PostgresqlStandalone provider.
+// A PostgresqlStandaloneConfig configures a PostgresqlStandalone provider on a cluster level.
+// This API isn't meant for consumers.
+// It contains defaults and platform-specific configuration values that influence how instances are provisioned.
 type PostgresqlStandaloneConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

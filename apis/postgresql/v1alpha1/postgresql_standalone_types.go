@@ -15,12 +15,14 @@ type PostgresqlStandaloneObservation struct {
 	HelmChart *ChartMetaStatus `json:"helmChart,omitempty"`
 }
 
-// PostgresqlStandaloneSpec defines the desired state of a PostgresqlStandalone.
-type PostgresqlStandaloneSpec struct {
+// PostgresqlStandaloneParameters defines the PostgreSQL specific settings.
+type PostgresqlStandaloneParameters struct {
+
 	// Resources contain the storage and compute resources.
 	Resources Resources `json:"resources,omitempty"`
 
 	//+kubebuilder:validation:Enum=v14
+	//+kubebuilder:default=v14
 
 	// MajorVersion is the supported major version of PostgreSQL.
 	//
@@ -28,8 +30,17 @@ type PostgresqlStandaloneSpec struct {
 	// Once bumped to the next version, an upgrade process is started in the background.
 	// During the upgrade the instance remains in maintenance mode until the upgrade went through successfully.
 	MajorVersion MajorVersion `json:"majorVersion,omitempty"`
+
+	//+kubebuilder:default=false
+
 	// EnableSuperUser also provisions the 'postgres' superuser credentials for consumption.
 	EnableSuperUser bool `json:"enableSuperUser,omitempty"`
+}
+
+// PostgresqlStandaloneSpec defines the desired state of a PostgresqlStandalone.
+type PostgresqlStandaloneSpec struct {
+	// Parameters defines the PostgreSQL specific settings.
+	Parameters PostgresqlStandaloneParameters `json:"forInstance,omitempty"`
 }
 
 // PostgresqlStandaloneStatus represents the observed state of a PostgresqlStandalone.

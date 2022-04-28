@@ -40,9 +40,11 @@
         "creationTimestamp": null
       },
       "spec": {
-        "resources": {},
-        "majorVersion": "v14",
-        "enableSuperUser": true
+        "forInstance": {
+          "resources": {},
+          "majorVersion": "v14",
+          "enableSuperUser": true
+        }
       },
       "status": {}
     },

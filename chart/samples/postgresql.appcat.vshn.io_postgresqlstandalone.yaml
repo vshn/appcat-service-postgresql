@@ -5,9 +5,10 @@ metadata:
   generation: 1
   name: standalone
 spec:
-  enableSuperUser: true
-  majorVersion: v14
-  resources: {}
+  forInstance:
+    enableSuperUser: true
+    majorVersion: v14
+    resources: {}
 status:
   conditions:
   - lastTransitionTime: "2022-04-27T15:20:13Z"
