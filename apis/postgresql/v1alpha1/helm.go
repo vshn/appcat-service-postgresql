@@ -7,11 +7,11 @@ import (
 // ChartMeta contains the metadata to a Helm chart.
 type ChartMeta struct {
 	// Repository is the Helm chart repository URL.
-	Repository string `json:"repository"`
+	Repository string `json:"repository,omitempty"`
 	// Version is the Helm chart version identifier.
-	Version string `json:"version"`
+	Version string `json:"version,omitempty"`
 	// Name is the Helm chart name within the repository.
-	Name string `json:"name"`
+	Name string `json:"name,omitempty"`
 }
 
 // ChartMetaStatus contains metadata to a deployed Helm chart.

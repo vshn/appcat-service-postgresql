@@ -179,10 +179,6 @@ spec:
                   version:
                     description: Version is the Helm chart version identifier.
                     type: string
-                required:
-                - name
-                - repository
-                - version
                 type: object
               observedGeneration:
                 description: ObservedGeneration is the meta.generation number this

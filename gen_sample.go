@@ -26,7 +26,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+	serializerjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/apimachinery/pkg/util/json"
 )
 
 var scheme = runtime.NewScheme()
@@ -38,31 +39,6 @@ func main() {
 	generatePostgresqlStandaloneAdmissionRequest()
 }
 
-func generatePostgresqlStandaloneAdmissionRequest() {
-	spec := newPostgresqlStandaloneSample()
-	gvk := metav1.GroupVersionKind{Group: v1alpha1.Group, Version: v1alpha1.Version, Kind: v1alpha1.PostgresStandaloneKind}
-	gvr := metav1.GroupVersionResource{Group: v1alpha1.Group, Version: v1alpha1.Version, Resource: v1alpha1.PostgresStandaloneKind}
-	admission := &admissionv1.AdmissionReview{
-		TypeMeta: metav1.TypeMeta{APIVersion: "admission.k8s.io/v1", Kind: "AdmissionReview"},
-		Request: &admissionv1.AdmissionRequest{
-			Object: runtime.RawExtension{
-				Object: spec,
-			},
-			Kind:            gvk,
-			Resource:        gvr,
-			RequestKind:     &gvk,
-			RequestResource: &gvr,
-			Name:            spec.Name,
-			Operation:       admissionv1.Create,
-			UserInfo: authv1.UserInfo{
-				Username: "admin",
-				Groups:   []string{"system:authenticated"},
-			},
-		},
-	}
-	serialize(admission, false)
-}
-
 func generatePostgresStandaloneConfigSample() {
 	spec := &v1alpha1.PostgresqlStandaloneConfig{
 		TypeMeta: metav1.TypeMeta{
@@ -71,6 +47,7 @@ func generatePostgresStandaloneConfigSample() {
 		},
 		ObjectMeta: metav1.ObjectMeta{Name: "platform-config"},
 		Spec: v1alpha1.PostgresqlStandaloneConfigSpec{
+			DeploymentStrategy: v1alpha1.StrategyHelmChart,
 			ResourceMinima: v1alpha1.Resources{
 				ComputeResources: v1alpha1.ComputeResources{MemoryLimit: parseResource("512Mi")},
 				StorageResources: v1alpha1.StorageResources{StorageCapacity: parseResource("5Gi")},
@@ -78,6 +55,26 @@ func generatePostgresStandaloneConfigSample() {
 			ResourceMaxima: v1alpha1.Resources{
 				ComputeResources: v1alpha1.ComputeResources{MemoryLimit: parseResource("6Gi")},
 				StorageResources: v1alpha1.StorageResources{StorageCapacity: parseResource("500Gi")},
+			},
+			HelmReleaseTemplate: &v1alpha1.HelmReleaseConfig{
+				Chart: v1alpha1.ChartMeta{
+					Repository: "https://charts.bitnami.com/bitnami",
+					Version:    "11.1.23",
+					Name:       "postgresql",
+				},
+				Values: runtime.RawExtension{Raw: toRawJSON(map[string]interface{}{
+					"key": "value",
+				})},
+			},
+			HelmReleases: []v1alpha1.HelmReleaseConfig{
+				{
+					Chart: v1alpha1.ChartMeta{Version: "11.1.23"},
+					Values: runtime.RawExtension{Raw: toRawJSON(map[string]interface{}{
+						"key":    "overridden",
+						"newKey": "newValue",
+					})},
+					MergeValuesFromTemplate: true,
+				},
 			},
 		},
 	}
@@ -127,10 +124,41 @@ func newPostgresqlStandaloneSample() *v1alpha1.PostgresqlStandalone {
 	}
 }
 
+func generatePostgresqlStandaloneAdmissionRequest() {
+	spec := newPostgresqlStandaloneSample()
+	gvk := metav1.GroupVersionKind{Group: v1alpha1.Group, Version: v1alpha1.Version, Kind: v1alpha1.PostgresStandaloneKind}
+	gvr := metav1.GroupVersionResource{Group: v1alpha1.Group, Version: v1alpha1.Version, Resource: v1alpha1.PostgresStandaloneKind}
+	admission := &admissionv1.AdmissionReview{
+		TypeMeta: metav1.TypeMeta{APIVersion: "admission.k8s.io/v1", Kind: "AdmissionReview"},
+		Request: &admissionv1.AdmissionRequest{
+			Object: runtime.RawExtension{
+				Object: spec,
+			},
+			Kind:            gvk,
+			Resource:        gvr,
+			RequestKind:     &gvk,
+			RequestResource: &gvr,
+			Name:            spec.Name,
+			Operation:       admissionv1.Create,
+			UserInfo: authv1.UserInfo{
+				Username: "admin",
+				Groups:   []string{"system:authenticated"},
+			},
+		},
+	}
+	serialize(admission, false)
+}
+
 func failIfError(err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func toRawJSON(vals map[string]interface{}) []byte {
+	b, err := json.Marshal(vals)
+	failIfError(err)
+	return b
 }
 
 func serialize(object runtime.Object, useYaml bool) {
@@ -141,7 +169,7 @@ func serialize(object runtime.Object, useYaml bool) {
 	}
 	fileName := fmt.Sprintf("%s_%s.%s", strings.ToLower(gvk.Group), strings.ToLower(gvk.Kind), fileExt)
 	f := prepareFile(fileName)
-	err := json.NewSerializerWithOptions(json.DefaultMetaFactory, scheme, scheme, json.SerializerOptions{Yaml: useYaml, Pretty: true}).Encode(object, f)
+	err := serializerjson.NewSerializerWithOptions(serializerjson.DefaultMetaFactory, scheme, scheme, serializerjson.SerializerOptions{Yaml: useYaml, Pretty: true}).Encode(object, f)
 	failIfError(err)
 }
 

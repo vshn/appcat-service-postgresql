@@ -4,6 +4,21 @@ metadata:
   creationTimestamp: null
   name: platform-config
 spec:
+  defaultDeploymentStrategy: HelmChart
+  helmReleaseTemplate:
+    chart:
+      name: postgresql
+      repository: https://charts.bitnami.com/bitnami
+      version: 11.1.23
+    values:
+      key: value
+  helmReleases:
+  - chart:
+      version: 11.1.23
+    mergeValuesFromTemplate: true
+    values:
+      key: overridden
+      newKey: newValue
   resourceMaxima:
     memoryLimit: 6Gi
     storageCapacity: 500Gi
