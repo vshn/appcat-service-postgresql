@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-const finalizer = "finalizer"
+var finalizer = strings.ReplaceAll(v1alpha1.Group, ".", "-")
 
 // OperatorNamespace is the namespace where the controller looks for v1alpha1.PostgresqlStandaloneOperatorConfig.
 var OperatorNamespace = "postgresql-system"
@@ -29,7 +29,7 @@ func SetupController(mgr ctrl.Manager, o controller.Options) error {
 		For(&v1alpha1.PostgresqlStandalone{}).
 		WithEventFilter(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{}, predicate.LabelChangedPredicate{})).
 		Complete(&PostgresStandaloneReconciler{
-			log:    o.Log,
+			log:    o.Log.WithName("controller"),
 			client: mgr.GetClient(),
 		})
 }
@@ -61,23 +61,35 @@ func (r *PostgresStandaloneReconciler) Reconcile(ctx context.Context, request re
 		// some other error
 		return reconcile.Result{}, err
 	}
-	if !controllerutil.ContainsFinalizer(obj, finalizer) {
-		return r.Create(ctx, obj)
-	}
 	if !obj.DeletionTimestamp.IsZero() {
 		return r.Delete(ctx, obj)
+	}
+	if !controllerutil.ContainsFinalizer(obj, finalizer) {
+		controllerutil.AddFinalizer(obj, finalizer)
+		res, err := r.Create(ctx, obj)
+		if err != nil {
+			r.log.Error(err, "couldn't reconcile instance")
+		}
+		return res, err
 	}
 	return r.Update(ctx, obj)
 }
 
 // Create creates the given instance.
 func (r *PostgresStandaloneReconciler) Create(ctx context.Context, instance *v1alpha1.PostgresqlStandalone) (reconcile.Result, error) {
-	controllerutil.AddFinalizer(instance, finalizer)
-
 	r.log.Info("Creating", "res", instance.Name)
+	p := CreateStandalonePipeline{
+		instance:          instance,
+		client:            r.client,
+		operatorNamespace: OperatorNamespace,
+	}
+	err := p.runPipeline(ctx)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 	// also add some status condition here
 	instance.Status.SetObservedGeneration(instance.ObjectMeta)
-	err := r.client.Status().Update(ctx, instance)
+	err = r.client.Status().Update(ctx, instance)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
