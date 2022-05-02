@@ -17,6 +17,9 @@ import (
 
 const finalizer = "finalizer"
 
+// OperatorNamespace is the namespace where the controller looks for v1alpha1.PostgresqlStandaloneOperatorConfig.
+var OperatorNamespace = "postgresql-system"
+
 // SetupController adds a controller that reconciles v1alpha1.PostgresqlStandalone managed resources.
 func SetupController(mgr ctrl.Manager, o controller.Options) error {
 	name := strings.ToLower(v1alpha1.PostgresStandaloneGroupKind)

@@ -21,6 +21,7 @@ type operatorCommand struct {
 	SyncInterval          time.Duration
 	LeaderElectionEnabled bool
 	WebhookCertDir        string
+	OperatorNamespace     string
 
 	manager    manager.Manager
 	kubeconfig *rest.Config
@@ -48,6 +49,10 @@ func newOperatorCommand() *cli.Command {
 				Usage:       "Directory containing the certificates for the webhook server. If empty, the webhook server is not started.",
 				Destination: &command.WebhookCertDir,
 			},
+			&cli.StringFlag{Name: "operator-namespace", EnvVars: []string{"OPERATOR_NAMESPACE"},
+				Usage:       "Namespace name where the operator runs in.",
+				Destination: &command.OperatorNamespace, Required: true,
+			},
 		},
 	}
 }
@@ -62,6 +67,11 @@ func (c *operatorCommand) validate(ctx *cli.Context) error {
 func (c *operatorCommand) execute(ctx *cli.Context) error {
 	log := AppLogger(ctx).WithName(operatorCommandName)
 	log.Info("Setting up controllers", "config", c)
+
+	options := operator.Options{
+		Options:   controller.Options{Log: log},
+		Namespace: c.OperatorNamespace,
+	}
 
 	p := pipeline.NewPipeline().WithBeforeHooks([]pipeline.Listener{
 		func(step pipeline.Step) {
@@ -106,18 +116,14 @@ func (c *operatorCommand) execute(ctx *cli.Context) error {
 		}),
 	))
 	p.AddStepFromFunc("setup controllers", func(ctx context.Context) error {
-		o := controller.Options{
-			Log: log,
-		}
-		return operator.SetupControllers(c.manager, o)
+		return operator.SetupControllers(c.manager, options)
 	})
 	p.AddStep(pipeline.ToStep("setup webhook server",
 		func(ctx context.Context) error {
 			ws := c.manager.GetWebhookServer()
 			ws.CertDir = c.WebhookCertDir
 			ws.TLSMinVersion = "1.3"
-			o := controller.Options{Log: log}
-			return operator.SetupWebhooks(c.manager, o)
+			return operator.SetupWebhooks(c.manager, options)
 		},
 		pipeline.Bool(c.WebhookCertDir != "")))
 	p.AddStepFromFunc("run manager", func(ctx context.Context) error {
