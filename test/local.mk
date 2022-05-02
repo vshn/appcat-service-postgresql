@@ -35,7 +35,7 @@ local-install: crossplane-setup kind-load-image install-crd webhook-cert ## Inst
 .PHONY: kind-run-operator
 kind-run-operator: export KUBECONFIG = $(KIND_KUBECONFIG)
 kind-run-operator: kind-setup webhook-cert ## Run in Operator mode against kind cluster (you may also need `install-crd`)
-	go run . -v 1 operator --webhook-tls-cert-dir .kind
+	go run . -v 1 operator --webhook-tls-cert-dir .kind --operator-namespace postgresql-system
 
 
 ###

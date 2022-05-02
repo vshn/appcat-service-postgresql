@@ -45,9 +45,12 @@ func generatePostgresStandaloneConfigSample() {
 			APIVersion: v1alpha1.PostgresqlStandaloneOperatorConfigGroupVersionKind.GroupVersion().String(),
 			Kind:       v1alpha1.PostgresqlStandaloneOperatorConfigKind,
 		},
-		ObjectMeta: metav1.ObjectMeta{Name: "platform-config", Labels: map[string]string{
-			fmt.Sprintf("%s/major-version", v1alpha1.Group): v1alpha1.PostgresqlVersion14.String(),
-		}},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "platform-config",
+			Namespace: "postgresql-system",
+			Labels: map[string]string{
+				v1alpha1.PostgresqlMajorVersionLabelKey: v1alpha1.PostgresqlVersion14.String(),
+			}},
 		Spec: v1alpha1.PostgresqlStandaloneOperatorConfigSpec{
 			DeploymentStrategy: v1alpha1.StrategyHelmChart,
 			ResourceMinima: v1alpha1.Resources{
