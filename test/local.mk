@@ -10,7 +10,6 @@ else
 endif
 
 # Despite the registry running in Cluster, we need to load the container image with `kind load`.
-# There were problems trying to pull container image from registry ("no such host") even though Crossplane could pull the package image...
 .PHONY: local-install
 local-install: export KUBECONFIG = $(KIND_KUBECONFIG)
 local-install: kind-load-image install-crd webhook-cert ## Install Operator in local cluster

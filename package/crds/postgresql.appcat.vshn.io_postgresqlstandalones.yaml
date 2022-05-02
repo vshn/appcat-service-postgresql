@@ -28,7 +28,8 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: A PostgresqlStandalone is an example API type.
+        description: PostgresqlStandalone is the user-facing and consumer-friendly
+          API that abstracts the provisioning of standalone Postgresql service instances.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -43,24 +44,55 @@ spec:
           metadata:
             type: object
           spec:
-            description: A PostgresqlStandaloneSpec defines the desired state of a
-              PostgresqlStandalone.
+            description: PostgresqlStandaloneSpec defines the desired state of a PostgresqlStandalone.
             properties:
-              forProvider:
-                description: PostgresqlStandaloneParameters are the configurable fields
-                  of a PostgresqlStandalone.
+              forInstance:
+                description: Parameters defines the PostgreSQL specific settings.
+                properties:
+                  enableSuperUser:
+                    default: false
+                    description: EnableSuperUser also provisions the 'postgres' superuser
+                      credentials for consumption.
+                    type: boolean
+                  majorVersion:
+                    default: v14
+                    description: "MajorVersion is the supported major version of PostgreSQL.
+                      \n A version cannot be downgraded. Once bumped to the next version,
+                      an upgrade process is started in the background. During the
+                      upgrade the instance remains in maintenance mode until the upgrade
+                      went through successfully."
+                    enum:
+                    - v14
+                    type: string
+                  resources:
+                    description: Resources contain the storage and compute resources.
+                    properties:
+                      memoryLimit:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: MemoryLimit defines the maximum memory limit
+                          designated for the instance. It can be freely scaled up
+                          or down within the operator-configured limits.
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      storageCapacity:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: StorageCapacity is the reserved storage size
+                          for a PersistentVolume. It can only grow and never shrink.
+                          Attempt to shrink the size will throw a validation error.
+                          Minimum and Maximum is defined on an operator level.
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                    type: object
                 type: object
-            required:
-            - forProvider
             type: object
           status:
-            description: A PostgresqlStandaloneStatus represents the observed state
+            description: PostgresqlStandaloneStatus represents the observed state
               of a PostgresqlStandalone.
             properties:
-              atProvider:
-                description: PostgresqlStandaloneObservation are the observable fields
-                  of a PostgresqlStandalone.
-                type: object
               conditions:
                 items:
                   description: "Condition contains details for one aspect of the current
@@ -129,6 +161,25 @@ spec:
                   - type
                   type: object
                 type: array
+              deploymentStrategy:
+                description: DeploymentStrategy is the observed deployed strategy.
+                type: string
+              helmChart:
+                description: HelmChart is the observed deployed Helm chart version.
+                properties:
+                  modifiedAt:
+                    format: date-time
+                    type: string
+                  name:
+                    description: Name is the Helm chart name within the repository.
+                    type: string
+                  repository:
+                    description: Repository is the Helm chart repository URL.
+                    type: string
+                  version:
+                    description: Version is the Helm chart version identifier.
+                    type: string
+                type: object
               observedGeneration:
                 description: ObservedGeneration is the meta.generation number this
                   resource was last reconciled with.

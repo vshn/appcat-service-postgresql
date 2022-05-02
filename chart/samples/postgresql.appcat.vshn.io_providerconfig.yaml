@@ -1,7 +1,0 @@
-apiVersion: postgresql.appcat.vshn.io/v1alpha1
-kind: ProviderConfig
-metadata:
-  creationTimestamp: null
-  name: provider-config
-spec: {}
-status: {}

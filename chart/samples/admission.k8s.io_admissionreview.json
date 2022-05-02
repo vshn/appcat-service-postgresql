@@ -1,0 +1,54 @@
+{
+  "kind": "AdmissionReview",
+  "apiVersion": "admission.k8s.io/v1",
+  "request": {
+    "uid": "",
+    "kind": {
+      "group": "postgresql.appcat.vshn.io",
+      "version": "v1alpha1",
+      "kind": "PostgresqlStandalone"
+    },
+    "resource": {
+      "group": "postgresql.appcat.vshn.io",
+      "version": "v1alpha1",
+      "resource": "PostgresqlStandalone"
+    },
+    "requestKind": {
+      "group": "postgresql.appcat.vshn.io",
+      "version": "v1alpha1",
+      "kind": "PostgresqlStandalone"
+    },
+    "requestResource": {
+      "group": "postgresql.appcat.vshn.io",
+      "version": "v1alpha1",
+      "resource": "PostgresqlStandalone"
+    },
+    "name": "standalone",
+    "operation": "CREATE",
+    "userInfo": {
+      "username": "admin",
+      "groups": [
+        "system:authenticated"
+      ]
+    },
+    "object": {
+      "kind": "PostgresqlStandalone",
+      "apiVersion": "postgresql.appcat.vshn.io/v1alpha1",
+      "metadata": {
+        "name": "standalone",
+        "generation": 1,
+        "creationTimestamp": null
+      },
+      "spec": {
+        "forInstance": {
+          "resources": {},
+          "majorVersion": "v14",
+          "enableSuperUser": true
+        }
+      },
+      "status": {}
+    },
+    "oldObject": null,
+    "options": null
+  }
+}

@@ -28,7 +28,7 @@ This service provider installs PostgreSQL instances of various architecture type
 * `make build` to build the binary and docker image
 * `make generate` to (re)generate additional code artifacts
 * `make test` run test suite
-* `make package-install` to package the provider and install via Crossplane
+* `make local-install` to install the operator in local cluster
 * `make install-samples` to run the provider in local cluster and apply a sample instance
 * `make run-operator` to run the code in operator mode against local cluster
 
@@ -45,5 +45,5 @@ To test and troubleshoot the webhooks, do a port-forward and send an admission r
 kubectl -n crossplane-system port-forward $(kubectl -n crossplane-system get pods -o name -l pkg.crossplane.io/provider=appcat-service-postgresql) 9443:9443
 
 # send an admission request
-curl -k -v -H "Content-Type: application/json" --data @samples/admissionrequest.json https://localhost:9443/validate-postgresql-appcat-vshn-io-v1alpha1-postgresqlstandalone
+curl -k -v -H "Content-Type: application/json" --data @chart/samples/admission.k8s.io_admissionreview.json https://localhost:9443/validate-postgresql-appcat-vshn-io-v1alpha1-postgresqlstandalone
 ```

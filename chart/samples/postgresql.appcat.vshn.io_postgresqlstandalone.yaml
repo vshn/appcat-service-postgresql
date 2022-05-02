@@ -5,6 +5,20 @@ metadata:
   generation: 1
   name: standalone
 spec:
-  forProvider: {}
+  forInstance:
+    enableSuperUser: true
+    majorVersion: v14
+    resources: {}
 status:
-  atProvider: {}
+  conditions:
+  - lastTransitionTime: "2022-04-27T15:20:13Z"
+    message: ""
+    reason: The resource is ready
+    status: "True"
+    type: Ready
+  deploymentStrategy: HelmChart
+  helmChart:
+    modifiedAt: "2022-04-27T15:20:13Z"
+    name: postgresql
+    repository: https://charts.bitnami.com/bitnami
+    version: 11.1.23

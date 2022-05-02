@@ -1,0 +1,183 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
+  name: postgresqlstandaloneoperatorconfigs.postgresql.appcat.vshn.io
+spec:
+  group: postgresql.appcat.vshn.io
+  names:
+    kind: PostgresqlStandaloneOperatorConfig
+    listKind: PostgresqlStandaloneOperatorConfigList
+    plural: postgresqlstandaloneoperatorconfigs
+    singular: postgresqlstandaloneoperatorconfig
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: A PostgresqlStandaloneOperatorConfig configures a PostgresqlStandalone
+          provider on a cluster level. This API isn't meant for consumers. It contains
+          defaults and platform-specific configuration values that influence how instances
+          are provisioned. There should be a PostgresqlStandaloneOperatorConfig for
+          each major version in use.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: A PostgresqlStandaloneOperatorConfigSpec defines the desired
+              state of a PostgresqlStandaloneOperatorConfig.
+            properties:
+              defaultDeploymentStrategy:
+                description: DeploymentStrategy defines the DeploymentStrategy in
+                  case there isn't a 1:1 match.
+                type: string
+              helmReleaseTemplate:
+                description: HelmReleaseTemplate is the default release config that
+                  is used for all HelmReleases. Changing values in this field affects
+                  also existing deployed Helm releases unless they are pinned in HelmReleases
+                  for a specific chart version. New instances use this config unless
+                  there's a specific HelmReleaseConfig for a version that matches
+                  the version in this spec.
+                properties:
+                  chart:
+                    description: Chart sets the scope of this config to a specific
+                      version. At least chart version is required in order for this
+                      HelmReleaseConfig to take effect.
+                    properties:
+                      name:
+                        description: Name is the Helm chart name within the repository.
+                        type: string
+                      repository:
+                        description: Repository is the Helm chart repository URL.
+                        type: string
+                      version:
+                        description: Version is the Helm chart version identifier.
+                        type: string
+                    type: object
+                  mergeValuesFromTemplate:
+                    description: MergeValuesFromTemplate sets the merge behaviour
+                      for Values.
+                    type: boolean
+                  values:
+                    description: Values override PostgresqlStandaloneOperatorConfigSpec.HelmReleaseTemplate.
+                      Set MergeValuesFromTemplate to true to deep-merge values instead
+                      of replacing them all.
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                type: object
+              helmReleases:
+                description: HelmReleases allows to override settings for a specific
+                  deployable Helm chart.
+                items:
+                  description: HelmReleaseConfig describes a Helm chart release.
+                  properties:
+                    chart:
+                      description: Chart sets the scope of this config to a specific
+                        version. At least chart version is required in order for this
+                        HelmReleaseConfig to take effect.
+                      properties:
+                        name:
+                          description: Name is the Helm chart name within the repository.
+                          type: string
+                        repository:
+                          description: Repository is the Helm chart repository URL.
+                          type: string
+                        version:
+                          description: Version is the Helm chart version identifier.
+                          type: string
+                      type: object
+                    mergeValuesFromTemplate:
+                      description: MergeValuesFromTemplate sets the merge behaviour
+                        for Values.
+                      type: boolean
+                    values:
+                      description: Values override PostgresqlStandaloneOperatorConfigSpec.HelmReleaseTemplate.
+                        Set MergeValuesFromTemplate to true to deep-merge values instead
+                        of replacing them all.
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                  type: object
+                type: array
+              resourceMaxima:
+                description: ResourceMaxima defines the maximum supported resources
+                  an instance can have.
+                properties:
+                  memoryLimit:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: MemoryLimit defines the maximum memory limit designated
+                      for the instance. It can be freely scaled up or down within
+                      the operator-configured limits.
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  storageCapacity:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: StorageCapacity is the reserved storage size for
+                      a PersistentVolume. It can only grow and never shrink. Attempt
+                      to shrink the size will throw a validation error. Minimum and
+                      Maximum is defined on an operator level.
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                type: object
+              resourceMinima:
+                description: ResourceMinima defines the minimum supported resources
+                  an instance can have.
+                properties:
+                  memoryLimit:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: MemoryLimit defines the maximum memory limit designated
+                      for the instance. It can be freely scaled up or down within
+                      the operator-configured limits.
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  storageCapacity:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: StorageCapacity is the reserved storage size for
+                      a PersistentVolume. It can only grow and never shrink. Attempt
+                      to shrink the size will throw a validation error. Minimum and
+                      Maximum is defined on an operator level.
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                type: object
+            type: object
+          status:
+            description: A PostgresqlStandaloneConfigStatus reflects the observed
+              state of a PostgresqlStandaloneOperatorConfig.
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
