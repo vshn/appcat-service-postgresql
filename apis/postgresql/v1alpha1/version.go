@@ -9,9 +9,6 @@ const (
 )
 
 // String implements fmt.Stringer.
-func (v *MajorVersion) String() string {
-	if v == nil {
-		return ""
-	}
-	return string(*v)
+func (v MajorVersion) String() string {
+	return string(v)
 }

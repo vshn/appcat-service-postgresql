@@ -8,8 +8,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-// A PostgresqlStandaloneConfigSpec defines the desired state of a PostgresqlStandaloneConfig.
-type PostgresqlStandaloneConfigSpec struct {
+// A PostgresqlStandaloneOperatorConfigSpec defines the desired state of a PostgresqlStandaloneOperatorConfig.
+type PostgresqlStandaloneOperatorConfigSpec struct {
 	// DeploymentStrategy defines the DeploymentStrategy in case there isn't a 1:1 match.
 	DeploymentStrategy DeploymentStrategy `json:"defaultDeploymentStrategy,omitempty"`
 
@@ -35,7 +35,7 @@ type HelmReleaseConfig struct {
 
 	// +kubebuilder:pruning:PreserveUnknownFields
 
-	// Values override PostgresqlStandaloneConfigSpec.HelmReleaseTemplate.
+	// Values override PostgresqlStandaloneOperatorConfigSpec.HelmReleaseTemplate.
 	// Set MergeValuesFromTemplate to true to deep-merge values instead of replacing them all.
 	Values runtime.RawExtension `json:"values,omitempty"`
 	// MergeValuesFromTemplate sets the merge behaviour for Values.
@@ -47,39 +47,39 @@ type HelmReleaseConfig struct {
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:resource:scope=Namespaced
 
-// A PostgresqlStandaloneConfig configures a PostgresqlStandalone provider on a cluster level.
+// A PostgresqlStandaloneOperatorConfig configures a PostgresqlStandalone provider on a cluster level.
 // This API isn't meant for consumers.
 // It contains defaults and platform-specific configuration values that influence how instances are provisioned.
-// There should be a PostgresqlStandaloneConfig for each major version in use.
-type PostgresqlStandaloneConfig struct {
+// There should be a PostgresqlStandaloneOperatorConfig for each major version in use.
+type PostgresqlStandaloneOperatorConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   PostgresqlStandaloneConfigSpec   `json:"spec"`
-	Status PostgresqlStandaloneConfigStatus `json:"status,omitempty"`
+	Spec   PostgresqlStandaloneOperatorConfigSpec `json:"spec"`
+	Status PostgresqlStandaloneConfigStatus       `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// PostgresqlStandaloneConfigList contains a list of PostgresqlStandaloneConfig.
-type PostgresqlStandaloneConfigList struct {
+// PostgresqlStandaloneOperatorConfigList contains a list of PostgresqlStandaloneOperatorConfig.
+type PostgresqlStandaloneOperatorConfigList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []PostgresqlStandaloneConfig `json:"items"`
+	Items           []PostgresqlStandaloneOperatorConfig `json:"items"`
 }
 
-// A PostgresqlStandaloneConfigStatus reflects the observed state of a PostgresqlStandaloneConfig.
+// A PostgresqlStandaloneConfigStatus reflects the observed state of a PostgresqlStandaloneOperatorConfig.
 type PostgresqlStandaloneConfigStatus struct {
 }
 
-// PostgresqlStandaloneConfig type metadata.
+// PostgresqlStandaloneOperatorConfig type metadata.
 var (
-	PostgresqlStandaloneConfigKind             = reflect.TypeOf(PostgresqlStandaloneConfig{}).Name()
-	PostgresqlStandaloneConfigGroupKind        = schema.GroupKind{Group: Group, Kind: PostgresqlStandaloneConfigKind}.String()
-	PostgresqlStandaloneConfigKindAPIVersion   = PostgresqlStandaloneConfigKind + "." + SchemeGroupVersion.String()
-	PostgresqlStandaloneConfigGroupVersionKind = SchemeGroupVersion.WithKind(PostgresqlStandaloneConfigKind)
+	PostgresqlStandaloneOperatorConfigKind             = reflect.TypeOf(PostgresqlStandaloneOperatorConfig{}).Name()
+	PostgresqlStandaloneOperatorConfigGroupKind        = schema.GroupKind{Group: Group, Kind: PostgresqlStandaloneOperatorConfigKind}.String()
+	PostgresqlStandaloneOperatorConfigKindAPIVersion   = PostgresqlStandaloneOperatorConfigKind + "." + SchemeGroupVersion.String()
+	PostgresqlStandaloneOperatorConfigGroupVersionKind = SchemeGroupVersion.WithKind(PostgresqlStandaloneOperatorConfigKind)
 )
 
 func init() {
-	SchemeBuilder.Register(&PostgresqlStandaloneConfig{}, &PostgresqlStandaloneConfigList{})
+	SchemeBuilder.Register(&PostgresqlStandaloneOperatorConfig{}, &PostgresqlStandaloneOperatorConfigList{})
 }

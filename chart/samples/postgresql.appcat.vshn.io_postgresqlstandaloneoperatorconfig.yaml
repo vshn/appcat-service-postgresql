@@ -1,7 +1,9 @@
 apiVersion: postgresql.appcat.vshn.io/v1alpha1
-kind: PostgresqlStandaloneConfig
+kind: PostgresqlStandaloneOperatorConfig
 metadata:
   creationTimestamp: null
+  labels:
+    postgresql.appcat.vshn.io/major-version: v14
   name: platform-config
 spec:
   defaultDeploymentStrategy: HelmChart

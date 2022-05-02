@@ -5,14 +5,14 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: postgresqlstandaloneconfigs.postgresql.appcat.vshn.io
+  name: postgresqlstandaloneoperatorconfigs.postgresql.appcat.vshn.io
 spec:
   group: postgresql.appcat.vshn.io
   names:
-    kind: PostgresqlStandaloneConfig
-    listKind: PostgresqlStandaloneConfigList
-    plural: postgresqlstandaloneconfigs
-    singular: postgresqlstandaloneconfig
+    kind: PostgresqlStandaloneOperatorConfig
+    listKind: PostgresqlStandaloneOperatorConfigList
+    plural: postgresqlstandaloneoperatorconfigs
+    singular: postgresqlstandaloneoperatorconfig
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -22,11 +22,11 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: A PostgresqlStandaloneConfig configures a PostgresqlStandalone
+        description: A PostgresqlStandaloneOperatorConfig configures a PostgresqlStandalone
           provider on a cluster level. This API isn't meant for consumers. It contains
           defaults and platform-specific configuration values that influence how instances
-          are provisioned. There should be a PostgresqlStandaloneConfig for each major
-          version in use.
+          are provisioned. There should be a PostgresqlStandaloneOperatorConfig for
+          each major version in use.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -41,8 +41,8 @@ spec:
           metadata:
             type: object
           spec:
-            description: A PostgresqlStandaloneConfigSpec defines the desired state
-              of a PostgresqlStandaloneConfig.
+            description: A PostgresqlStandaloneOperatorConfigSpec defines the desired
+              state of a PostgresqlStandaloneOperatorConfig.
             properties:
               defaultDeploymentStrategy:
                 description: DeploymentStrategy defines the DeploymentStrategy in
@@ -76,7 +76,7 @@ spec:
                       for Values.
                     type: boolean
                   values:
-                    description: Values override PostgresqlStandaloneConfigSpec.HelmReleaseTemplate.
+                    description: Values override PostgresqlStandaloneOperatorConfigSpec.HelmReleaseTemplate.
                       Set MergeValuesFromTemplate to true to deep-merge values instead
                       of replacing them all.
                     type: object
@@ -108,7 +108,7 @@ spec:
                         for Values.
                       type: boolean
                     values:
-                      description: Values override PostgresqlStandaloneConfigSpec.HelmReleaseTemplate.
+                      description: Values override PostgresqlStandaloneOperatorConfigSpec.HelmReleaseTemplate.
                         Set MergeValuesFromTemplate to true to deep-merge values instead
                         of replacing them all.
                       type: object
@@ -166,7 +166,7 @@ spec:
             type: object
           status:
             description: A PostgresqlStandaloneConfigStatus reflects the observed
-              state of a PostgresqlStandaloneConfig.
+              state of a PostgresqlStandaloneOperatorConfig.
             type: object
         required:
         - spec

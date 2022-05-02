@@ -40,13 +40,15 @@ func main() {
 }
 
 func generatePostgresStandaloneConfigSample() {
-	spec := &v1alpha1.PostgresqlStandaloneConfig{
+	spec := &v1alpha1.PostgresqlStandaloneOperatorConfig{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: v1alpha1.PostgresqlStandaloneConfigGroupVersionKind.GroupVersion().String(),
-			Kind:       v1alpha1.PostgresqlStandaloneConfigKind,
+			APIVersion: v1alpha1.PostgresqlStandaloneOperatorConfigGroupVersionKind.GroupVersion().String(),
+			Kind:       v1alpha1.PostgresqlStandaloneOperatorConfigKind,
 		},
-		ObjectMeta: metav1.ObjectMeta{Name: "platform-config"},
-		Spec: v1alpha1.PostgresqlStandaloneConfigSpec{
+		ObjectMeta: metav1.ObjectMeta{Name: "platform-config", Labels: map[string]string{
+			fmt.Sprintf("%s/major-version", v1alpha1.Group): v1alpha1.PostgresqlVersion14.String(),
+		}},
+		Spec: v1alpha1.PostgresqlStandaloneOperatorConfigSpec{
 			DeploymentStrategy: v1alpha1.StrategyHelmChart,
 			ResourceMinima: v1alpha1.Resources{
 				ComputeResources: v1alpha1.ComputeResources{MemoryLimit: parseResource("512Mi")},
