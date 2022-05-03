@@ -10,16 +10,21 @@ import (
 )
 
 type CreateStandalonePipeline struct {
-	instance          *v1alpha1.PostgresqlStandalone
-	client            client.Client
-	config            *v1alpha1.PostgresqlStandaloneOperatorConfig
 	operatorNamespace string
+	client            client.Client
+
+	instance   *v1alpha1.PostgresqlStandalone
+	config     *v1alpha1.PostgresqlStandaloneOperatorConfig
+	helmValues HelmValues
 }
 
 func (p *CreateStandalonePipeline) runPipeline(ctx context.Context) error {
 	return pipeline.NewPipeline().
 		WithSteps(
 			pipeline.NewStepFromFunc("fetch operator config", p.FetchOperatorConfig),
+			pipeline.NewPipeline().WithSteps(
+				pipeline.NewStepFromFunc("read template values", p.UseTemplateValues),
+			).AsNestedStep("compile helm values"),
 		).
 		RunWithContext(ctx).Err()
 }
@@ -42,4 +47,11 @@ func (p *CreateStandalonePipeline) FetchOperatorConfig(ctx context.Context) erro
 	}
 	p.config = &list.Items[0]
 	return nil
+}
+
+func (p *CreateStandalonePipeline) UseTemplateValues(_ context.Context) error {
+	values := HelmValues{}
+	err := values.Unmarshal(p.config.Spec.HelmReleaseTemplate.Values)
+	p.helmValues = values
+	return err
 }
