@@ -161,7 +161,7 @@ func TestHelmValues_MergeWith(t *testing.T) {
 			expectedMap: HelmValues{"key": nil},
 		},
 		/*
-			TODO: This currently fails since mergo doesn't overwrite "key" with an empty object.
+			TODO: This currently fails since key isn't overwritten with an empty object.
 			This might later become a bug when trying to overwrite an existing object with an explicitly empty object.
 
 			"GivenMapWithExistingValue_WhenEmptyObjectMerged_ThenOverwriteExistingWithEmptyObject": {
@@ -174,6 +174,11 @@ func TestHelmValues_MergeWith(t *testing.T) {
 			givenMap:    HelmValues{"key": map[string]interface{}{"nested": "value"}},
 			mergeWith:   HelmValues{"key": map[string]interface{}{"another": "value2"}},
 			expectedMap: HelmValues{"key": map[string]interface{}{"nested": "value", "another": "value2"}},
+		},
+		"GivenMapWithExistingValue_WhenObjectHasNestedKeys_ThenOverwriteExistingKeys": {
+			givenMap:    HelmValues{"key": "value"},
+			mergeWith:   HelmValues{"key": map[string]interface{}{"another": "value2"}},
+			expectedMap: HelmValues{"key": map[string]interface{}{"another": "value2"}},
 		},
 		"GivenMapWithExistingArray_WhenMergingArray_ThenOverwriteExistingWithNewArray": {
 			givenMap:    HelmValues{"array": []string{"string"}},
