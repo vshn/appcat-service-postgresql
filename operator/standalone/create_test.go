@@ -7,10 +7,12 @@ import (
 	"context"
 	"testing"
 
+	pipeline "github.com/ccremer/go-command-pipeline"
 	"github.com/stretchr/testify/suite"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
 	"github.com/vshn/appcat-service-postgresql/operator/operatortest"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 type CreateStandalonePipelineSuite struct {
@@ -22,7 +24,7 @@ func TestCreateStandalonePipeline(t *testing.T) {
 }
 
 func (ts *CreateStandalonePipelineSuite) BeforeTest(suiteName, testName string) {
-	ts.Ctx = context.Background()
+	ts.Context = pipeline.MutableContext(context.Background())
 }
 
 func (ts *CreateStandalonePipelineSuite) Test_FetchOperatorConfig() {
@@ -72,15 +74,31 @@ func (ts *CreateStandalonePipelineSuite) Test_FetchOperatorConfig() {
 				instance:          ts.newInstance(),
 			}
 			tc.prepare()
-			err := p.FetchOperatorConfig(ts.Ctx)
+			err := p.FetchOperatorConfig(ts.Context)
 			if tc.expectedError != "" {
-				ts.Require().EqualError(err, tc.expectedError, "fetch operator config")
+				ts.Require().EqualError(err, tc.expectedError)
 				ts.Assert().Nil(p.config)
 				return
 			}
 			ts.Assert().NoError(err)
 		})
 	}
+}
+
+func (ts *CreateStandalonePipelineSuite) Test_UseTemplateValues() {
+	p := &CreateStandalonePipeline{
+		config: &v1alpha1.PostgresqlStandaloneOperatorConfig{Spec: v1alpha1.PostgresqlStandaloneOperatorConfigSpec{
+			HelmReleaseTemplate: &v1alpha1.HelmReleaseConfig{
+				Values: runtime.RawExtension{Raw: []byte(`{"key":"value"}`)},
+			},
+		}},
+	}
+	err := p.UseTemplateValues(ts.Context)
+	ts.Require().NoError(err)
+	expected := HelmValues{
+		"key": "value",
+	}
+	ts.Assert().Equal(expected, p.helmValues)
 }
 
 func (ts *CreateStandalonePipelineSuite) newPostgresqlStandaloneOperatorConfig(name string, namespace string) *v1alpha1.PostgresqlStandaloneOperatorConfig {
