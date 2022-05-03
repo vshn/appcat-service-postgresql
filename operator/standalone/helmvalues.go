@@ -4,7 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/imdario/mergo"
+	"github.com/knadh/koanf"
+	"github.com/knadh/koanf/providers/confmap"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -19,6 +20,14 @@ func (v *HelmValues) Unmarshal(raw runtime.RawExtension) error {
 		*v = newMap
 	}
 	return err
+}
+
+// MustUnmarshal is like Unmarshal but panics if there's an error.
+func (v *HelmValues) MustUnmarshal(raw runtime.RawExtension) {
+	err := v.Unmarshal(raw)
+	if err != nil {
+		panic(fmt.Errorf("cannot unmarshal map: %w", err))
+	}
 }
 
 // Marshal returns a runtime.RawExtension object.
@@ -36,8 +45,26 @@ func (v HelmValues) MustMarshal() runtime.RawExtension {
 	return raw
 }
 
-// MergeWith merges the given values into this object.
-// Non-empty objects are overwritten with empty objects if they are present in values.
+// MergeWith deep-merges the given values into this object.
 func (v *HelmValues) MergeWith(values HelmValues) error {
-	return mergo.Merge(v, values, mergo.WithOverride, mergo.WithOverwriteWithEmptyValue)
+	dstK, err := loadKoanf(*v)
+	if err != nil {
+		return err
+	}
+	srcK, err := loadKoanf(values)
+	if err != nil {
+		return err
+	}
+	err = dstK.Merge(srcK)
+	if err != nil {
+		return err
+	}
+	*v = dstK.Raw()
+	return nil
+}
+
+func loadKoanf(v map[string]interface{}) (*koanf.Koanf, error) {
+	k := koanf.New(".")
+	err := k.Load(confmap.Provider(v, ""), nil)
+	return k, err
 }
