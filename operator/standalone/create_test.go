@@ -1,5 +1,4 @@
 //go:build integration
-// +build integration
 
 package standalone
 
@@ -8,6 +7,8 @@ import (
 	"testing"
 
 	pipeline "github.com/ccremer/go-command-pipeline"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
 	"github.com/vshn/appcat-service-postgresql/operator/operatortest"
@@ -99,6 +100,74 @@ func (ts *CreateStandalonePipelineSuite) Test_UseTemplateValues() {
 		"key": "value",
 	}
 	ts.Assert().Equal(expected, p.helmValues)
+}
+
+func TestCreateStandalonePipeline_OverrideTemplateValues(t *testing.T) {
+	tests := map[string]struct {
+		givenSpec      v1alpha1.PostgresqlStandaloneOperatorConfigSpec
+		expectedValues HelmValues
+		expectedError  string
+	}{
+		"GivenSpecificReleaseExists_WhenMergeEnabled_ThenMergeWithExistingValues": {
+			givenSpec: v1alpha1.PostgresqlStandaloneOperatorConfigSpec{
+				HelmReleaseTemplate: &v1alpha1.HelmReleaseConfig{
+					Values: HelmValues{"key": "value", "existing": "untouched"}.MustMarshal(),
+					Chart:  v1alpha1.ChartMeta{Version: "version"},
+				},
+				HelmReleases: []v1alpha1.HelmReleaseConfig{
+					{
+						MergeValuesFromTemplate: true,
+						Chart:                   v1alpha1.ChartMeta{Version: "version"},
+						Values:                  HelmValues{"key": map[string]interface{}{"nested": "value"}, "merged": "newValue"}.MustMarshal(),
+					},
+				},
+			},
+			expectedValues: HelmValues{
+				"key": map[string]interface{}{
+					"nested": "value",
+				},
+				"merged":   "newValue",
+				"existing": "untouched",
+			},
+		},
+		"GivenSpecificReleaseExists_WhenMergeDisabled_ThenOverwriteExistingValues": {
+			givenSpec: v1alpha1.PostgresqlStandaloneOperatorConfigSpec{
+				HelmReleaseTemplate: &v1alpha1.HelmReleaseConfig{
+					Values: HelmValues{"key": "value", "existing": "untouched"}.MustMarshal(),
+					Chart:  v1alpha1.ChartMeta{Version: "version"},
+				},
+				HelmReleases: []v1alpha1.HelmReleaseConfig{
+					{
+						Chart:  v1alpha1.ChartMeta{Version: "version"},
+						Values: HelmValues{"key": map[string]interface{}{"nested": "value"}, "merged": "newValue"}.MustMarshal(),
+					},
+				},
+			},
+			expectedValues: HelmValues{
+				"key": map[string]interface{}{
+					"nested": "value",
+				},
+				"merged": "newValue",
+			},
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			vals := HelmValues{}
+			vals.MustUnmarshal(tc.givenSpec.HelmReleaseTemplate.Values)
+			p := &CreateStandalonePipeline{
+				config:     &v1alpha1.PostgresqlStandaloneOperatorConfig{Spec: tc.givenSpec},
+				helmValues: vals,
+			}
+			err := p.OverrideTemplateValues(nil)
+			if tc.expectedError != "" {
+				require.EqualError(t, err, tc.expectedError)
+				return
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expectedValues, p.helmValues)
+		})
+	}
 }
 
 func (ts *CreateStandalonePipelineSuite) newPostgresqlStandaloneOperatorConfig(name string, namespace string) *v1alpha1.PostgresqlStandaloneOperatorConfig {

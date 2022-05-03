@@ -24,6 +24,7 @@ func (p *CreateStandalonePipeline) runPipeline(ctx context.Context) error {
 			pipeline.NewStepFromFunc("fetch operator config", p.FetchOperatorConfig),
 			pipeline.NewPipeline().WithSteps(
 				pipeline.NewStepFromFunc("read template values", p.UseTemplateValues),
+				pipeline.NewStepFromFunc("override template values", p.OverrideTemplateValues),
 			).AsNestedStep("compile helm values"),
 		).
 		RunWithContext(ctx).Err()
@@ -54,4 +55,26 @@ func (p *CreateStandalonePipeline) UseTemplateValues(_ context.Context) error {
 	err := values.Unmarshal(p.config.Spec.HelmReleaseTemplate.Values)
 	p.helmValues = values
 	return err
+}
+
+func (p *CreateStandalonePipeline) OverrideTemplateValues(_ context.Context) error {
+	for _, release := range p.config.Spec.HelmReleases {
+		// TODO: maybe a better semver comparison later on?
+		if release.Chart.Version == p.config.Spec.HelmReleaseTemplate.Chart.Version {
+			overrides := HelmValues{}
+			err := overrides.Unmarshal(release.Values)
+			if err != nil {
+				return err
+			}
+			if release.MergeValuesFromTemplate {
+				err = p.helmValues.MergeWith(overrides)
+				if err != nil {
+					return err
+				}
+			} else {
+				p.helmValues = overrides
+			}
+		}
+	}
+	return nil
 }
