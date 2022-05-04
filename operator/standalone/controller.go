@@ -18,7 +18,7 @@ import (
 var finalizer = strings.ReplaceAll(v1alpha1.Group, ".", "-")
 
 var (
-// OperatorNamespace is the namespace where the controller looks for v1alpha1.PostgresqlStandaloneOperatorConfig.
+	// OperatorNamespace is the namespace where the controller looks for v1alpha1.PostgresqlStandaloneOperatorConfig.
 	OperatorNamespace = ""
 	// ServiceNamespacePrefix is the namespace prefix which the controller uses to create the namespaces where the PostgreSQL instances are actually deployed in.
 	ServiceNamespacePrefix = "sv-postgresql-"
@@ -122,4 +122,21 @@ func (r *PostgresStandaloneReconciler) Update(ctx context.Context, instance *v1a
 	}
 	err = r.client.Update(ctx, instance)
 	return reconcile.Result{}, err
+}
+
+// Upsert creates the given obj if it doesn't exist.
+// If it exists, it's being updated.
+func Upsert(ctx context.Context, client client.Client, obj client.Object) error {
+	err := client.Create(ctx, obj)
+	if err == nil {
+		// new resource created successfully
+		return nil
+	}
+	if err != nil && !apierrors.IsAlreadyExists(err) {
+		// something went wrong when creating
+		return err
+	}
+	// every other case: Update
+	err = client.Update(ctx, obj)
+	return err
 }
