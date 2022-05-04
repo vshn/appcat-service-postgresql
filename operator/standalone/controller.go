@@ -17,8 +17,12 @@ import (
 
 var finalizer = strings.ReplaceAll(v1alpha1.Group, ".", "-")
 
+var (
 // OperatorNamespace is the namespace where the controller looks for v1alpha1.PostgresqlStandaloneOperatorConfig.
-var OperatorNamespace = "postgresql-system"
+	OperatorNamespace = ""
+	// ServiceNamespacePrefix is the namespace prefix which the controller uses to create the namespaces where the PostgreSQL instances are actually deployed in.
+	ServiceNamespacePrefix = "sv-postgresql-"
+)
 
 // SetupController adds a controller that reconciles v1alpha1.PostgresqlStandalone managed resources.
 func SetupController(mgr ctrl.Manager, o controller.Options) error {
