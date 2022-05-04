@@ -10,7 +10,9 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
 	"github.com/vshn/appcat-service-postgresql/operator/operatortest"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 type CreateStandalonePipelineSuite struct {
@@ -97,4 +99,29 @@ func (ts *CreateStandalonePipelineSuite) Test_UseTemplateValues() {
 		"key": "value",
 	}
 	ts.Assert().Equal(expected, p.helmValues)
+}
+
+func (ts *CreateStandalonePipelineSuite) Test_EnsureCredentialSecret() {
+	// Arrange
+	ns := ServiceNamespacePrefix + "my-app-instance"
+	ts.EnsureNS(ns)
+	p := &CreateStandalonePipeline{
+		instance: newInstance(),
+		client:   ts.Client,
+	}
+
+	// Act
+	err := p.EnsureCredentialsSecret(ts.Context)
+	ts.Require().NoError(err)
+
+	// Assert
+	result := &corev1.Secret{}
+	ts.FetchResource(types.NamespacedName{
+		Namespace: ns,
+		Name:      "instance-credentials",
+	}, result)
+	ts.Require().NoError(err)
+	ts.Assert().Equal("instance", result.Labels["app.kubernetes.io/instance"], "instance label")
+	// Note: Even though we access "Data", the content is not encoded in base64 in envtest.
+	ts.Assert().Len(result.Data["password"], 40, "password length")
 }

@@ -3,9 +3,13 @@ package standalone
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	pipeline "github.com/ccremer/go-command-pipeline"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -27,6 +31,7 @@ func (p *CreateStandalonePipeline) runPipeline(ctx context.Context) error {
 				pipeline.NewStepFromFunc("override template values", p.OverrideTemplateValues),
 				pipeline.NewStepFromFunc("apply values from instance", p.ApplyValuesFromInstance),
 			).AsNestedStep("compile helm values"),
+			pipeline.NewStepFromFunc("create credentials secret", p.EnsureCredentialsSecret),
 		).
 		RunWithContext(ctx).Err()
 }
@@ -84,7 +89,7 @@ func (p *CreateStandalonePipeline) ApplyValuesFromInstance(_ context.Context) er
 	resources := HelmValues{
 		"auth": HelmValues{
 			"enablePostgresUser": p.instance.Spec.Parameters.EnableSuperUser,
-			"existingSecret":     fmt.Sprintf("%s-credentials", p.instance.Name),
+			"existingSecret":     getCredentialSecretName(p.instance.ObjectMeta),
 			"database":           p.instance.Name,
 		},
 		"primary": HelmValues{
@@ -99,4 +104,45 @@ func (p *CreateStandalonePipeline) ApplyValuesFromInstance(_ context.Context) er
 		},
 	}
 	return p.helmValues.MergeWith(resources)
+}
+
+func (p *CreateStandalonePipeline) EnsureCredentialsSecret(ctx context.Context) error {
+	// https://github.com/bitnami/charts/tree/master/bitnami/postgresql
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      getCredentialSecretName(p.instance.ObjectMeta),
+			Namespace: getNamespaceForInstance(p.instance.ObjectMeta),
+			Labels:    getCommonLabels(p.instance.Name),
+		},
+		StringData: map[string]string{
+			"postgres-password":    generatePassword(),
+			"password":             generatePassword(),
+			"replication-password": generatePassword(),
+		},
+	}
+	// TODO: Add OwnerReference to Crossplane's HelmRelease
+	// Note: We cannot set the reference to the instance, since cross-namespace references aren't allowed.
+	return Upsert(ctx, p.client, secret)
+}
+
+func getCredentialSecretName(meta metav1.ObjectMeta) string {
+	return fmt.Sprintf("%s-credentials", meta.Name)
+}
+
+func getCommonLabels(instanceName string) map[string]string {
+	// https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
+	return map[string]string{
+		"app.kubernetes.io/instance":   instanceName,
+		"app.kubernetes.io/managed-by": v1alpha1.Group,
+		"app.kubernetes.io/created-by": fmt.Sprintf("controller-%s", strings.ToLower(v1alpha1.PostgresStandaloneKind)),
+	}
+}
+
+func getNamespaceForInstance(meta metav1.ObjectMeta) string {
+	// TODO: ensure that name doesn't exceed 63 characters
+	return fmt.Sprintf("%s%s-%s", ServiceNamespacePrefix, meta.Namespace, meta.Name)
+}
+
+func generatePassword() string {
+	return rand.String(40)
 }
