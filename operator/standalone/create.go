@@ -25,6 +25,7 @@ func (p *CreateStandalonePipeline) runPipeline(ctx context.Context) error {
 			pipeline.NewPipeline().WithSteps(
 				pipeline.NewStepFromFunc("read template values", p.UseTemplateValues),
 				pipeline.NewStepFromFunc("override template values", p.OverrideTemplateValues),
+				pipeline.NewStepFromFunc("apply values from instance", p.ApplyValuesFromInstance),
 			).AsNestedStep("compile helm values"),
 		).
 		RunWithContext(ctx).Err()
@@ -77,4 +78,25 @@ func (p *CreateStandalonePipeline) OverrideTemplateValues(_ context.Context) err
 		}
 	}
 	return nil
+}
+
+func (p *CreateStandalonePipeline) ApplyValuesFromInstance(_ context.Context) error {
+	resources := HelmValues{
+		"auth": HelmValues{
+			"enablePostgresUser": p.instance.Spec.Parameters.EnableSuperUser,
+			"existingSecret":     fmt.Sprintf("%s-credentials", p.instance.Name),
+			"database":           p.instance.Name,
+		},
+		"primary": HelmValues{
+			"resources": HelmValues{
+				"limits": HelmValues{
+					"memory": p.instance.Spec.Parameters.Resources.MemoryLimit.String(),
+				},
+			},
+			"persistence": HelmValues{
+				"size": p.instance.Spec.Parameters.Resources.StorageCapacity.String(),
+			},
+		},
+	}
+	return p.helmValues.MergeWith(resources)
 }

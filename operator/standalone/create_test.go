@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -77,6 +78,33 @@ func TestCreateStandalonePipeline_OverrideTemplateValues(t *testing.T) {
 	}
 }
 
+func TestCreateStandalonePipeline_ApplyValuesFromInstance(t *testing.T) {
+	p := CreateStandalonePipeline{
+		config:   newPostgresqlStandaloneOperatorConfig("cfg", "postgresql-system"),
+		instance: newInstance(),
+	}
+	p.instance.UID = "1aa230ee-63f7-4e7f-9ade-46818595e337"
+	err := p.ApplyValuesFromInstance(nil)
+	require.NoError(t, err)
+	assert.Equal(t, HelmValues{
+		"auth": HelmValues{
+			"existingSecret":     "instance-credentials",
+			"database":           "instance",
+			"enablePostgresUser": true,
+		},
+		"primary": HelmValues{
+			"persistence": HelmValues{
+				"size": "1Gi",
+			},
+			"resources": HelmValues{
+				"limits": HelmValues{
+					"memory": "2Gi",
+				},
+			},
+		},
+	}, p.helmValues)
+}
+
 func newPostgresqlStandaloneOperatorConfig(name string, namespace string) *v1alpha1.PostgresqlStandaloneOperatorConfig {
 	return &v1alpha1.PostgresqlStandaloneOperatorConfig{
 		ObjectMeta: metav1.ObjectMeta{
@@ -90,10 +118,20 @@ func newPostgresqlStandaloneOperatorConfig(name string, namespace string) *v1alp
 }
 func newInstance() *v1alpha1.PostgresqlStandalone {
 	return &v1alpha1.PostgresqlStandalone{
+		ObjectMeta: metav1.ObjectMeta{Name: "instance", Namespace: "my-app"},
 		Spec: v1alpha1.PostgresqlStandaloneSpec{
 			Parameters: v1alpha1.PostgresqlStandaloneParameters{
-				MajorVersion: v1alpha1.PostgresqlVersion14,
+				MajorVersion:    v1alpha1.PostgresqlVersion14,
+				EnableSuperUser: true,
+				Resources: v1alpha1.Resources{
+					ComputeResources: v1alpha1.ComputeResources{MemoryLimit: parseResource("2Gi")},
+					StorageResources: v1alpha1.StorageResources{StorageCapacity: parseResource("1Gi")},
+				},
 			},
 		},
 	}
+}
+func parseResource(value string) *resource.Quantity {
+	parsed := resource.MustParse(value)
+	return &parsed
 }
