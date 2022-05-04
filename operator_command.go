@@ -10,6 +10,7 @@ import (
 	"github.com/urfave/cli/v2"
 	"github.com/vshn/appcat-service-postgresql/apis"
 	"github.com/vshn/appcat-service-postgresql/operator"
+	"github.com/vshn/appcat-service-postgresql/operator/standalone"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -21,7 +22,6 @@ type operatorCommand struct {
 	SyncInterval          time.Duration
 	LeaderElectionEnabled bool
 	WebhookCertDir        string
-	OperatorNamespace     string
 
 	manager    manager.Manager
 	kubeconfig *rest.Config
@@ -45,13 +45,17 @@ func newOperatorCommand() *cli.Command {
 				Usage:       "Use leader election for the controller manager.",
 				Destination: &command.LeaderElectionEnabled,
 			},
-			&cli.StringFlag{Name: "webhook-tls-cert-dir", EnvVars: []string{"WEBHOOK_TLS_CERT_DIR"}, // Env var is set by Crossplane
+			&cli.StringFlag{Name: "webhook-tls-cert-dir", EnvVars: []string{"WEBHOOK_TLS_CERT_DIR"},
 				Usage:       "Directory containing the certificates for the webhook server. If empty, the webhook server is not started.",
 				Destination: &command.WebhookCertDir,
 			},
 			&cli.StringFlag{Name: "operator-namespace", EnvVars: []string{"OPERATOR_NAMESPACE"},
-				Usage:       "Namespace name where the operator runs in.",
-				Destination: &command.OperatorNamespace, Required: true,
+				Usage:       "OperatorNamespace name where the operator runs in.",
+				Destination: &standalone.OperatorNamespace, Required: true,
+			},
+			&cli.StringFlag{Name: "service-namespace-prefix", EnvVars: envVars("SERVICE_NAMESPACE_PREFIX"),
+				Usage: "Prefix of namespaces where the actual PostgreSQL deployments are deployed in.",
+				Value: standalone.ServiceNamespacePrefix, Destination: &standalone.ServiceNamespacePrefix,
 			},
 		},
 	}
@@ -68,10 +72,7 @@ func (c *operatorCommand) execute(ctx *cli.Context) error {
 	log := AppLogger(ctx).WithName(operatorCommandName)
 	log.Info("Setting up controllers", "config", c)
 
-	options := operator.Options{
-		Options:   controller.Options{Log: log},
-		Namespace: c.OperatorNamespace,
-	}
+	options := controller.Options{Log: log}
 
 	p := pipeline.NewPipeline().WithBeforeHooks([]pipeline.Listener{
 		func(step pipeline.Step) {
