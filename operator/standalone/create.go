@@ -31,7 +31,8 @@ func (p *CreateStandalonePipeline) runPipeline(ctx context.Context) error {
 				pipeline.NewStepFromFunc("override template values", p.OverrideTemplateValues),
 				pipeline.NewStepFromFunc("apply values from instance", p.ApplyValuesFromInstance),
 			).AsNestedStep("compile helm values"),
-			pipeline.NewStepFromFunc("create credentials secret", p.EnsureCredentialsSecret),
+			pipeline.NewStepFromFunc("ensure deployment namespace", p.EnsureDeploymentNamespace),
+			pipeline.NewStepFromFunc("ensure credentials secret", p.EnsureCredentialsSecret),
 		).
 		RunWithContext(ctx).Err()
 }
@@ -89,7 +90,7 @@ func (p *CreateStandalonePipeline) ApplyValuesFromInstance(_ context.Context) er
 	resources := HelmValues{
 		"auth": HelmValues{
 			"enablePostgresUser": p.instance.Spec.Parameters.EnableSuperUser,
-			"existingSecret":     getCredentialSecretName(p.instance.ObjectMeta),
+			"existingSecret":     getCredentialSecretName(p.instance),
 			"database":           p.instance.Name,
 		},
 		"primary": HelmValues{
@@ -110,8 +111,8 @@ func (p *CreateStandalonePipeline) EnsureCredentialsSecret(ctx context.Context) 
 	// https://github.com/bitnami/charts/tree/master/bitnami/postgresql
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      getCredentialSecretName(p.instance.ObjectMeta),
-			Namespace: getNamespaceForInstance(p.instance.ObjectMeta),
+			Name:      getCredentialSecretName(p.instance),
+			Namespace: getNamespaceForInstance(p.instance),
 			Labels:    getCommonLabels(p.instance.Name),
 		},
 		StringData: map[string]string{
@@ -125,8 +126,19 @@ func (p *CreateStandalonePipeline) EnsureCredentialsSecret(ctx context.Context) 
 	return Upsert(ctx, p.client, secret)
 }
 
-func getCredentialSecretName(meta metav1.ObjectMeta) string {
-	return fmt.Sprintf("%s-credentials", meta.Name)
+func (p *CreateStandalonePipeline) EnsureDeploymentNamespace(ctx context.Context) error {
+	ns := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: getNamespaceForInstance(p.instance),
+			// TODO: Add APPUiO cloud organization label that identifies ownership.
+			Labels: getCommonLabels(p.instance.Name),
+		},
+	}
+	return Upsert(ctx, p.client, ns)
+}
+
+func getCredentialSecretName(obj client.Object) string {
+	return fmt.Sprintf("%s-credentials", obj.GetName())
 }
 
 func getCommonLabels(instanceName string) map[string]string {
@@ -138,9 +150,9 @@ func getCommonLabels(instanceName string) map[string]string {
 	}
 }
 
-func getNamespaceForInstance(meta metav1.ObjectMeta) string {
+func getNamespaceForInstance(obj client.Object) string {
 	// TODO: ensure that name doesn't exceed 63 characters
-	return fmt.Sprintf("%s%s-%s", ServiceNamespacePrefix, meta.Namespace, meta.Name)
+	return fmt.Sprintf("%s%s-%s", ServiceNamespacePrefix, obj.GetNamespace(), obj.GetName())
 }
 
 func generatePassword() string {
