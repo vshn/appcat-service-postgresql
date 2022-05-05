@@ -81,7 +81,7 @@ func TestCreateStandalonePipeline_OverrideTemplateValues(t *testing.T) {
 func TestCreateStandalonePipeline_ApplyValuesFromInstance(t *testing.T) {
 	p := CreateStandalonePipeline{
 		config:   newPostgresqlStandaloneOperatorConfig("cfg", "postgresql-system"),
-		instance: newInstance(),
+		instance: newInstance("instance"),
 	}
 	p.instance.UID = "1aa230ee-63f7-4e7f-9ade-46818595e337"
 	err := p.ApplyValuesFromInstance(nil)
@@ -116,9 +116,9 @@ func newPostgresqlStandaloneOperatorConfig(name string, namespace string) *v1alp
 		},
 	}
 }
-func newInstance() *v1alpha1.PostgresqlStandalone {
+func newInstance(name string) *v1alpha1.PostgresqlStandalone {
 	return &v1alpha1.PostgresqlStandalone{
-		ObjectMeta: metav1.ObjectMeta{Name: "instance", Namespace: "my-app"},
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "my-app"},
 		Spec: v1alpha1.PostgresqlStandaloneSpec{
 			Parameters: v1alpha1.PostgresqlStandaloneParameters{
 				MajorVersion:    v1alpha1.PostgresqlVersion14,

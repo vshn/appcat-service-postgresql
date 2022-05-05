@@ -71,7 +71,7 @@ func (ts *CreateStandalonePipelineSuite) Test_FetchOperatorConfig() {
 			p := &CreateStandalonePipeline{
 				operatorNamespace: tc.givenNamespace,
 				client:            ts.Client,
-				instance:          newInstance(),
+				instance:          newInstance("instance"),
 			}
 			tc.prepare()
 			err := p.FetchOperatorConfig(ts.Context)
@@ -101,12 +101,29 @@ func (ts *CreateStandalonePipelineSuite) Test_UseTemplateValues() {
 	ts.Assert().Equal(expected, p.helmValues)
 }
 
+func (ts *CreateStandalonePipelineSuite) Test_EnsureDeploymentNamespace() {
+	// Arrange
+	p := &CreateStandalonePipeline{
+		instance: newInstance("test-ensure-namespace"),
+		client:   ts.Client,
+	}
+
+	// Act
+	err := p.EnsureDeploymentNamespace(ts.Context)
+	ts.Require().NoError(err, "create namespace func")
+
+	// Assert
+	ns := &corev1.Namespace{}
+	ts.FetchResource(types.NamespacedName{Name: ServiceNamespacePrefix + "my-app-" + p.instance.Name}, ns)
+	ts.Assert().Equal(ns.Labels["app.kubernetes.io/instance"], p.instance.Name)
+}
+
 func (ts *CreateStandalonePipelineSuite) Test_EnsureCredentialSecret() {
 	// Arrange
 	ns := ServiceNamespacePrefix + "my-app-instance"
 	ts.EnsureNS(ns)
 	p := &CreateStandalonePipeline{
-		instance: newInstance(),
+		instance: newInstance("instance"),
 		client:   ts.Client,
 	}
 
