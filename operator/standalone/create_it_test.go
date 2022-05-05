@@ -118,12 +118,30 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureCredentialSecret() {
 
 	// Assert
 	result := &corev1.Secret{}
-	ts.FetchResource(types.NamespacedName{
-		Namespace: ns,
-		Name:      "instance-credentials",
-	}, result)
-	ts.Require().NoError(err)
+	ts.FetchResource(types.NamespacedName{Namespace: ns, Name: "instance-credentials"}, result)
 	ts.Assert().Equal("instance", result.Labels["app.kubernetes.io/instance"], "instance label")
 	// Note: Even though we access "Data", the content is not encoded in base64 in envtest.
 	ts.Assert().Len(result.Data["password"], 40, "password length")
+}
+
+func (ts *CreateStandalonePipelineSuite) Test_EnsureHelmRelease() {
+	// Arrange
+	p := &CreateStandalonePipeline{
+		instance:   newInstance("instance"),
+		client:     ts.Client,
+		helmChart:  &v1alpha1.ChartMeta{Repository: "https://host/path", Version: "version", Name: "postgres"},
+		helmValues: HelmValues{"key": "value"},
+		config:     newPostgresqlStandaloneOperatorConfig("config", "postgresql-system"),
+	}
+	targetNs := ServiceNamespacePrefix + "my-app-" + p.instance.Name
+
+	// Act
+	err := p.EnsureHelmRelease(ts.Context)
+	ts.Require().NoError(err)
+
+	// Assert
+	result := &helmv1beta1.Release{}
+	ts.FetchResource(types.NamespacedName{Name: targetNs}, result)
+	ts.Assert().Equal(result.Spec.ForProvider.Namespace, targetNs, "target namespace")
+	ts.Assert().JSONEq(`{"key":"value"}`, string(result.Spec.ForProvider.Values.Raw))
 }

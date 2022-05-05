@@ -25,6 +25,10 @@ type PostgresqlStandaloneOperatorConfigSpec struct {
 
 	// HelmReleases allows to override settings for a specific deployable Helm chart.
 	HelmReleases []HelmReleaseConfig `json:"helmReleases,omitempty"`
+
+	// HelmProviderConfigReference is the name of the ProviderConfig CR from crossplane-contrib/provider-helm.
+	// Used when DeploymentStrategy is StrategyHelmChart.
+	HelmProviderConfigReference string `json:"helmProviderConfigReference,omitempty"`
 }
 
 // HelmReleaseConfig describes a Helm chart release.

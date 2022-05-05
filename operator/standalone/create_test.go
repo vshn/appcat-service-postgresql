@@ -143,6 +143,9 @@ func newPostgresqlStandaloneOperatorConfig(name string, namespace string) *v1alp
 				v1alpha1.PostgresqlMajorVersionLabelKey: v1alpha1.PostgresqlVersion14.String(),
 			},
 		},
+		Spec: v1alpha1.PostgresqlStandaloneOperatorConfigSpec{
+			HelmProviderConfigReference: "helm-provider",
+		},
 	}
 }
 func newInstance(name string) *v1alpha1.PostgresqlStandalone {
