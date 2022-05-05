@@ -8,7 +8,31 @@ import (
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
+
+func TestCreateStandalonePipeline_UseTemplateValues(t *testing.T) {
+	p := &CreateStandalonePipeline{
+		config: &v1alpha1.PostgresqlStandaloneOperatorConfig{Spec: v1alpha1.PostgresqlStandaloneOperatorConfigSpec{
+			HelmReleaseTemplate: &v1alpha1.HelmReleaseConfig{
+				Values: runtime.RawExtension{Raw: []byte(`{"key":"value"}`)},
+				Chart:  v1alpha1.ChartMeta{Repository: "https://host/path", Name: "postgresql", Version: "1.0"},
+			},
+		}},
+	}
+	err := p.UseTemplateValues(nil)
+	assert.NoError(t, err)
+	expectedValues := HelmValues{
+		"key": "value",
+	}
+	expectedChart := &v1alpha1.ChartMeta{
+		Repository: "https://host/path",
+		Name:       "postgresql",
+		Version:    "1.0",
+	}
+	assert.Equal(t, expectedValues, p.helmValues)
+	assert.Equal(t, expectedChart, p.helmChart)
+}
 
 func TestCreateStandalonePipeline_OverrideTemplateValues(t *testing.T) {
 	tests := map[string]struct {

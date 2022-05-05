@@ -20,6 +20,7 @@ type CreateStandalonePipeline struct {
 	instance   *v1alpha1.PostgresqlStandalone
 	config     *v1alpha1.PostgresqlStandaloneOperatorConfig
 	helmValues HelmValues
+	helmChart  *v1alpha1.ChartMeta
 }
 
 func (p *CreateStandalonePipeline) runPipeline(ctx context.Context) error {
@@ -61,6 +62,7 @@ func (p *CreateStandalonePipeline) UseTemplateValues(_ context.Context) error {
 	values := HelmValues{}
 	err := values.Unmarshal(p.config.Spec.HelmReleaseTemplate.Values)
 	p.helmValues = values
+	p.helmChart = &p.config.Spec.HelmReleaseTemplate.Chart
 	return err
 }
 
