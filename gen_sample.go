@@ -18,6 +18,8 @@ import (
 	"strings"
 	"time"
 
+	helmv1beta1 "github.com/crossplane-contrib/provider-helm/apis/v1beta1"
+	crossplanev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/vshn/appcat-service-postgresql/apis"
 	"github.com/vshn/appcat-service-postgresql/apis/conditions"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
@@ -37,6 +39,8 @@ func main() {
 	generatePostgresStandaloneConfigSample()
 	generatePostgresStandaloneSample()
 	generatePostgresqlStandaloneAdmissionRequest()
+
+	generateProviderHelmConfigSample()
 }
 
 func generatePostgresStandaloneConfigSample() {
@@ -152,6 +156,19 @@ func generatePostgresqlStandaloneAdmissionRequest() {
 		},
 	}
 	serialize(admission, false)
+}
+
+func generateProviderHelmConfigSample() {
+	spec := &helmv1beta1.ProviderConfig{
+		TypeMeta: metav1.TypeMeta{APIVersion: helmv1beta1.ProviderConfigGroupVersionKind.GroupVersion().String(), Kind: helmv1beta1.ProviderConfigKind},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "provider-helm",
+		},
+		Spec: helmv1beta1.ProviderConfigSpec{
+			Credentials: helmv1beta1.ProviderCredentials{Source: crossplanev1.CredentialsSourceInjectedIdentity},
+		},
+	}
+	serialize(spec, true)
 }
 
 func failIfError(err error) {
