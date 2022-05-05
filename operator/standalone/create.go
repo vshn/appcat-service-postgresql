@@ -76,10 +76,7 @@ func (p *CreateStandalonePipeline) OverrideTemplateValues(_ context.Context) err
 				return err
 			}
 			if release.MergeValuesFromTemplate {
-				err = p.helmValues.MergeWith(overrides)
-				if err != nil {
-					return err
-				}
+				p.helmValues.MergeWith(overrides)
 			} else {
 				p.helmValues = overrides
 			}
@@ -112,7 +109,8 @@ func (p *CreateStandalonePipeline) ApplyValuesFromInstance(_ context.Context) er
 			},
 		},
 	}
-	return p.helmValues.MergeWith(resources)
+	p.helmValues.MergeWith(resources)
+	return nil
 }
 
 func (p *CreateStandalonePipeline) EnsureCredentialsSecret(ctx context.Context) error {

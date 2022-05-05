@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/knadh/koanf"
-	"github.com/knadh/koanf/providers/confmap"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -46,25 +44,51 @@ func (v HelmValues) MustMarshal() runtime.RawExtension {
 }
 
 // MergeWith deep-merges the given values into this object.
-func (v *HelmValues) MergeWith(values HelmValues) error {
-	dstK, err := loadKoanf(*v)
-	if err != nil {
-		return err
+func (v *HelmValues) MergeWith(values HelmValues) {
+	dest := *v
+	if dest == nil {
+		dest = map[string]interface{}{}
 	}
-	srcK, err := loadKoanf(values)
-	if err != nil {
-		return err
-	}
-	err = dstK.Merge(srcK)
-	if err != nil {
-		return err
-	}
-	*v = dstK.Raw()
-	return nil
+	customMerge(values, dest)
+	*v = dest
 }
 
-func loadKoanf(v map[string]interface{}) (*koanf.Koanf, error) {
-	k := koanf.New(".")
-	err := k.Load(confmap.Provider(v, ""), nil)
-	return k, err
+// Copied from github.com/knadh/koanf/maps/maps.go (v1.4.1)
+// Modified so that empty maps in map 'a' overwrite existing maps in 'b'.
+// (https://github.com/knadh/koanf/blob/516880fe32716d1b03e95a5ba844b6a3c8fba2a1/maps/maps.go#L107)
+// See also https://github.com/knadh/koanf/issues/146
+func customMerge(a, b map[string]interface{}) {
+	for key, val := range a {
+		// Does the key exist in the target map?
+		// If no, add it and move on.
+		bVal, ok := b[key]
+		if !ok {
+			b[key] = val
+			continue
+		}
+
+		if val == nil {
+			b[key] = nil
+		}
+
+		// If the incoming val is not a map, do a direct merge.
+		if _, ok := val.(map[string]interface{}); !ok {
+			b[key] = val
+			continue
+		}
+
+		// The source key and target keys are both maps. Merge them.
+		switch v := bVal.(type) {
+		case map[string]interface{}:
+			// If it is an empty map, set the value to empty.
+			if len(val.(map[string]interface{})) == 0 {
+				b[key] = map[string]interface{}{}
+				continue
+			}
+
+			customMerge(val.(map[string]interface{}), v)
+		default:
+			b[key] = val
+		}
+	}
 }

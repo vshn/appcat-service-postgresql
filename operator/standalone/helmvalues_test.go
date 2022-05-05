@@ -1,6 +1,7 @@
 package standalone
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -160,16 +161,11 @@ func TestHelmValues_MergeWith(t *testing.T) {
 			mergeWith:   HelmValues{"key": nil},
 			expectedMap: HelmValues{"key": nil},
 		},
-		/*
-			TODO: This currently fails since key isn't overwritten with an empty object.
-			This might later become a bug when trying to overwrite an existing object with an explicitly empty object.
-
-			"GivenMapWithExistingValue_WhenEmptyObjectMerged_ThenOverwriteExistingWithEmptyObject": {
-				givenMap:    HelmValues{"key": map[string]interface{}{"nested": "value"}},
-				mergeWith:   HelmValues{"key": map[string]interface{}{}},
-				expectedMap: HelmValues{"key": map[string]interface{}{}},
-			},
-		*/
+		"GivenMapWithExistingValue_WhenEmptyObjectMerged_ThenOverwriteExistingWithEmptyObject": {
+			givenMap:    HelmValues{"key": map[string]interface{}{"nested": "value"}},
+			mergeWith:   HelmValues{"key": map[string]interface{}{}},
+			expectedMap: HelmValues{"key": map[string]interface{}{}},
+		},
 		"GivenMapWithExistingValue_WhenObjectMerged_ThenKeepExistingKeys": {
 			givenMap:    HelmValues{"key": map[string]interface{}{"nested": "value"}},
 			mergeWith:   HelmValues{"key": map[string]interface{}{"another": "value2"}},
@@ -198,13 +194,11 @@ func TestHelmValues_MergeWith(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			err := tc.givenMap.MergeWith(tc.mergeWith)
-			if tc.expectedError != "" {
-				assert.EqualError(t, err, tc.expectedError, "merge error")
-				return
-			}
-			require.NoError(t, err, "merge error")
+			tc.givenMap.MergeWith(tc.mergeWith)
 			assert.Equal(t, tc.expectedMap, tc.givenMap)
+			b, err := json.Marshal(tc.givenMap)
+			require.NoError(t, err, "json marshal")
+			t.Log(string(b))
 		})
 	}
 }
