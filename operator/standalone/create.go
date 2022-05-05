@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	pipeline "github.com/ccremer/go-command-pipeline"
+	helmv1beta1 "github.com/crossplane-contrib/provider-helm/apis/release/v1beta1"
+	crossplanev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,6 +36,7 @@ func (p *CreateStandalonePipeline) runPipeline(ctx context.Context) error {
 			).AsNestedStep("compile helm values"),
 			pipeline.NewStepFromFunc("ensure deployment namespace", p.EnsureDeploymentNamespace),
 			pipeline.NewStepFromFunc("ensure credentials secret", p.EnsureCredentialsSecret),
+			pipeline.NewStepFromFunc("ensure helmrelease exists", p.EnsureHelmRelease),
 		).
 		RunWithContext(ctx).Err()
 }
@@ -118,7 +121,7 @@ func (p *CreateStandalonePipeline) EnsureCredentialsSecret(ctx context.Context) 
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      getCredentialSecretName(p.instance),
-			Namespace: getNamespaceForInstance(p.instance),
+			Namespace: generateClusterScopedNameForInstance(p.instance),
 			Labels:    getCommonLabels(p.instance.Name),
 		},
 		StringData: map[string]string{
@@ -135,12 +138,38 @@ func (p *CreateStandalonePipeline) EnsureCredentialsSecret(ctx context.Context) 
 func (p *CreateStandalonePipeline) EnsureDeploymentNamespace(ctx context.Context) error {
 	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: getNamespaceForInstance(p.instance),
+			Name: generateClusterScopedNameForInstance(p.instance),
 			// TODO: Add APPUiO cloud organization label that identifies ownership.
 			Labels: getCommonLabels(p.instance.Name),
 		},
 	}
 	return Upsert(ctx, p.client, ns)
+}
+
+func (p *CreateStandalonePipeline) EnsureHelmRelease(ctx context.Context) error {
+	helmValues, err := p.helmValues.Marshal()
+	if err != nil {
+		return err
+	}
+	helmRelease := &helmv1beta1.Release{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   generateClusterScopedNameForInstance(p.instance),
+			Labels: getCommonLabels(p.instance.Name),
+		},
+		Spec: helmv1beta1.ReleaseSpec{
+			ForProvider: helmv1beta1.ReleaseParameters{
+				Chart:               helmv1beta1.ChartSpec{Repository: p.helmChart.Repository, Name: p.helmChart.Name, Version: p.helmChart.Version},
+				Namespace:           generateClusterScopedNameForInstance(p.instance),
+				SkipCreateNamespace: true,
+				Wait:                true,
+				ValuesSpec:          helmv1beta1.ValuesSpec{Values: helmValues},
+			},
+			ResourceSpec: crossplanev1.ResourceSpec{
+				ProviderConfigReference: &crossplanev1.Reference{Name: p.config.Spec.HelmProviderConfigReference},
+			},
+		},
+	}
+	return Upsert(ctx, p.client, helmRelease)
 }
 
 func getCredentialSecretName(obj client.Object) string {
@@ -156,7 +185,7 @@ func getCommonLabels(instanceName string) map[string]string {
 	}
 }
 
-func getNamespaceForInstance(obj client.Object) string {
+func generateClusterScopedNameForInstance(obj client.Object) string {
 	// TODO: ensure that name doesn't exceed 63 characters
 	return fmt.Sprintf("%s%s-%s", ServiceNamespacePrefix, obj.GetNamespace(), obj.GetName())
 }
