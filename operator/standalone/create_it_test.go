@@ -11,7 +11,6 @@ import (
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
 	"github.com/vshn/appcat-service-postgresql/operator/operatortest"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -83,22 +82,6 @@ func (ts *CreateStandalonePipelineSuite) Test_FetchOperatorConfig() {
 			ts.Assert().NoError(err)
 		})
 	}
-}
-
-func (ts *CreateStandalonePipelineSuite) Test_UseTemplateValues() {
-	p := &CreateStandalonePipeline{
-		config: &v1alpha1.PostgresqlStandaloneOperatorConfig{Spec: v1alpha1.PostgresqlStandaloneOperatorConfigSpec{
-			HelmReleaseTemplate: &v1alpha1.HelmReleaseConfig{
-				Values: runtime.RawExtension{Raw: []byte(`{"key":"value"}`)},
-			},
-		}},
-	}
-	err := p.UseTemplateValues(ts.Context)
-	ts.Require().NoError(err)
-	expected := HelmValues{
-		"key": "value",
-	}
-	ts.Assert().Equal(expected, p.helmValues)
 }
 
 func (ts *CreateStandalonePipelineSuite) Test_EnsureDeploymentNamespace() {
