@@ -83,6 +83,12 @@ func (p *CreateStandalonePipeline) OverrideTemplateValues(_ context.Context) err
 			} else {
 				p.helmValues = overrides
 			}
+			if release.Chart.Name != "" {
+				p.helmChart.Name = release.Chart.Name
+			}
+			if release.Chart.Repository != "" {
+				p.helmChart.Repository = release.Chart.Repository
+			}
 		}
 	}
 	return nil
