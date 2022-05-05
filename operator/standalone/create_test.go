@@ -38,6 +38,7 @@ func TestCreateStandalonePipeline_OverrideTemplateValues(t *testing.T) {
 	tests := map[string]struct {
 		givenSpec      v1alpha1.PostgresqlStandaloneOperatorConfigSpec
 		expectedValues HelmValues
+		expectedChart  v1alpha1.ChartMeta
 		expectedError  string
 	}{
 		"GivenSpecificReleaseExists_WhenMergeEnabled_ThenMergeWithExistingValues": {
@@ -61,6 +62,7 @@ func TestCreateStandalonePipeline_OverrideTemplateValues(t *testing.T) {
 				"merged":   "newValue",
 				"existing": "untouched",
 			},
+			expectedChart: v1alpha1.ChartMeta{Repository: "url", Name: "postgres", Version: "version"},
 		},
 		"GivenSpecificReleaseExists_WhenMergeDisabled_ThenOverwriteExistingValues": {
 			givenSpec: v1alpha1.PostgresqlStandaloneOperatorConfigSpec{
@@ -70,7 +72,7 @@ func TestCreateStandalonePipeline_OverrideTemplateValues(t *testing.T) {
 				},
 				HelmReleases: []v1alpha1.HelmReleaseConfig{
 					{
-						Chart:  v1alpha1.ChartMeta{Version: "version"},
+						Chart:  v1alpha1.ChartMeta{Version: "version", Name: "alternative", Repository: "fork"},
 						Values: HelmValues{"key": map[string]interface{}{"nested": "value"}, "merged": "newValue"}.MustMarshal(),
 					},
 				},
@@ -81,6 +83,7 @@ func TestCreateStandalonePipeline_OverrideTemplateValues(t *testing.T) {
 				},
 				"merged": "newValue",
 			},
+			expectedChart: v1alpha1.ChartMeta{Repository: "fork", Name: "alternative", Version: "version"},
 		},
 	}
 	for name, tc := range tests {
@@ -90,6 +93,7 @@ func TestCreateStandalonePipeline_OverrideTemplateValues(t *testing.T) {
 			p := &CreateStandalonePipeline{
 				config:     &v1alpha1.PostgresqlStandaloneOperatorConfig{Spec: tc.givenSpec},
 				helmValues: vals,
+				helmChart:  &v1alpha1.ChartMeta{Repository: "url", Name: "postgres", Version: "version"},
 			}
 			err := p.OverrideTemplateValues(nil)
 			if tc.expectedError != "" {
@@ -98,6 +102,7 @@ func TestCreateStandalonePipeline_OverrideTemplateValues(t *testing.T) {
 			}
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expectedValues, p.helmValues)
+			assert.Equal(t, &tc.expectedChart, p.helmChart)
 		})
 	}
 }
