@@ -85,6 +85,7 @@ func generatePostgresStandaloneConfigSample() {
 					MergeValuesFromTemplate: true,
 				},
 			},
+			HelmProviderConfigReference: "provider-helm",
 		},
 	}
 	serialize(spec, true)
@@ -118,12 +119,12 @@ func newPostgresqlStandaloneSample() *v1alpha1.PostgresqlStandalone {
 			APIVersion: v1alpha1.PostgresStandaloneGroupVersionKind.GroupVersion().String(),
 			Kind:       v1alpha1.PostgresStandaloneKind,
 		},
-		ObjectMeta: metav1.ObjectMeta{Name: "standalone", Generation: 1},
+		ObjectMeta: metav1.ObjectMeta{Name: "my-instance", Namespace: "default", Generation: 1},
 		Spec: v1alpha1.PostgresqlStandaloneSpec{
 			Parameters: v1alpha1.PostgresqlStandaloneParameters{
 				Resources: v1alpha1.Resources{
-					ComputeResources: v1alpha1.ComputeResources{},
-					StorageResources: v1alpha1.StorageResources{},
+					ComputeResources: v1alpha1.ComputeResources{MemoryLimit: parseResource("256Mi")},
+					StorageResources: v1alpha1.StorageResources{StorageCapacity: parseResource("1Gi")},
 				},
 				MajorVersion:    v1alpha1.PostgresqlVersion14,
 				EnableSuperUser: true,
