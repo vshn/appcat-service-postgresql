@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	pipeline "github.com/ccremer/go-command-pipeline"
+	helmv1beta1 "github.com/crossplane-contrib/provider-helm/apis/release/v1beta1"
 	"github.com/stretchr/testify/suite"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
 	"github.com/vshn/appcat-service-postgresql/operator/operatortest"
@@ -24,6 +25,7 @@ func TestCreateStandalonePipeline(t *testing.T) {
 
 func (ts *CreateStandalonePipelineSuite) BeforeTest(suiteName, testName string) {
 	ts.Context = pipeline.MutableContext(context.Background())
+	ts.RegisterScheme(helmv1beta1.SchemeBuilder.AddToScheme)
 }
 
 func (ts *CreateStandalonePipelineSuite) Test_FetchOperatorConfig() {
