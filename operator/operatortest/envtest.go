@@ -75,7 +75,7 @@ func (ts *Suite) SetupSuite() {
 	ts.Require().NoError(err)
 	ts.Require().NotNil(config)
 
-	registerCRDs(ts)
+	registerCommonCRDs(ts)
 
 	k8sClient, err := client.New(config, client.Options{
 		Scheme: ts.Scheme,
@@ -88,12 +88,16 @@ func (ts *Suite) SetupSuite() {
 	ts.Client = k8sClient
 }
 
-func registerCRDs(ts *Suite) {
+func registerCommonCRDs(ts *Suite) {
 	ts.Scheme = runtime.NewScheme()
 	ts.Require().NoError(v1alpha1.SchemeBuilder.AddToScheme(ts.Scheme))
 	ts.Require().NoError(corev1.AddToScheme(ts.Scheme))
 
 	// +kubebuilder:scaffold:scheme
+}
+
+func (ts *Suite) RegisterScheme(addToScheme func(s *runtime.Scheme) error) {
+	ts.Require().NoError(addToScheme(ts.Scheme))
 }
 
 func (ts *Suite) TearDownSuite() {

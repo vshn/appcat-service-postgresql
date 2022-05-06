@@ -51,7 +51,24 @@ $(webhook_values): $(webhook_cert)
 	@yq -n '.webhook.caBundle="$(shell $(b64) $(webhook_cert))" | .webhook.certificate="$(shell $(b64) $(webhook_cert))" | .webhook.privateKey="$(shell $(b64) $(webhook_key))"' > $(kind_dir)/webhook-values.yaml
 
 .PHONY: test-integration
-test-integration: export ENVTEST_CRD_DIR = $(shell realpath $(PROJECT_ROOT_DIR))/package/crds
-test-integration: $(setup_envtest_bin) ## Run integration tests against code
+test-integration: export ENVTEST_CRD_DIR = $(shell realpath $(envtest_crd_dir))
+test-integration: $(setup_envtest_bin) .envtest_crds ## Run integration tests against code
 	export KUBEBUILDER_ASSETS="$$($(setup_envtest_bin) $(ENVTEST_ADDITIONAL_FLAGS) use -i -p path '$(ENVTEST_K8S_VERSION)!')" && \
 	go test -tags=integration -coverprofile cover.out -covermode atomic ./...
+
+envtest_crd_dir ?= $(kind_dir)/crds
+# Getting the version from go.mod. Doesn't work if it references a specific commit
+provider_helm_version ?= $(shell go mod edit -json | jq -r '.Require[] | select(.Path == "github.com/crossplane-contrib/provider-helm") | .Version')
+provider_helm_download_root ?= https://raw.githubusercontent.com/crossplane-contrib/provider-helm/$(provider_helm_version)/package/crds
+
+.envtest_crd_dir:
+	@mkdir -p $(envtest_crd_dir)
+	@cp -r package/crds $(kind_dir)
+
+$(envtest_crd_dir)/helm.crossplane.io_releases.yaml: $(.envtest_crd_dir)
+	curl -sSL -o $@ $(provider_helm_download_root)/helm.crossplane.io_releases.yaml
+
+$(envtest_crd_dir)/helm.crossplane.io_providerconfigs.yaml: $(.envtest_crd_dir)
+	curl -sSL -o $@ $(provider_helm_download_root)/helm.crossplane.io_providerconfigs.yaml
+
+.envtest_crds: .envtest_crd_dir $(envtest_crd_dir)/helm.crossplane.io_releases.yaml $(envtest_crd_dir)/helm.crossplane.io_providerconfigs.yaml
