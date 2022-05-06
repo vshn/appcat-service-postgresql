@@ -24,8 +24,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-var InvalidNSNameCharacters = regexp.MustCompile("[^a-z0-9-]")
+var invalidNSNameCharacters = regexp.MustCompile("[^a-z0-9-]")
 
+// Suite is the common test suite for integration tests using envtest.
+// It's expected that concrete suites use this suite as the base.
 type Suite struct {
 	suite.Suite
 
@@ -38,6 +40,8 @@ type Suite struct {
 	Scheme  *runtime.Scheme
 }
 
+// SetupSuite implements suite.SetupAllSuite.
+// It is run before running all the tests in the suite and is used to start up a local Kubernetes API server.
 func (ts *Suite) SetupSuite() {
 	ts.Logger = zapr.NewLogger(zaptest.NewLogger(ts.T()))
 	log.SetLogger(ts.Logger)
@@ -90,25 +94,27 @@ func (ts *Suite) SetupSuite() {
 
 func registerCommonCRDs(ts *Suite) {
 	ts.Scheme = runtime.NewScheme()
-	ts.Require().NoError(v1alpha1.SchemeBuilder.AddToScheme(ts.Scheme))
-	ts.Require().NoError(corev1.AddToScheme(ts.Scheme))
+	ts.RegisterScheme(v1alpha1.SchemeBuilder.AddToScheme)
+	ts.RegisterScheme(corev1.SchemeBuilder.AddToScheme)
 
 	// +kubebuilder:scaffold:scheme
 }
 
+// RegisterScheme passes the current scheme to the given SchemeBuilder func.
 func (ts *Suite) RegisterScheme(addToScheme func(s *runtime.Scheme) error) {
 	ts.Require().NoError(addToScheme(ts.Scheme))
 }
 
+// TearDownSuite implements suite.TearDownAllSuite.
+// It is used to shut down the local envtest environment.
 func (ts *Suite) TearDownSuite() {
 	err := ts.Env.Stop()
 	ts.Require().NoErrorf(err, "error while stopping test environment")
 	ts.Logger.Info("test environment stopped")
 }
 
-type AssertFunc func(timedCtx context.Context) (done bool, err error)
-
-// NewNS instantiates a new Namespace object with the given name.
+// NewNS returns a new Namespace object with the given name.
+// Note: The namespace is not actually created, use EnsureNS for this.
 func (ts *Suite) NewNS(nsName string) *corev1.Namespace {
 	ts.Assert().Emptyf(validation.IsDNS1123Label(nsName), "'%s' does not appear to be a valid name for a namespace", nsName)
 
@@ -183,5 +189,5 @@ func (ts *Suite) MapToRequest(object metav1.Object) ctrl.Request {
 // SanitizeNameForNS first converts the given name to lowercase using strings.ToLower
 // and then remove all characters but `a-z` (only lower case), `0-9` and the `-` (dash).
 func (ts *Suite) SanitizeNameForNS(name string) string {
-	return InvalidNSNameCharacters.ReplaceAllString(strings.ToLower(name), "")
+	return invalidNSNameCharacters.ReplaceAllString(strings.ToLower(name), "")
 }
