@@ -23,6 +23,8 @@ This service provider installs PostgreSQL instances of various architecture type
 * `kubectl`
 * `yq`
 
+Some other requirements (e.g. `kind`) will be compiled on-the-fly and put in the local cache dir `.kind` as needed.
+
 ### Common make targets
 
 * `make build` to build the binary and docker image
@@ -33,6 +35,10 @@ This service provider installs PostgreSQL instances of various architecture type
 * `make run-operator` to run the code in operator mode against local cluster
 
 See all targets with `make help`
+
+### QuickStart Demonstration
+
+TL;DR: `make local-install install-samples`
 
 ### Kubernetes Webhook Troubleshooting
 

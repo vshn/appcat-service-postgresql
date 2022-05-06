@@ -101,6 +101,7 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureDeploymentNamespace() {
 	ns := &corev1.Namespace{}
 	ts.FetchResource(types.NamespacedName{Name: ServiceNamespacePrefix + "my-app-" + p.instance.Name}, ns)
 	ts.Assert().Equal(ns.Labels["app.kubernetes.io/instance"], p.instance.Name)
+	ts.Assert().Equal(ns.Labels["app.kubernetes.io/instance-namespace"], p.instance.Namespace)
 }
 
 func (ts *CreateStandalonePipelineSuite) Test_EnsureCredentialSecret() {
