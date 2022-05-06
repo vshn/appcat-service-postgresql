@@ -26,8 +26,8 @@ local-install: export KUBECONFIG = $(KIND_KUBECONFIG)
 local-install: crossplane-setup kind-load-image install-crd webhook-cert ## Install Operator in local cluster
 	helm upgrade --install provider-postgresql chart \
 		--create-namespace --namespace postgresql-system \
-		--set "args[0]='--log-level=2" \
-		--set "args[1]='operator'" \
+		--set "operator.args[0]=--log-level=2" \
+		--set "operator.args[1]=operator" \
 		--set podAnnotations.date="$(shell date)" \
 		--values $(webhook_values) \
 		--wait

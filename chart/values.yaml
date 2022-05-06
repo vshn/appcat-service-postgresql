@@ -11,6 +11,10 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: latest
 
+operator:
+  # -- Overrides arguments passed to the entrypoint
+  args: []
+
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
