@@ -143,6 +143,7 @@ func (p *CreateStandalonePipeline) EnsureDeploymentNamespace(ctx context.Context
 			Labels: getCommonLabels(p.instance.Name),
 		},
 	}
+	ns.Labels["app.kubernetes.io/instance-namespace"] = p.instance.Namespace
 	return Upsert(ctx, p.client, ns)
 }
 
