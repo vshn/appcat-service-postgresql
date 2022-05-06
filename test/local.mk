@@ -21,10 +21,9 @@ else
   b64 := base64 -w0
 endif
 
-# Despite the registry running in Cluster, we need to load the container image with `kind load`.
 .PHONY: local-install
 local-install: export KUBECONFIG = $(KIND_KUBECONFIG)
-local-install: kind-load-image install-crd webhook-cert ## Install Operator in local cluster
+local-install: crossplane-setup kind-load-image install-crd webhook-cert ## Install Operator in local cluster
 	helm upgrade --install provider-postgresql chart \
 		--create-namespace --namespace postgresql-system \
 		--set "args[0]='--log-level=2" \
@@ -38,6 +37,11 @@ kind-run-operator: export KUBECONFIG = $(KIND_KUBECONFIG)
 kind-run-operator: kind-setup webhook-cert ## Run in Operator mode against kind cluster (you may also need `install-crd`)
 	go run . -v 1 operator --webhook-tls-cert-dir .kind
 
+
+###
+### Generate webhook certificates
+###
+
 .PHONY: webhook-cert
 webhook-cert: $(webhook_values)
 
@@ -49,6 +53,10 @@ $(webhook_cert): $(webhook_key)
 
 $(webhook_values): $(webhook_cert)
 	@yq -n '.webhook.caBundle="$(shell $(b64) $(webhook_cert))" | .webhook.certificate="$(shell $(b64) $(webhook_cert))" | .webhook.privateKey="$(shell $(b64) $(webhook_key))"' > $(kind_dir)/webhook-values.yaml
+
+###
+### Integration Tests
+###
 
 .PHONY: test-integration
 test-integration: export ENVTEST_CRD_DIR = $(shell realpath $(envtest_crd_dir))
