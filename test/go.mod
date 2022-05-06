@@ -1,6 +1,6 @@
 module test
 
-go 1.17
+go 1.18
 
 require sigs.k8s.io/controller-runtime/tools/setup-envtest v0.0.0-20220428151950-3cb672286042
 
