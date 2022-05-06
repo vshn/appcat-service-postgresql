@@ -82,12 +82,8 @@ func (r *PostgresStandaloneReconciler) Reconcile(ctx context.Context, request re
 // Create creates the given instance.
 func (r *PostgresStandaloneReconciler) Create(ctx context.Context, instance *v1alpha1.PostgresqlStandalone) (reconcile.Result, error) {
 	r.log.Info("Creating", "res", instance.Name)
-	p := CreateStandalonePipeline{
-		instance:          instance,
-		client:            r.client,
-		operatorNamespace: OperatorNamespace,
-	}
-	err := p.runPipeline(ctx)
+	p := NewCreateStandalonePipeline(r.client, instance, OperatorNamespace)
+	err := p.RunPipeline(ctx)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
