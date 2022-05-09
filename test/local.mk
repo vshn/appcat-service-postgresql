@@ -18,7 +18,7 @@ webhook_values = $(kind_dir)/webhook-values.yaml
 ifeq ($(shell uname -s),Darwin)
 	b64 := base64
 else
-  b64 := base64 -w0
+	b64 := base64 -w0
 endif
 
 .PHONY: local-install
