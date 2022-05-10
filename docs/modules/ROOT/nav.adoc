@@ -5,7 +5,7 @@
 //* xref:tutorials/example.adoc[Example Tutorial]
 
 .How To
-//* xref:how-tos/example.adoc[Example How-To]
+* xref:how-tos/create-releases.adoc[Create Releases]
 
 .Technical reference
 //* xref:references/example.adoc[Example Reference]

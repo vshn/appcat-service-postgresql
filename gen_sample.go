@@ -2,10 +2,10 @@
 // +build generate
 
 // Clean samples dir
-//go:generate rm -rf chart/samples/*
+//go:generate rm -rf charts/provider-postgresql/samples/*
 
 // Generate sample files
-//go:generate go run gen_sample.go chart/samples
+//go:generate go run gen_sample.go charts/provider-postgresql/samples
 
 package main
 

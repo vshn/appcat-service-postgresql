@@ -17,7 +17,7 @@ include Makefile.vars.mk
 # Optional kind module
 -include kind/kind.mk
 # Chart-related
--include chart/Makefile
+-include charts/charts.mk
 # Local Env & testing
 -include test/local.mk test/crossplane.mk
 
@@ -53,7 +53,7 @@ vet: ## Run 'go vet' against code
 	go vet ./...
 
 .PHONY: lint
-lint: fmt vet generate ## All-in-one linting
+lint: fmt vet generate chart-docs ## All-in-one linting
 	@echo 'Check for uncommitted changes ...'
 	git diff --exit-code
 
@@ -65,7 +65,7 @@ generate-go: ## Generate Go artifacts
 	@go generate ./...
 
 .PHONY: generate-helm
-generate-helm: generate-go $(webhook_gen_result) $(rbac_gen_result)  ## 'Helmifys' artifacts that Kubebuilder generates
+generate-helm: generate-go chart-prepare  ## 'Helmifies' artifacts that Kubebuilder generates
 
 .PHONY: install-crd
 install-crd: export KUBECONFIG = $(KIND_KUBECONFIG)

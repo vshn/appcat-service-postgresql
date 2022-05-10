@@ -5,7 +5,7 @@
       "title": "## 🚀 Features",
       "labels": [
         "enhancement",
-        "area:operator"
+        "area:chart"
       ],
       "exhaustive": true
     },
@@ -13,7 +13,7 @@
       "title": "## 🛠️ Minor Changes",
       "labels": [
         "change",
-        "area:operator"
+        "area:chart"
       ],
       "exhaustive": true
     },
@@ -21,7 +21,7 @@
       "title": "## 🔎 Breaking Changes",
       "labels": [
         "breaking",
-        "area:operator"
+        "area:chart"
       ],
       "exhaustive": true
     },
@@ -29,7 +29,7 @@
       "title": "## 🐛 Fixes",
       "labels": [
         "bug",
-        "area:operator"
+        "area:chart"
       ],
       "exhaustive": true
     },
@@ -37,7 +37,7 @@
       "title": "## 📄 Documentation",
       "labels": [
         "documentation",
-        "area:operator"
+        "area:chart"
       ],
       "exhaustive": true
     },
@@ -45,10 +45,10 @@
       "title": "## 🔗 Dependency Updates",
       "labels": [
         "dependency",
-        "area:operator"
+        "area:chart"
       ],
       "exhaustive": true
     }
   ],
-  "template": "${{CATEGORIZED_COUNT}} changes since ${{FROM_TAG}}\n\n${{CHANGELOG}}\n\n_This release doesn't contain any Helm chart changes._"
+  "template": "This release contains _only_ Helm chart changes\n\n${{CATEGORIZED_COUNT}} changes since ${{FROM_TAG}}\n\n${{CHANGELOG}}"
 }

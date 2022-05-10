@@ -1,0 +1,51 @@
+name: ChartsRelease
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'charts/**'
+      - '!charts/charts.mk'
+      - '!charts/go*'
+
+jobs:
+  # Currently this job with changelog generator only works for the provider-postgresql chart...
+  # More charts (e.g. forks) may need additional engineering to get the changelog right.
+  gh-pages:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: '0'
+
+      - name: Get chart version
+        run: echo "CHART_VERSION=$(yq e '.version' charts/provider-postgresql/Chart.yaml)" >> $GITHUB_ENV
+
+      - name: Prepare changelog config
+        run: .github/changelog.sh provider-postgresql
+
+      - name: Build changelog from PRs with labels
+        id: build_changelog
+        uses: mikepenz/release-changelog-builder-action@v2
+        with:
+          configuration: ".github/configuration.json"
+          # PreReleases still get a changelog, but the next full release gets a diff since the last full release,
+          # combining possible changelogs of all previous PreReleases in between.
+          # PreReleases show a partial changelog since last PreRelease.
+          ignorePreReleases: "${{ !contains(env.CHART_VERSION, '-rc') }}"
+          outputFile: charts/provider-postgresql/CHANGELOG.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Run chart-releaser
+        uses: helm/chart-releaser-action@v1.4.0
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          CR_RELEASE_NOTES_FILE: CHANGELOG.md # is this per chart next to Chart.yaml?
