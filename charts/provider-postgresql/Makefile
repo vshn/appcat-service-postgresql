@@ -1,4 +1,3 @@
-
 webhook_gen_src = templates/manifests.yaml
 webhook_gen_tgt = templates/webhook.yaml
 rbac_gen_src = templates/role.yaml
