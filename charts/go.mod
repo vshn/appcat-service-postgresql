@@ -2,7 +2,7 @@ module charts
 
 go 1.18
 
-require github.com/norwoodj/helm-docs v1.9.1
+require github.com/norwoodj/helm-docs v1.10.0
 
 require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
