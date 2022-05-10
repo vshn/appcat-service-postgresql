@@ -56,9 +56,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push Crossplane package
-        run: make package -e IMG_TAG=${GITHUB_REF##*/}
-
       - name: Publish releases
         uses: goreleaser/goreleaser-action@v2
         with:

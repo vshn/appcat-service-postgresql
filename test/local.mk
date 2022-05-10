@@ -24,7 +24,7 @@ endif
 .PHONY: local-install
 local-install: export KUBECONFIG = $(KIND_KUBECONFIG)
 local-install: crossplane-setup kind-load-image install-crd webhook-cert ## Install Operator in local cluster
-	helm upgrade --install provider-postgresql chart \
+	helm upgrade --install provider-postgresql charts/provider-postgresql \
 		--create-namespace --namespace postgresql-system \
 		--set "operator.args[0]=--log-level=2" \
 		--set "operator.args[1]=operator" \
