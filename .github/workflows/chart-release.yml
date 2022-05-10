@@ -24,7 +24,7 @@ jobs:
         run: echo "CHART_VERSION=$(yq e '.version' charts/provider-postgresql/Chart.yaml)" >> $GITHUB_ENV
 
       - name: Prepare changelog config
-        run: .github/changelog.sh provider-postgresql
+        run: .github/changelog-charts.sh provider-postgresql
 
       - name: Build changelog from PRs with labels
         id: build_changelog
