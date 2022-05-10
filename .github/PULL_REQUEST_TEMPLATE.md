@@ -8,6 +8,10 @@
 - [ ] Categorize the PR by setting a good title and adding one of the labels:
       `bug`, `enhancement`, `documentation`, `change`, `breaking`, `dependency`
       as they show up in the changelog
+- [ ] PR contains the label that identifies the area, one of:
+      `area:operator`, `area:chart`
+- [ ] Changes to Helm charts are separated from code changes (mandatory!)
+- [ ] If the PR is targeting a Helm chart, add the chart label, e.g. `chart:provider-postgresql`
 - [ ] Update tests.
 - [ ] Link this PR to related issues.
 
