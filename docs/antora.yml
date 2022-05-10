@@ -1,6 +1,6 @@
 name: appcat-service-postgresql
 title: AppCat Service PostgreSQL
-version: master
+version: "0.0"
 start_page: ROOT:index.adoc
 nav:
   - modules/ROOT/nav.adoc
