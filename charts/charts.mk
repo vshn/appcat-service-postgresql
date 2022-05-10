@@ -18,3 +18,11 @@ chart-docs: $(helm_docs_bin) ## Creates the Chart READMEs from template and valu
 		--template-files ./.github/helm-docs-header.gotmpl.md \
 		--template-files README.gotmpl.md \
 		--template-files ./.github/helm-docs-footer.gotmpl.md
+
+.PHONY: chart-lint
+chart-lint: export charts_dir = charts
+chart-lint: ## Checks if chart versions have been changed
+	@echo "    If this target fails, one of the listed charts below has not its version updated!"
+	@changed_charts=$$(git diff --dirstat=files,0 origin/master..HEAD -- $(charts_dir) | cut -d '/' -f 2 | uniq) ; \
+	  echo $$changed_charts ; echo ;  \
+	  for dir in $$changed_charts; do git diff origin/master..HEAD -- "$(charts_dir)/$${dir}/Chart.yaml" | grep -H --label=$${dir} "+version"; done

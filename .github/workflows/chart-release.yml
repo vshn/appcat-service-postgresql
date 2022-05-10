@@ -1,4 +1,4 @@
-name: Release Charts
+name: ChartsRelease
 
 on:
   push:
@@ -6,6 +6,8 @@ on:
       - master
     paths:
       - 'charts/**'
+      - '!charts/charts.mk'
+      - '!charts/go*'
 
 jobs:
   # Currently this job with changelog generator only works for the provider-postgresql chart...

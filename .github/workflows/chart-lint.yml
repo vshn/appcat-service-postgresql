@@ -1,0 +1,20 @@
+name: ChartsLint
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'charts/**'
+      - '!charts/charts.mk'
+      - '!charts/go*'
+
+jobs:
+  chart-versions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: '0'
+      - name: Verify chart versions have been updated
+        run: make chart-lint
