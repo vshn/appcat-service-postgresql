@@ -6,5 +6,5 @@ package tools
 
 import (
 	// To have kind updated via Renovate.
-	_ "sigs.k8s.io/kind"
+	_ "sigs.k8s.io/controller-runtime/tools/setup-envtest"
 )

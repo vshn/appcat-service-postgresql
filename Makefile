@@ -19,7 +19,7 @@ include Makefile.vars.mk
 # Chart-related
 -include chart/Makefile
 # Local Env & testing
--include test/local.mk
+-include test/local.mk test/crossplane.mk
 
 .PHONY: help
 help: ## Show this help

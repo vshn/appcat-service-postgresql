@@ -34,6 +34,8 @@ spec:
           env:
             - name: WEBHOOK_TLS_CERT_DIR
               value: /webhook/tls
+          args:
+            {{- toYaml .Values.operator.args | nindent 12 }}
           ports:
             - name: webhook
               containerPort: 9443

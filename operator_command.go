@@ -5,6 +5,8 @@ import (
 	"time"
 
 	pipeline "github.com/ccremer/go-command-pipeline"
+	helmreleasev1beta1 "github.com/crossplane-contrib/provider-helm/apis/release/v1beta1"
+	helmconfigv1beta1 "github.com/crossplane-contrib/provider-helm/apis/v1beta1"
 	"github.com/urfave/cli/v2"
 	"github.com/vshn/appcat-service-postgresql/apis"
 	"github.com/vshn/appcat-service-postgresql/operator"
@@ -92,9 +94,17 @@ func (c *operatorCommand) execute(ctx *cli.Context) error {
 		c.manager = mgr
 		return err
 	})
-	p.AddStepFromFunc("register schemes", func(ctx context.Context) error {
-		return apis.AddToScheme(c.manager.GetScheme())
-	})
+	p.AddStep(pipeline.NewPipeline().WithNestedSteps("register schemes",
+		pipeline.NewStepFromFunc("register API schemes", func(ctx context.Context) error {
+			return apis.AddToScheme(c.manager.GetScheme())
+		}),
+		pipeline.NewStepFromFunc("register helm config scheme", func(ctx context.Context) error {
+			return helmconfigv1beta1.SchemeBuilder.AddToScheme(c.manager.GetScheme())
+		}),
+		pipeline.NewStepFromFunc("register helm release scheme", func(ctx context.Context) error {
+			return helmreleasev1beta1.SchemeBuilder.AddToScheme(c.manager.GetScheme())
+		}),
+	))
 	p.AddStepFromFunc("setup controllers", func(ctx context.Context) error {
 		o := controller.Options{
 			Log: log,
