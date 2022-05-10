@@ -12,6 +12,7 @@ docs: docs-html ## All-in-one docs build
 .PHONY: docs-html
 docs-html: $(docs_out_dir)/index.html ## Generate HTML version of documentation with Antora, output at ./.public
 	@touch $(docs_out_dir)/.nojekyll
+	git restore --source origin/gh-pages index.yaml && mv index.yaml .public/index.yaml || true
 
 $(docs_out_dir)/index.html:
 	$(antora_cmd) $(antora_opts) docs/antora-playbook.yml
