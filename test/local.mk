@@ -1,6 +1,6 @@
 setup_envtest_bin = $(kind_dir)/setup-envtest
 
-# Prepare kind binary
+# Prepare binary
 # We need to set the Go arch since the binary is meant for the user's OS.
 $(setup_envtest_bin): export GOOS = $(shell go env GOOS)
 $(setup_envtest_bin): export GOARCH = $(shell go env GOARCH)
