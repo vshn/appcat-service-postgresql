@@ -43,27 +43,27 @@ func NewCreateStandalonePipeline(client client.Client, instance *v1alpha1.Postgr
 func (p *CreateStandalonePipeline) RunPipeline(ctx context.Context) error {
 	return pipeline.NewPipeline().
 		WithSteps(
-			pipeline.NewStepFromFunc("fetch operator config", p.FetchOperatorConfig),
+			pipeline.NewStepFromFunc("fetch operator config", p.fetchOperatorConfig),
 
 			pipeline.NewPipeline().WithNestedSteps("compile helm values",
-				pipeline.NewStepFromFunc("read template values", p.UseTemplateValues),
-				pipeline.NewStepFromFunc("override template values", p.OverrideTemplateValues),
-				pipeline.NewStepFromFunc("apply values from instance", p.ApplyValuesFromInstance),
+				pipeline.NewStepFromFunc("read template values", p.useTemplateValues),
+				pipeline.NewStepFromFunc("override template values", p.overrideTemplateValues),
+				pipeline.NewStepFromFunc("apply values from instance", p.applyValuesFromInstance),
 			),
 
 			pipeline.NewPipeline().WithNestedSteps("deploy resources",
-				pipeline.NewStepFromFunc("ensure deployment namespace", p.EnsureDeploymentNamespace),
-				pipeline.NewStepFromFunc("ensure credentials secret", p.EnsureCredentialsSecret),
-				pipeline.NewStepFromFunc("ensure helmrelease exists", p.EnsureHelmRelease),
+				pipeline.NewStepFromFunc("ensure deployment namespace", p.ensureDeploymentNamespace),
+				pipeline.NewStepFromFunc("ensure credentials secret", p.ensureCredentialsSecret),
+				pipeline.NewStepFromFunc("ensure helmrelease exists", p.ensureHelmRelease),
 			),
 		).
 		RunWithContext(ctx).Err()
 }
 
-// FetchOperatorConfig fetches a matching v1alpha1.PostgresqlStandaloneOperatorConfig from the OperatorNamespace.
+// fetchOperatorConfig fetches a matching v1alpha1.PostgresqlStandaloneOperatorConfig from the OperatorNamespace.
 // The Major version specified in v1alpha1.PostgresqlStandalone is used to filter the correct config by the v1alpha1.PostgresqlMajorVersionLabelKey label.
 // If there is none or multiple found, it returns an error.
-func (p *CreateStandalonePipeline) FetchOperatorConfig(ctx context.Context) error {
+func (p *CreateStandalonePipeline) fetchOperatorConfig(ctx context.Context) error {
 	list := &v1alpha1.PostgresqlStandaloneOperatorConfigList{}
 	labels := client.MatchingLabels{
 		v1alpha1.PostgresqlMajorVersionLabelKey: p.instance.Spec.Parameters.MajorVersion.String(),
@@ -83,10 +83,10 @@ func (p *CreateStandalonePipeline) FetchOperatorConfig(ctx context.Context) erro
 	return nil
 }
 
-// UseTemplateValues copies the Helm values and Chart metadata from the v1alpha1.PostgresqlStandaloneOperatorConfig spec as the starting parameters.
+// useTemplateValues copies the Helm values and Chart metadata from the v1alpha1.PostgresqlStandaloneOperatorConfig spec as the starting parameters.
 //
-// This step assumes that the config has been fetched first via FetchOperatorConfig.
-func (p *CreateStandalonePipeline) UseTemplateValues(_ context.Context) error {
+// This step assumes that the config has been fetched first via fetchOperatorConfig.
+func (p *CreateStandalonePipeline) useTemplateValues(_ context.Context) error {
 	values := HelmValues{}
 	err := values.Unmarshal(p.config.Spec.HelmReleaseTemplate.Values)
 	p.helmValues = values
@@ -94,11 +94,11 @@ func (p *CreateStandalonePipeline) UseTemplateValues(_ context.Context) error {
 	return err
 }
 
-// OverrideTemplateValues searches for a specific HelmRelease spec that matches the Chart version from the template spec.
+// overrideTemplateValues searches for a specific HelmRelease spec that matches the Chart version from the template spec.
 // If it does, the template values are replaced or merged.
 //
-// This step assumes that the config has been fetched first via FetchOperatorConfig.
-func (p *CreateStandalonePipeline) OverrideTemplateValues(_ context.Context) error {
+// This step assumes that the config has been fetched first via fetchOperatorConfig.
+func (p *CreateStandalonePipeline) overrideTemplateValues(_ context.Context) error {
 	for _, release := range p.config.Spec.HelmReleases {
 		// TODO: maybe a better semver comparison later on?
 		if release.Chart.Version == p.config.Spec.HelmReleaseTemplate.Chart.Version {
@@ -123,8 +123,8 @@ func (p *CreateStandalonePipeline) OverrideTemplateValues(_ context.Context) err
 	return nil
 }
 
-// ApplyValuesFromInstance merges the user-defined and -exposed Helm values into the current Helm values map.
-func (p *CreateStandalonePipeline) ApplyValuesFromInstance(_ context.Context) error {
+// applyValuesFromInstance merges the user-defined and -exposed Helm values into the current Helm values map.
+func (p *CreateStandalonePipeline) applyValuesFromInstance(_ context.Context) error {
 	resources := HelmValues{
 		"auth": HelmValues{
 			"enablePostgresUser": p.instance.Spec.Parameters.EnableSuperUser,
@@ -146,11 +146,11 @@ func (p *CreateStandalonePipeline) ApplyValuesFromInstance(_ context.Context) er
 	return nil
 }
 
-// EnsureCredentialsSecret creates the secret that contains the PostgreSQL secret.
+// ensureCredentialsSecret creates the secret that contains the PostgreSQL secret.
 // Passwords are generated, so this step should only run once in the lifetime of the v1alpha1.PostgresqlStandalone instance.
 //
-// This step assumes that the deployment namespace already exists using EnsureDeploymentNamespace.
-func (p *CreateStandalonePipeline) EnsureCredentialsSecret(ctx context.Context) error {
+// This step assumes that the deployment namespace already exists using ensureDeploymentNamespace.
+func (p *CreateStandalonePipeline) ensureCredentialsSecret(ctx context.Context) error {
 	// https://github.com/bitnami/charts/tree/master/bitnami/postgresql
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -169,8 +169,8 @@ func (p *CreateStandalonePipeline) EnsureCredentialsSecret(ctx context.Context) 
 	return Upsert(ctx, p.client, secret)
 }
 
-// EnsureDeploymentNamespace creates the deployment namespace where the Helm release is ultimately deployed in.
-func (p *CreateStandalonePipeline) EnsureDeploymentNamespace(ctx context.Context) error {
+// ensureDeploymentNamespace creates the deployment namespace where the Helm release is ultimately deployed in.
+func (p *CreateStandalonePipeline) ensureDeploymentNamespace(ctx context.Context) error {
 	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: generateClusterScopedNameForInstance(p.instance),
@@ -182,11 +182,11 @@ func (p *CreateStandalonePipeline) EnsureDeploymentNamespace(ctx context.Context
 	return Upsert(ctx, p.client, ns)
 }
 
-// EnsureHelmRelease creates the Helm release object.
-// It uses the current Helm values that are prepared using UseTemplateValues and ApplyValuesFromInstance.
+// ensureHelmRelease creates the Helm release object.
+// It uses the current Helm values that are prepared using useTemplateValues and applyValuesFromInstance.
 //
 // This step requires that provider-helm from Crossplane is running on the cluster (https://github.com/crossplane-contrib/provider-helm).
-func (p *CreateStandalonePipeline) EnsureHelmRelease(ctx context.Context) error {
+func (p *CreateStandalonePipeline) ensureHelmRelease(ctx context.Context) error {
 	helmValues, err := p.helmValues.Marshal()
 	if err != nil {
 		return err

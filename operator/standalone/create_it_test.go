@@ -75,7 +75,7 @@ func (ts *CreateStandalonePipelineSuite) Test_FetchOperatorConfig() {
 				instance:          newInstance("instance"),
 			}
 			tc.prepare()
-			err := p.FetchOperatorConfig(ts.Context)
+			err := p.fetchOperatorConfig(ts.Context)
 			if tc.expectedError != "" {
 				ts.Require().EqualError(err, tc.expectedError)
 				ts.Assert().Nil(p.config)
@@ -94,7 +94,7 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureDeploymentNamespace() {
 	}
 
 	// Act
-	err := p.EnsureDeploymentNamespace(ts.Context)
+	err := p.ensureDeploymentNamespace(ts.Context)
 	ts.Require().NoError(err, "create namespace func")
 
 	// Assert
@@ -114,7 +114,7 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureCredentialSecret() {
 	}
 
 	// Act
-	err := p.EnsureCredentialsSecret(ts.Context)
+	err := p.ensureCredentialsSecret(ts.Context)
 	ts.Require().NoError(err)
 
 	// Assert
@@ -137,7 +137,7 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureHelmRelease() {
 	targetNs := ServiceNamespacePrefix + "my-app-" + p.instance.Name
 
 	// Act
-	err := p.EnsureHelmRelease(ts.Context)
+	err := p.ensureHelmRelease(ts.Context)
 	ts.Require().NoError(err)
 
 	// Assert

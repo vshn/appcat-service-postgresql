@@ -20,7 +20,7 @@ func TestCreateStandalonePipeline_UseTemplateValues(t *testing.T) {
 			},
 		}},
 	}
-	err := p.UseTemplateValues(nil)
+	err := p.useTemplateValues(nil)
 	assert.NoError(t, err)
 	expectedValues := HelmValues{
 		"key": "value",
@@ -95,7 +95,7 @@ func TestCreateStandalonePipeline_OverrideTemplateValues(t *testing.T) {
 				helmValues: vals,
 				helmChart:  &v1alpha1.ChartMeta{Repository: "url", Name: "postgres", Version: "version"},
 			}
-			err := p.OverrideTemplateValues(nil)
+			err := p.overrideTemplateValues(nil)
 			if tc.expectedError != "" {
 				require.EqualError(t, err, tc.expectedError)
 				return
@@ -113,7 +113,7 @@ func TestCreateStandalonePipeline_ApplyValuesFromInstance(t *testing.T) {
 		instance: newInstance("instance"),
 	}
 	p.instance.UID = "1aa230ee-63f7-4e7f-9ade-46818595e337"
-	err := p.ApplyValuesFromInstance(nil)
+	err := p.applyValuesFromInstance(nil)
 	require.NoError(t, err)
 	assert.Equal(t, HelmValues{
 		"auth": HelmValues{
