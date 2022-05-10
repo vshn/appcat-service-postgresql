@@ -222,7 +222,7 @@ func getCommonLabels(instanceName string) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/instance":   instanceName,
 		"app.kubernetes.io/managed-by": v1alpha1.Group,
-		"app.kubernetes.io/created-by": fmt.Sprintf("controller-%s", strings.ToLower(v1alpha1.PostgresStandaloneKind)),
+		"app.kubernetes.io/created-by": fmt.Sprintf("controller-%s", strings.ToLower(v1alpha1.PostgresqlStandaloneKind)),
 	}
 }
 

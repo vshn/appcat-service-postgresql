@@ -116,8 +116,8 @@ func generatePostgresStandaloneSample() {
 func newPostgresqlStandaloneSample() *v1alpha1.PostgresqlStandalone {
 	return &v1alpha1.PostgresqlStandalone{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: v1alpha1.PostgresStandaloneGroupVersionKind.GroupVersion().String(),
-			Kind:       v1alpha1.PostgresStandaloneKind,
+			APIVersion: v1alpha1.PostgresqlStandaloneGroupVersionKind.GroupVersion().String(),
+			Kind:       v1alpha1.PostgresqlStandaloneKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{Name: "my-instance", Namespace: "default", Generation: 1},
 		Spec: v1alpha1.PostgresqlStandaloneSpec{
@@ -136,8 +136,8 @@ func newPostgresqlStandaloneSample() *v1alpha1.PostgresqlStandalone {
 
 func generatePostgresqlStandaloneAdmissionRequest() {
 	spec := newPostgresqlStandaloneSample()
-	gvk := metav1.GroupVersionKind{Group: v1alpha1.Group, Version: v1alpha1.Version, Kind: v1alpha1.PostgresStandaloneKind}
-	gvr := metav1.GroupVersionResource{Group: v1alpha1.Group, Version: v1alpha1.Version, Resource: v1alpha1.PostgresStandaloneKind}
+	gvk := metav1.GroupVersionKind{Group: v1alpha1.Group, Version: v1alpha1.Version, Kind: v1alpha1.PostgresqlStandaloneKind}
+	gvr := metav1.GroupVersionResource{Group: v1alpha1.Group, Version: v1alpha1.Version, Resource: v1alpha1.PostgresqlStandaloneKind}
 	admission := &admissionv1.AdmissionReview{
 		TypeMeta: metav1.TypeMeta{APIVersion: "admission.k8s.io/v1", Kind: "AdmissionReview"},
 		Request: &admissionv1.AdmissionRequest{

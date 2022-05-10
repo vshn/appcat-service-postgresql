@@ -77,10 +77,10 @@ type PostgresqlStandaloneList struct {
 
 // PostgresqlStandalone type metadata.
 var (
-	PostgresStandaloneKind             = reflect.TypeOf(PostgresqlStandalone{}).Name()
-	PostgresStandaloneGroupKind        = schema.GroupKind{Group: Group, Kind: PostgresStandaloneKind}.String()
-	PostgresStandaloneKindAPIVersion   = PostgresStandaloneKind + "." + SchemeGroupVersion.String()
-	PostgresStandaloneGroupVersionKind = SchemeGroupVersion.WithKind(PostgresStandaloneKind)
+	PostgresqlStandaloneKind             = reflect.TypeOf(PostgresqlStandalone{}).Name()
+	PostgresqlStandaloneGroupKind        = schema.GroupKind{Group: Group, Kind: PostgresqlStandaloneKind}.String()
+	PostgresqlStandaloneKindAPIVersion   = PostgresqlStandaloneKind + "." + SchemeGroupVersion.String()
+	PostgresqlStandaloneGroupVersionKind = SchemeGroupVersion.WithKind(PostgresqlStandaloneKind)
 )
 
 func init() {

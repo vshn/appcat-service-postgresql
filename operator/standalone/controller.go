@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-var finalizer = strings.ReplaceAll(v1alpha1.Group, ".", "-")
+var finalizer = strings.ReplaceAll(v1alpha1.PostgresqlStandaloneGroupKind, ".", "-")
 
 var (
 	// OperatorNamespace is the namespace where the controller looks for v1alpha1.PostgresqlStandaloneOperatorConfig.
@@ -26,7 +26,7 @@ var (
 
 // SetupController adds a controller that reconciles v1alpha1.PostgresqlStandalone managed resources.
 func SetupController(mgr ctrl.Manager, o controller.Options) error {
-	name := strings.ToLower(v1alpha1.PostgresStandaloneGroupKind)
+	name := strings.ToLower(v1alpha1.PostgresqlStandaloneGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
