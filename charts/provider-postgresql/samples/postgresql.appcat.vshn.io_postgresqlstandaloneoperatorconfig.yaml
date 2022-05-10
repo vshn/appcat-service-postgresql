@@ -8,6 +8,7 @@ metadata:
   namespace: postgresql-system
 spec:
   defaultDeploymentStrategy: HelmChart
+  helmProviderConfigReference: provider-helm
   helmReleaseTemplate:
     chart:
       name: postgresql

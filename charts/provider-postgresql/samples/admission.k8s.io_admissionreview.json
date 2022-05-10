@@ -23,7 +23,7 @@
       "version": "v1alpha1",
       "resource": "PostgresqlStandalone"
     },
-    "name": "standalone",
+    "name": "my-instance",
     "operation": "CREATE",
     "userInfo": {
       "username": "admin",
@@ -35,13 +35,17 @@
       "kind": "PostgresqlStandalone",
       "apiVersion": "postgresql.appcat.vshn.io/v1alpha1",
       "metadata": {
-        "name": "standalone",
+        "name": "my-instance",
+        "namespace": "default",
         "generation": 1,
         "creationTimestamp": null
       },
       "spec": {
         "forInstance": {
-          "resources": {},
+          "resources": {
+            "memoryLimit": "256Mi",
+            "storageCapacity": "1Gi"
+          },
           "majorVersion": "v14",
           "enableSuperUser": true
         }

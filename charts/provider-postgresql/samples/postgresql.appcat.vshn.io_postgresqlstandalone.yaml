@@ -3,12 +3,15 @@ kind: PostgresqlStandalone
 metadata:
   creationTimestamp: null
   generation: 1
-  name: standalone
+  name: my-instance
+  namespace: default
 spec:
   forInstance:
     enableSuperUser: true
     majorVersion: v14
-    resources: {}
+    resources:
+      memoryLimit: 256Mi
+      storageCapacity: 1Gi
 status:
   conditions:
   - lastTransitionTime: "2022-04-27T15:20:13Z"
