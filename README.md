@@ -51,5 +51,5 @@ To test and troubleshoot the webhooks, do a port-forward and send an admission r
 kubectl -n crossplane-system port-forward $(kubectl -n crossplane-system get pods -o name -l pkg.crossplane.io/provider=appcat-service-postgresql) 9443:9443
 
 # send an admission request
-curl -k -v -H "Content-Type: application/json" --data @charts/provider-postgresql/samples/admission.k8s.io_admissionreview.json https://localhost:9443/validate-postgresql-appcat-vshn-io-v1alpha1-postgresqlstandalone
+curl -k -v -H "Content-Type: application/json" --data @package/samples/admission.k8s.io_admissionreview.json https://localhost:9443/validate-postgresql-appcat-vshn-io-v1alpha1-postgresqlstandalone
 ```
