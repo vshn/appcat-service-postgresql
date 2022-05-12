@@ -85,13 +85,13 @@ func (r *PostgresStandaloneReconciler) Create(ctx context.Context, instance *v1a
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	// also add some status condition here
-	instance.Status.SetObservedGeneration(instance.ObjectMeta)
-	err = r.client.Status().Update(ctx, instance.DeepCopy())
+	err = r.client.Update(ctx, instance)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.client.Update(ctx, instance)
+	// also add some status condition here
+	instance.Status.SetObservedGeneration(instance.ObjectMeta)
+	err = r.client.Status().Update(ctx, instance.DeepCopy())
 	return reconcile.Result{}, err
 }
 
@@ -110,13 +110,13 @@ func (r *PostgresStandaloneReconciler) Delete(ctx context.Context, instance *v1a
 func (r *PostgresStandaloneReconciler) Update(ctx context.Context, instance *v1alpha1.PostgresqlStandalone) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 	log.Info("Updating")
-	// ensure status conditions are up-to-date.
-	instance.Status.SetObservedGeneration(instance.ObjectMeta)
-	err := r.client.Status().Update(ctx, instance)
+	err := Upsert(ctx, r.client, instance)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = Upsert(ctx, r.client, instance)
+	// ensure status conditions are up-to-date.
+	instance.Status.SetObservedGeneration(instance.ObjectMeta)
+	err = r.client.Status().Update(ctx, instance.DeepCopy())
 	return reconcile.Result{}, err
 }
 
