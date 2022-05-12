@@ -2,6 +2,15 @@ apiVersion: v1
 entries:
   provider-postgresql:
   - apiVersion: v2
+    created: "2022-05-12T15:14:34.866007314Z"
+    description: VSHN-opinionated PostgreSQL operator for AppCat
+    digest: f7bc21fae2d02f22fc36b11b1575c10cdf8cca40ccddb2d29d20767addc6fac0
+    name: provider-postgresql
+    type: application
+    urls:
+    - https://github.com/vshn/appcat-service-postgresql/releases/download/provider-postgresql-0.1.2/provider-postgresql-0.1.2.tgz
+    version: 0.1.2
+  - apiVersion: v2
     created: "2022-05-12T13:32:19.693397525Z"
     description: VSHN-opinionated PostgreSQL operator for AppCat
     digest: acebaeeba64e9cf6e3d180e62fdb89849afd2b226eeb1daae7b1d9e671ae438e
@@ -19,4 +28,4 @@ entries:
     urls:
     - https://github.com/vshn/appcat-service-postgresql/releases/download/provider-postgresql-0.1.0/provider-postgresql-0.1.0.tgz
     version: 0.1.0
-generated: "2022-05-12T13:32:19.693412226Z"
+generated: "2022-05-12T15:14:34.866015814Z"
