@@ -2,18 +2,15 @@ package standalone
 
 import (
 	"context"
-	"strings"
 
-	"github.com/go-logr/logr"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 )
 
 // SetupWebhook adds a webhook for v1alpha1.PostgresqlStandalone managed resources.
-func SetupWebhook(mgr ctrl.Manager, o controller.Options) error {
+func SetupWebhook(mgr ctrl.Manager) error {
 	/*
 		Totally undocumented and hard-to-find feature is that the builder automatically registers the URL path for the webhook.
 		What's more, not even the tests in upstream controller-runtime reveal what this path is _actually_ going to look like.
@@ -29,7 +26,6 @@ func SetupWebhook(mgr ctrl.Manager, o controller.Options) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(&v1alpha1.PostgresqlStandalone{}).
 		WithValidator(&PostgresqlStandaloneValidator{
-			log:  o.Log.WithValues("webhook", strings.ToLower(v1alpha1.PostgresqlStandaloneGroupKind)),
 			kube: mgr.GetClient(),
 		}).
 		Complete()
@@ -37,14 +33,14 @@ func SetupWebhook(mgr ctrl.Manager, o controller.Options) error {
 
 // PostgresqlStandaloneValidator validates admission requests.
 type PostgresqlStandaloneValidator struct {
-	log  logr.Logger
 	kube client.Client
 }
 
 // ValidateCreate implements admission.CustomValidator.
 func (v *PostgresqlStandaloneValidator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
 	res := obj.(*v1alpha1.PostgresqlStandalone)
-	v.log.V(1).Info("Validate create", "name", res.Name)
+	log := ctrl.LoggerFrom(ctx)
+	log.V(1).Info("Validate create", "name", res.Name)
 	//TODO implement me
 	return nil
 }
@@ -52,7 +48,8 @@ func (v *PostgresqlStandaloneValidator) ValidateCreate(ctx context.Context, obj 
 // ValidateUpdate implements admission.CustomValidator.
 func (v *PostgresqlStandaloneValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
 	res := newObj.(*v1alpha1.PostgresqlStandalone)
-	v.log.V(1).Info("Validate update", "name", res.Name)
+	log := ctrl.LoggerFrom(ctx)
+	log.V(1).Info("Validate update", "name", res.Name)
 	//TODO implement me
 	return nil
 }
@@ -60,7 +57,8 @@ func (v *PostgresqlStandaloneValidator) ValidateUpdate(ctx context.Context, oldO
 // ValidateDelete implements admission.CustomValidator.
 func (v *PostgresqlStandaloneValidator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
 	res := obj.(*v1alpha1.PostgresqlStandalone)
-	v.log.V(1).Info("Validate delete", "name", res.Name)
+	log := ctrl.LoggerFrom(ctx)
+	log.V(1).Info("Validate delete", "name", res.Name)
 	//TODO implement me
 	return nil
 }
