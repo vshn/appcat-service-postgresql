@@ -2,6 +2,7 @@ package standalone
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -46,11 +47,14 @@ func (v *PostgresqlStandaloneValidator) ValidateCreate(ctx context.Context, obj 
 }
 
 // ValidateUpdate implements admission.CustomValidator.
-func (v *PostgresqlStandaloneValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
-	res := newObj.(*v1alpha1.PostgresqlStandalone)
-	log := ctrl.LoggerFrom(ctx)
-	log.V(1).Info("Validate update", "name", res.Name)
-	//TODO implement me
+// This validator:
+//  - prevents selecting another major version (major version upgrade is currently unsupported)
+func (v *PostgresqlStandaloneValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) error {
+	newInstance := newObj.(*v1alpha1.PostgresqlStandalone)
+	oldInstance := oldObj.(*v1alpha1.PostgresqlStandalone)
+	if newInstance.Spec.Parameters.MajorVersion != oldInstance.Spec.Parameters.MajorVersion {
+		return fmt.Errorf("major version cannot be changed once specified at creation time")
+	}
 	return nil
 }
 
