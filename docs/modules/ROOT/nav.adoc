@@ -8,7 +8,7 @@
 * xref:how-tos/create-releases.adoc[Create Releases]
 
 .Technical reference
-//* xref:references/example.adoc[Example Reference]
+* xref:references/standalone-api.adoc[API: PostgresqlStandalone]
 
 .Explanation
 * Decisions
