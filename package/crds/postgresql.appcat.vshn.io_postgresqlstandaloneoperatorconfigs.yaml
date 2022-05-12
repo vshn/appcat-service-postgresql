@@ -48,6 +48,11 @@ spec:
                 description: DeploymentStrategy defines the DeploymentStrategy in
                   case there isn't a 1:1 match.
                 type: string
+              helmProviderConfigReference:
+                description: HelmProviderConfigReference is the name of the ProviderConfig
+                  CR from crossplane-contrib/provider-helm. Used when DeploymentStrategy
+                  is StrategyHelmChart.
+                type: string
               helmReleaseTemplate:
                 description: HelmReleaseTemplate is the default release config that
                   is used for all HelmReleases. Changing values in this field affects

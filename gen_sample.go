@@ -2,10 +2,10 @@
 // +build generate
 
 // Clean samples dir
-//go:generate rm -rf charts/provider-postgresql/samples/*
+//go:generate rm -rf package/samples/*
 
 // Generate sample files
-//go:generate go run gen_sample.go charts/provider-postgresql/samples
+//go:generate go run gen_sample.go package/samples
 
 package main
 
@@ -18,6 +18,8 @@ import (
 	"strings"
 	"time"
 
+	helmv1beta1 "github.com/crossplane-contrib/provider-helm/apis/v1beta1"
+	crossplanev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/vshn/appcat-service-postgresql/apis"
 	"github.com/vshn/appcat-service-postgresql/apis/conditions"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
@@ -36,7 +38,10 @@ func main() {
 	failIfError(apis.AddToScheme(scheme))
 	generatePostgresStandaloneConfigSample()
 	generatePostgresStandaloneSample()
+
 	generatePostgresqlStandaloneAdmissionRequest()
+
+	generateProviderHelmConfigSample()
 }
 
 func generatePostgresStandaloneConfigSample() {
@@ -45,9 +50,12 @@ func generatePostgresStandaloneConfigSample() {
 			APIVersion: v1alpha1.PostgresqlStandaloneOperatorConfigGroupVersionKind.GroupVersion().String(),
 			Kind:       v1alpha1.PostgresqlStandaloneOperatorConfigKind,
 		},
-		ObjectMeta: metav1.ObjectMeta{Name: "platform-config", Labels: map[string]string{
-			fmt.Sprintf("%s/major-version", v1alpha1.Group): v1alpha1.PostgresqlVersion14.String(),
-		}},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "platform-config",
+			Namespace: "postgresql-system",
+			Labels: map[string]string{
+				v1alpha1.PostgresqlMajorVersionLabelKey: v1alpha1.PostgresqlVersion14.String(),
+			}},
 		Spec: v1alpha1.PostgresqlStandaloneOperatorConfigSpec{
 			DeploymentStrategy: v1alpha1.StrategyHelmChart,
 			ResourceMinima: v1alpha1.Resources{
@@ -78,6 +86,7 @@ func generatePostgresStandaloneConfigSample() {
 					MergeValuesFromTemplate: true,
 				},
 			},
+			HelmProviderConfigReference: "provider-helm",
 		},
 	}
 	serialize(spec, true)
@@ -108,15 +117,15 @@ func generatePostgresStandaloneSample() {
 func newPostgresqlStandaloneSample() *v1alpha1.PostgresqlStandalone {
 	return &v1alpha1.PostgresqlStandalone{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: v1alpha1.PostgresStandaloneGroupVersionKind.GroupVersion().String(),
-			Kind:       v1alpha1.PostgresStandaloneKind,
+			APIVersion: v1alpha1.PostgresqlStandaloneGroupVersionKind.GroupVersion().String(),
+			Kind:       v1alpha1.PostgresqlStandaloneKind,
 		},
-		ObjectMeta: metav1.ObjectMeta{Name: "standalone", Generation: 1},
+		ObjectMeta: metav1.ObjectMeta{Name: "my-instance", Namespace: "default", Generation: 1},
 		Spec: v1alpha1.PostgresqlStandaloneSpec{
 			Parameters: v1alpha1.PostgresqlStandaloneParameters{
 				Resources: v1alpha1.Resources{
-					ComputeResources: v1alpha1.ComputeResources{},
-					StorageResources: v1alpha1.StorageResources{},
+					ComputeResources: v1alpha1.ComputeResources{MemoryLimit: parseResource("256Mi")},
+					StorageResources: v1alpha1.StorageResources{StorageCapacity: parseResource("1Gi")},
 				},
 				MajorVersion:    v1alpha1.PostgresqlVersion14,
 				EnableSuperUser: true,
@@ -128,8 +137,8 @@ func newPostgresqlStandaloneSample() *v1alpha1.PostgresqlStandalone {
 
 func generatePostgresqlStandaloneAdmissionRequest() {
 	spec := newPostgresqlStandaloneSample()
-	gvk := metav1.GroupVersionKind{Group: v1alpha1.Group, Version: v1alpha1.Version, Kind: v1alpha1.PostgresStandaloneKind}
-	gvr := metav1.GroupVersionResource{Group: v1alpha1.Group, Version: v1alpha1.Version, Resource: v1alpha1.PostgresStandaloneKind}
+	gvk := metav1.GroupVersionKind{Group: v1alpha1.Group, Version: v1alpha1.Version, Kind: v1alpha1.PostgresqlStandaloneKind}
+	gvr := metav1.GroupVersionResource{Group: v1alpha1.Group, Version: v1alpha1.Version, Resource: v1alpha1.PostgresqlStandaloneKind}
 	admission := &admissionv1.AdmissionReview{
 		TypeMeta: metav1.TypeMeta{APIVersion: "admission.k8s.io/v1", Kind: "AdmissionReview"},
 		Request: &admissionv1.AdmissionRequest{
@@ -149,6 +158,19 @@ func generatePostgresqlStandaloneAdmissionRequest() {
 		},
 	}
 	serialize(admission, false)
+}
+
+func generateProviderHelmConfigSample() {
+	spec := &helmv1beta1.ProviderConfig{
+		TypeMeta: metav1.TypeMeta{APIVersion: helmv1beta1.ProviderConfigGroupVersionKind.GroupVersion().String(), Kind: helmv1beta1.ProviderConfigKind},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "provider-helm",
+		},
+		Spec: helmv1beta1.ProviderConfigSpec{
+			Credentials: helmv1beta1.ProviderCredentials{Source: crossplanev1.CredentialsSourceInjectedIdentity},
+		},
+	}
+	serialize(spec, true)
 }
 
 func failIfError(err error) {

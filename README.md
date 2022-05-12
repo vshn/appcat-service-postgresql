@@ -23,6 +23,8 @@ This service provider installs PostgreSQL instances of various architecture type
 * `kubectl`
 * `yq`
 
+Some other requirements (e.g. `kind`) will be compiled on-the-fly and put in the local cache dir `.kind` as needed.
+
 ### Common make targets
 
 * `make build` to build the binary and docker image
@@ -33,6 +35,10 @@ This service provider installs PostgreSQL instances of various architecture type
 * `make run-operator` to run the code in operator mode against local cluster
 
 See all targets with `make help`
+
+### QuickStart Demonstration
+
+TL;DR: `make local-install install-samples`
 
 ### Kubernetes Webhook Troubleshooting
 
@@ -45,5 +51,5 @@ To test and troubleshoot the webhooks, do a port-forward and send an admission r
 kubectl -n crossplane-system port-forward $(kubectl -n crossplane-system get pods -o name -l pkg.crossplane.io/provider=appcat-service-postgresql) 9443:9443
 
 # send an admission request
-curl -k -v -H "Content-Type: application/json" --data @charts/provider-postgresql/samples/admission.k8s.io_admissionreview.json https://localhost:9443/validate-postgresql-appcat-vshn-io-v1alpha1-postgresqlstandalone
+curl -k -v -H "Content-Type: application/json" --data @package/samples/admission.k8s.io_admissionreview.json https://localhost:9443/validate-postgresql-appcat-vshn-io-v1alpha1-postgresqlstandalone
 ```

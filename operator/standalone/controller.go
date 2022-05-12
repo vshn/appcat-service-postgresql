@@ -15,18 +15,25 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-const finalizer = "finalizer"
+var finalizer = strings.ReplaceAll(v1alpha1.PostgresqlStandaloneGroupKind, ".", "-")
+
+var (
+	// OperatorNamespace is the namespace where the controller looks for v1alpha1.PostgresqlStandaloneOperatorConfig.
+	OperatorNamespace = ""
+	// ServiceNamespacePrefix is the namespace prefix which the controller uses to create the namespaces where the PostgreSQL instances are actually deployed in.
+	ServiceNamespacePrefix = "sv-postgresql-s-"
+)
 
 // SetupController adds a controller that reconciles v1alpha1.PostgresqlStandalone managed resources.
 func SetupController(mgr ctrl.Manager, o controller.Options) error {
-	name := strings.ToLower(v1alpha1.PostgresStandaloneGroupKind)
+	name := strings.ToLower(v1alpha1.PostgresqlStandaloneGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		For(&v1alpha1.PostgresqlStandalone{}).
 		WithEventFilter(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{}, predicate.LabelChangedPredicate{})).
 		Complete(&PostgresStandaloneReconciler{
-			log:    o.Log,
+			log:    o.Log.WithName("controller"),
 			client: mgr.GetClient(),
 		})
 }
@@ -58,23 +65,31 @@ func (r *PostgresStandaloneReconciler) Reconcile(ctx context.Context, request re
 		// some other error
 		return reconcile.Result{}, err
 	}
-	if !controllerutil.ContainsFinalizer(obj, finalizer) {
-		return r.Create(ctx, obj)
-	}
 	if !obj.DeletionTimestamp.IsZero() {
 		return r.Delete(ctx, obj)
+	}
+	if !controllerutil.ContainsFinalizer(obj, finalizer) {
+		controllerutil.AddFinalizer(obj, finalizer)
+		res, err := r.Create(ctx, obj)
+		if err != nil {
+			r.log.Error(err, "couldn't reconcile instance")
+		}
+		return res, err
 	}
 	return r.Update(ctx, obj)
 }
 
 // Create creates the given instance.
 func (r *PostgresStandaloneReconciler) Create(ctx context.Context, instance *v1alpha1.PostgresqlStandalone) (reconcile.Result, error) {
-	controllerutil.AddFinalizer(instance, finalizer)
-
 	r.log.Info("Creating", "res", instance.Name)
+	p := NewCreateStandalonePipeline(r.client, instance, OperatorNamespace)
+	err := p.RunPipeline(ctx)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 	// also add some status condition here
 	instance.Status.SetObservedGeneration(instance.ObjectMeta)
-	err := r.client.Status().Update(ctx, instance)
+	err = r.client.Status().Update(ctx, instance)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -103,4 +118,21 @@ func (r *PostgresStandaloneReconciler) Update(ctx context.Context, instance *v1a
 	}
 	err = r.client.Update(ctx, instance)
 	return reconcile.Result{}, err
+}
+
+// Upsert creates the given obj if it doesn't exist.
+// If it exists, it's being updated.
+func Upsert(ctx context.Context, client client.Client, obj client.Object) error {
+	err := client.Create(ctx, obj)
+	if err == nil {
+		// new resource created successfully
+		return nil
+	}
+	if err != nil && !apierrors.IsAlreadyExists(err) {
+		// something went wrong when creating
+		return err
+	}
+	// every other case: Update
+	err = client.Update(ctx, obj)
+	return err
 }

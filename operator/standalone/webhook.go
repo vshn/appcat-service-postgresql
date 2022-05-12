@@ -29,7 +29,7 @@ func SetupWebhook(mgr ctrl.Manager, o controller.Options) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(&v1alpha1.PostgresqlStandalone{}).
 		WithValidator(&PostgresqlStandaloneValidator{
-			log:  o.Log.WithValues("webhook", strings.ToLower(v1alpha1.PostgresStandaloneGroupKind)),
+			log:  o.Log.WithValues("webhook", strings.ToLower(v1alpha1.PostgresqlStandaloneGroupKind)),
 			kube: mgr.GetClient(),
 		}).
 		Complete()

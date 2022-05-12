@@ -5,8 +5,10 @@ metadata:
   labels:
     postgresql.appcat.vshn.io/major-version: v14
   name: platform-config
+  namespace: postgresql-system
 spec:
   defaultDeploymentStrategy: HelmChart
+  helmProviderConfigReference: provider-helm
   helmReleaseTemplate:
     chart:
       name: postgresql
