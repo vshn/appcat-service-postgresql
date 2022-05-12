@@ -14,7 +14,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -71,8 +70,7 @@ func (c *operatorCommand) validate(ctx *cli.Context) error {
 func (c *operatorCommand) execute(ctx *cli.Context) error {
 	log := AppLogger(ctx).WithName(operatorCommandName)
 	log.Info("Setting up controllers", "config", c)
-
-	options := controller.Options{Log: log}
+	ctrl.SetLogger(log)
 
 	p := pipeline.NewPipeline().WithBeforeHooks([]pipeline.Listener{
 		func(step pipeline.Step) {
@@ -117,14 +115,14 @@ func (c *operatorCommand) execute(ctx *cli.Context) error {
 		}),
 	))
 	p.AddStepFromFunc("setup controllers", func(ctx context.Context) error {
-		return operator.SetupControllers(c.manager, options)
+		return operator.SetupControllers(c.manager)
 	})
 	p.AddStep(pipeline.ToStep("setup webhook server",
 		func(ctx context.Context) error {
 			ws := c.manager.GetWebhookServer()
 			ws.CertDir = c.WebhookCertDir
 			ws.TLSMinVersion = "1.3"
-			return operator.SetupWebhooks(c.manager, options)
+			return operator.SetupWebhooks(c.manager)
 		},
 		pipeline.Bool(c.WebhookCertDir != "")))
 	p.AddStepFromFunc("run manager", func(ctx context.Context) error {

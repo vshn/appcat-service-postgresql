@@ -4,18 +4,16 @@ import (
 	"context"
 	"strings"
 
-	"github.com/go-logr/logr"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-var finalizer = strings.ReplaceAll(v1alpha1.PostgresqlStandaloneGroupKind, ".", "-")
+var finalizer = strings.ToLower(strings.ReplaceAll(v1alpha1.PostgresqlStandaloneGroupKind, ".", "-"))
 
 var (
 	// OperatorNamespace is the namespace where the controller looks for v1alpha1.PostgresqlStandaloneOperatorConfig.
@@ -25,7 +23,7 @@ var (
 )
 
 // SetupController adds a controller that reconciles v1alpha1.PostgresqlStandalone managed resources.
-func SetupController(mgr ctrl.Manager, o controller.Options) error {
+func SetupController(mgr ctrl.Manager) error {
 	name := strings.ToLower(v1alpha1.PostgresqlStandaloneGroupKind)
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -33,7 +31,6 @@ func SetupController(mgr ctrl.Manager, o controller.Options) error {
 		For(&v1alpha1.PostgresqlStandalone{}).
 		WithEventFilter(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{}, predicate.LabelChangedPredicate{})).
 		Complete(&PostgresStandaloneReconciler{
-			log:    o.Log.WithName("controller"),
 			client: mgr.GetClient(),
 		})
 }
@@ -49,13 +46,13 @@ func SetupController(mgr ctrl.Manager, o controller.Options) error {
 // PostgresStandaloneReconciler reconciles v1alpha1.PostgresqlStandalone.
 type PostgresStandaloneReconciler struct {
 	client client.Client
-	log    logr.Logger
 }
 
 // Reconcile implements reconcile.Reconciler.
 func (r *PostgresStandaloneReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	log := ctrl.LoggerFrom(ctx)
 	obj := &v1alpha1.PostgresqlStandalone{}
-	r.log.V(1).Info("Reconciling", "res", request.Name)
+	log.V(1).Info("Reconciling")
 	err := r.client.Get(ctx, request.NamespacedName, obj)
 	if err != nil && apierrors.IsNotFound(err) {
 		// doesn't exist anymore, nothing to do
@@ -72,7 +69,7 @@ func (r *PostgresStandaloneReconciler) Reconcile(ctx context.Context, request re
 		controllerutil.AddFinalizer(obj, finalizer)
 		res, err := r.Create(ctx, obj)
 		if err != nil {
-			r.log.Error(err, "couldn't reconcile instance")
+			log.Error(err, "couldn't reconcile instance")
 		}
 		return res, err
 	}
@@ -81,7 +78,8 @@ func (r *PostgresStandaloneReconciler) Reconcile(ctx context.Context, request re
 
 // Create creates the given instance.
 func (r *PostgresStandaloneReconciler) Create(ctx context.Context, instance *v1alpha1.PostgresqlStandalone) (reconcile.Result, error) {
-	r.log.Info("Creating", "res", instance.Name)
+	log := ctrl.LoggerFrom(ctx)
+	log.Info("Creating")
 	p := NewCreateStandalonePipeline(r.client, instance, OperatorNamespace)
 	err := p.RunPipeline(ctx)
 	if err != nil {
@@ -89,7 +87,7 @@ func (r *PostgresStandaloneReconciler) Create(ctx context.Context, instance *v1a
 	}
 	// also add some status condition here
 	instance.Status.SetObservedGeneration(instance.ObjectMeta)
-	err = r.client.Status().Update(ctx, instance)
+	err = r.client.Status().Update(ctx, instance.DeepCopy())
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -101,38 +99,32 @@ func (r *PostgresStandaloneReconciler) Create(ctx context.Context, instance *v1a
 func (r *PostgresStandaloneReconciler) Delete(ctx context.Context, instance *v1alpha1.PostgresqlStandalone) (reconcile.Result, error) {
 	// we don't need to delete it by ourselves, since the deletion timestamp is already set.
 	// Just remove all finalizers
+	log := ctrl.LoggerFrom(ctx)
 	controllerutil.RemoveFinalizer(instance, finalizer)
-	r.log.Info("Deleting", "res", instance.Name)
+	log.Info("Deleting")
 	err := r.client.Update(ctx, instance)
 	return reconcile.Result{}, err
 }
 
 // Update saves the given spec in Kubernetes.
 func (r *PostgresStandaloneReconciler) Update(ctx context.Context, instance *v1alpha1.PostgresqlStandalone) (reconcile.Result, error) {
-	r.log.Info("Updating", "res", instance.Name)
+	log := ctrl.LoggerFrom(ctx)
+	log.Info("Updating")
 	// ensure status conditions are up-to-date.
 	instance.Status.SetObservedGeneration(instance.ObjectMeta)
 	err := r.client.Status().Update(ctx, instance)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = r.client.Update(ctx, instance)
+	err = Upsert(ctx, r.client, instance)
 	return reconcile.Result{}, err
 }
 
 // Upsert creates the given obj if it doesn't exist.
 // If it exists, it's being updated.
 func Upsert(ctx context.Context, client client.Client, obj client.Object) error {
-	err := client.Create(ctx, obj)
-	if err == nil {
-		// new resource created successfully
+	_, err := controllerutil.CreateOrUpdate(ctx, client, obj, func() error {
 		return nil
-	}
-	if err != nil && !apierrors.IsAlreadyExists(err) {
-		// something went wrong when creating
-		return err
-	}
-	// every other case: Update
-	err = client.Update(ctx, obj)
+	})
 	return err
 }

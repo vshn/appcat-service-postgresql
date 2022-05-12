@@ -3,20 +3,17 @@ package config
 import (
 	"context"
 
-	"github.com/go-logr/logr"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 // SetupController adds a controller that reconciles ProviderConfigs by accounting for their current usage.
-func SetupController(mgr ctrl.Manager, o controller.Options) error {
+func SetupController(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.PostgresqlStandaloneOperatorConfig{}).
 		Complete(&PostgresqlStandaloneOperatorConfigReconciler{
-			log:    o.Log,
 			client: mgr.GetClient(),
 		})
 }
@@ -27,12 +24,12 @@ func SetupController(mgr ctrl.Manager, o controller.Options) error {
 // PostgresqlStandaloneOperatorConfigReconciler reconciles v1alpha1.ProviderConfig.
 type PostgresqlStandaloneOperatorConfigReconciler struct {
 	client client.Client
-	log    logr.Logger
 }
 
 // Reconcile implements reconcile.Reconciler.
 func (r *PostgresqlStandaloneOperatorConfigReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	obj := &v1alpha1.PostgresqlStandaloneOperatorConfig{}
-	r.log.V(1).Info("Reconciling", "res", obj.Name)
+	_ = &v1alpha1.PostgresqlStandaloneOperatorConfig{}
+	log := ctrl.LoggerFrom(ctx)
+	log.V(1).Info("Reconciling")
 	return reconcile.Result{}, nil
 }
