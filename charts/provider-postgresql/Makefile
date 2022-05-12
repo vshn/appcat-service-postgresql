@@ -1,5 +1,6 @@
 webhook_gen_src = templates/manifests.yaml
 webhook_gen_tgt = templates/webhook.yaml
+
 rbac_gen_src = templates/role.yaml
 rbac_gen_tgt = templates/clusterrole.yaml
 
@@ -26,3 +27,4 @@ $(rbac_gen_tgt):
 
 .PHONY: prepare
 prepare: $(rbac_gen_tgt) $(webhook_gen_tgt) ## Helmify generated artifacts
+	cat ../../package/crds/*.yaml | yq > crds.yaml
