@@ -58,7 +58,7 @@ lint: fmt vet generate chart-docs ## All-in-one linting
 	git diff --exit-code
 
 .PHONY: generate
-generate: generate-go generate-helm ## All-in-one code generation
+generate: generate-go generate-helm generate-docs ## All-in-one code generation
 
 .PHONY: generate-go
 generate-go: ## Generate Go artifacts
@@ -66,6 +66,10 @@ generate-go: ## Generate Go artifacts
 
 .PHONY: generate-helm
 generate-helm: generate-go chart-prepare  ## 'Helmifies' artifacts that Kubebuilder generates
+
+.PHONY: generate-docs
+generate-docs: generate-go ## Generate example code snippets for documentation
+	@yq e 'del(.metadata.creationTimestamp) | del(.metadata.generation) | del(.status)' package/samples/postgresql.appcat.vshn.io_postgresqlstandalone.yaml > docs/modules/ROOT/examples/standalone.yaml
 
 .PHONY: install-crd
 install-crd: export KUBECONFIG = $(KIND_KUBECONFIG)

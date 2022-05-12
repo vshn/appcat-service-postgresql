@@ -1,0 +1,12 @@
+apiVersion: postgresql.appcat.vshn.io/v1alpha1
+kind: PostgresqlStandalone
+metadata:
+  name: my-instance
+  namespace: default
+spec:
+  forInstance:
+    enableSuperUser: true
+    majorVersion: v14
+    resources:
+      memoryLimit: 256Mi
+      storageCapacity: 1Gi
