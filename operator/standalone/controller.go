@@ -21,7 +21,7 @@ var (
 	// OperatorNamespace is the namespace where the controller looks for v1alpha1.PostgresqlStandaloneOperatorConfig.
 	OperatorNamespace = ""
 	// ServiceNamespacePrefix is the namespace prefix which the controller uses to create the namespaces where the PostgreSQL instances are actually deployed in.
-	ServiceNamespacePrefix = "sv-postgresql-"
+	ServiceNamespacePrefix = "sv-postgresql-s-"
 )
 
 // SetupController adds a controller that reconciles v1alpha1.PostgresqlStandalone managed resources.

@@ -4,6 +4,7 @@ package standalone
 
 import (
 	"context"
+	"math/rand"
 	"testing"
 
 	pipeline "github.com/ccremer/go-command-pipeline"
@@ -12,6 +13,7 @@ import (
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
 	"github.com/vshn/appcat-service-postgresql/operator/operatortest"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -92,14 +94,18 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureDeploymentNamespace() {
 		instance: newInstance("test-ensure-namespace"),
 		client:   ts.Client,
 	}
-
+	currentRand := namegeneratorRNG
+	defer func() {
+		namegeneratorRNG = currentRand
+	}()
+	namegeneratorRNG = rand.New(rand.NewSource(1))
 	// Act
 	err := p.ensureDeploymentNamespace(ts.Context)
 	ts.Require().NoError(err, "create namespace func")
 
 	// Assert
 	ns := &corev1.Namespace{}
-	ts.FetchResource(types.NamespacedName{Name: ServiceNamespacePrefix + "my-app-" + p.instance.Name}, ns)
+	ts.FetchResource(types.NamespacedName{Name: "sv-postgresql-s-merry-vigilante-7b16"}, ns)
 	ts.Assert().Equal(ns.Labels["app.kubernetes.io/instance"], p.instance.Name)
 	ts.Assert().Equal(ns.Labels["app.kubernetes.io/instance-namespace"], p.instance.Namespace)
 }
@@ -109,8 +115,9 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureCredentialSecret() {
 	ns := ServiceNamespacePrefix + "my-app-instance"
 	ts.EnsureNS(ns)
 	p := &CreateStandalonePipeline{
-		instance: newInstance("instance"),
-		client:   ts.Client,
+		instance:            newInstance("instance"),
+		client:              ts.Client,
+		deploymentNamespace: &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: ns}},
 	}
 
 	// Act
@@ -135,6 +142,7 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureHelmRelease() {
 		config:     newPostgresqlStandaloneOperatorConfig("config", "postgresql-system"),
 	}
 	targetNs := ServiceNamespacePrefix + "my-app-" + p.instance.Name
+	p.deploymentNamespace = &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: targetNs}}
 
 	// Act
 	err := p.ensureHelmRelease(ts.Context)

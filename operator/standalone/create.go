@@ -3,17 +3,29 @@ package standalone
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"strings"
 
 	pipeline "github.com/ccremer/go-command-pipeline"
 	helmv1beta1 "github.com/crossplane-contrib/provider-helm/apis/release/v1beta1"
 	crossplanev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	"github.com/lucasepe/codename"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/rand"
+	utilrand "k8s.io/apimachinery/pkg/util/rand"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+var namegeneratorRNG *rand.Rand
+
+func init() {
+	rng, err := codename.DefaultRNG()
+	if err != nil {
+		panic(err)
+	}
+	namegeneratorRNG = rng
+}
 
 // CreateStandalonePipeline is a pipeline that creates a new instance in the target deployment namespace.
 // Currently, it's optimized for first-time creation scenarios and may fail when reconciling existing instances.
@@ -23,10 +35,11 @@ type CreateStandalonePipeline struct {
 
 	// TODO: Idea: Maybe store and retrieve the following fields from the context for safe access. This would require some convenience getters and setters though.
 
-	instance   *v1alpha1.PostgresqlStandalone
-	config     *v1alpha1.PostgresqlStandaloneOperatorConfig
-	helmValues HelmValues
-	helmChart  *v1alpha1.ChartMeta
+	instance            *v1alpha1.PostgresqlStandalone
+	config              *v1alpha1.PostgresqlStandaloneOperatorConfig
+	helmValues          HelmValues
+	helmChart           *v1alpha1.ChartMeta
+	deploymentNamespace *corev1.Namespace
 }
 
 // NewCreateStandalonePipeline creates a new pipeline with the required dependencies.
@@ -146,6 +159,20 @@ func (p *CreateStandalonePipeline) applyValuesFromInstance(_ context.Context) er
 	return nil
 }
 
+// ensureDeploymentNamespace creates the deployment namespace where the Helm release is ultimately deployed in.
+func (p *CreateStandalonePipeline) ensureDeploymentNamespace(ctx context.Context) error {
+	ns := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: generateClusterScopedNameForInstance(),
+			// TODO: Add APPUiO cloud organization label that identifies ownership.
+			Labels: getCommonLabels(p.instance.Name),
+		},
+	}
+	ns.Labels["app.kubernetes.io/instance-namespace"] = p.instance.Namespace
+	p.deploymentNamespace = ns
+	return Upsert(ctx, p.client, ns)
+}
+
 // ensureCredentialsSecret creates the secret that contains the PostgreSQL secret.
 // Passwords are generated, so this step should only run once in the lifetime of the v1alpha1.PostgresqlStandalone instance.
 //
@@ -155,7 +182,7 @@ func (p *CreateStandalonePipeline) ensureCredentialsSecret(ctx context.Context) 
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      getCredentialSecretName(p.instance),
-			Namespace: generateClusterScopedNameForInstance(p.instance),
+			Namespace: p.deploymentNamespace.Name,
 			Labels:    getCommonLabels(p.instance.Name),
 		},
 		StringData: map[string]string{
@@ -169,19 +196,6 @@ func (p *CreateStandalonePipeline) ensureCredentialsSecret(ctx context.Context) 
 	return Upsert(ctx, p.client, secret)
 }
 
-// ensureDeploymentNamespace creates the deployment namespace where the Helm release is ultimately deployed in.
-func (p *CreateStandalonePipeline) ensureDeploymentNamespace(ctx context.Context) error {
-	ns := &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: generateClusterScopedNameForInstance(p.instance),
-			// TODO: Add APPUiO cloud organization label that identifies ownership.
-			Labels: getCommonLabels(p.instance.Name),
-		},
-	}
-	ns.Labels["app.kubernetes.io/instance-namespace"] = p.instance.Namespace
-	return Upsert(ctx, p.client, ns)
-}
-
 // ensureHelmRelease creates the Helm release object.
 // It uses the current Helm values that are prepared using useTemplateValues and applyValuesFromInstance.
 //
@@ -193,13 +207,13 @@ func (p *CreateStandalonePipeline) ensureHelmRelease(ctx context.Context) error 
 	}
 	helmRelease := &helmv1beta1.Release{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   generateClusterScopedNameForInstance(p.instance),
+			Name:   p.deploymentNamespace.Name,
 			Labels: getCommonLabels(p.instance.Name),
 		},
 		Spec: helmv1beta1.ReleaseSpec{
 			ForProvider: helmv1beta1.ReleaseParameters{
 				Chart:               helmv1beta1.ChartSpec{Repository: p.helmChart.Repository, Name: p.helmChart.Name, Version: p.helmChart.Version},
-				Namespace:           generateClusterScopedNameForInstance(p.instance),
+				Namespace:           p.deploymentNamespace.Name,
 				SkipCreateNamespace: true,
 				SkipCRDs:            true,
 				Wait:                true,
@@ -226,11 +240,17 @@ func getCommonLabels(instanceName string) map[string]string {
 	}
 }
 
-func generateClusterScopedNameForInstance(obj client.Object) string {
-	// TODO: ensure that name doesn't exceed 63 characters
-	return fmt.Sprintf("%s%s-%s", ServiceNamespacePrefix, obj.GetNamespace(), obj.GetName())
+func generateClusterScopedNameForInstance() string {
+	name := ""
+	for i := 0; i < 10; i++ {
+		name = fmt.Sprintf("%s%s", ServiceNamespacePrefix, codename.Generate(namegeneratorRNG, 4))
+		if len(name) <= 63 && !strings.HasSuffix(name, "-") {
+			return name
+		}
+	}
+	panic("no generated name under 63 chars without '-' suffix after 10 attempts, giving up")
 }
 
 func generatePassword() string {
-	return rand.String(40)
+	return utilrand.String(40)
 }
