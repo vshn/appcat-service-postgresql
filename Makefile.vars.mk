@@ -20,7 +20,7 @@ CONTAINER_IMG ?= $(CONTAINER_REGISTRY)/$(PROJECT_OWNER)/$(PROJECT_NAME):$(IMG_TA
 ## KIND:setup
 
 # see available options in https://hub.docker.com/r/kindest/node/tags
-KIND_NODE_VERSION ?= v1.23.0
+KIND_NODE_VERSION ?= v1.24.0
 KIND_IMAGE ?= docker.io/kindest/node:$(KIND_NODE_VERSION)
 KIND_KUBECONFIG ?= $(kind_dir)/kind-kubeconfig-$(KIND_NODE_VERSION)
 KIND_CLUSTER ?= $(PROJECT_NAME)-$(KIND_NODE_VERSION)
