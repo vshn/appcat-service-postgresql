@@ -14,19 +14,27 @@ func TestPostgresqlStandaloneValidator_ValidateUpdate(t *testing.T) {
 		givenNewSpec  *v1alpha1.PostgresqlStandalone
 		expectedError string
 	}{
-		"GivenSameMajorVersion_ThenExpectNoError": {
+		"GivenMajorVersion_WhenVersionSame_ThenExpectNil": {
 			givenOldSpec: &v1alpha1.PostgresqlStandalone{
 				Spec: v1alpha1.PostgresqlStandaloneSpec{
-					Parameters: v1alpha1.PostgresqlStandaloneParameters{MajorVersion: v1alpha1.PostgresqlVersion14},
+					Parameters: v1alpha1.PostgresqlStandaloneParameters{
+						MajorVersion: v1alpha1.PostgresqlVersion14,
+						Resources: v1alpha1.Resources{
+							StorageResources: v1alpha1.StorageResources{StorageCapacity: parseResource("1Gi")},
+						}},
 				},
 			},
 			givenNewSpec: &v1alpha1.PostgresqlStandalone{
 				Spec: v1alpha1.PostgresqlStandaloneSpec{
-					Parameters: v1alpha1.PostgresqlStandaloneParameters{MajorVersion: v1alpha1.PostgresqlVersion14},
+					Parameters: v1alpha1.PostgresqlStandaloneParameters{
+						MajorVersion: v1alpha1.PostgresqlVersion14,
+						Resources: v1alpha1.Resources{
+							StorageResources: v1alpha1.StorageResources{StorageCapacity: parseResource("1Gi")},
+						}},
 				},
 			},
 		},
-		"GivenDifferentMajorVersion_ThenExceptError": {
+		"GivenMajorVersion_WhenVersionDifferent_ThenExpectError": {
 			givenOldSpec: &v1alpha1.PostgresqlStandalone{
 				Spec: v1alpha1.PostgresqlStandaloneSpec{
 					Parameters: v1alpha1.PostgresqlStandaloneParameters{MajorVersion: v1alpha1.PostgresqlVersion14},
@@ -38,6 +46,39 @@ func TestPostgresqlStandaloneValidator_ValidateUpdate(t *testing.T) {
 				},
 			},
 			expectedError: "major version cannot be changed once specified at creation time",
+		},
+		"GivenStorageCapacity_WhenIncreased_ThenExpectNil": {
+			givenOldSpec: &v1alpha1.PostgresqlStandalone{
+				Spec: v1alpha1.PostgresqlStandaloneSpec{
+					Parameters: v1alpha1.PostgresqlStandaloneParameters{Resources: v1alpha1.Resources{
+						StorageResources: v1alpha1.StorageResources{StorageCapacity: parseResource("1Gi")},
+					}},
+				},
+			},
+			givenNewSpec: &v1alpha1.PostgresqlStandalone{
+				Spec: v1alpha1.PostgresqlStandaloneSpec{
+					Parameters: v1alpha1.PostgresqlStandaloneParameters{Resources: v1alpha1.Resources{
+						StorageResources: v1alpha1.StorageResources{StorageCapacity: parseResource("1.1Gi")},
+					}},
+				},
+			},
+		},
+		"GivenStorageCapacity_WhenDecreased_ThenExpectError": {
+			givenOldSpec: &v1alpha1.PostgresqlStandalone{
+				Spec: v1alpha1.PostgresqlStandaloneSpec{
+					Parameters: v1alpha1.PostgresqlStandaloneParameters{Resources: v1alpha1.Resources{
+						StorageResources: v1alpha1.StorageResources{StorageCapacity: parseResource("1Gi")},
+					}},
+				},
+			},
+			givenNewSpec: &v1alpha1.PostgresqlStandalone{
+				Spec: v1alpha1.PostgresqlStandaloneSpec{
+					Parameters: v1alpha1.PostgresqlStandaloneParameters{Resources: v1alpha1.Resources{
+						StorageResources: v1alpha1.StorageResources{StorageCapacity: parseResource("0.9Gi")},
+					}},
+				},
+			},
+			expectedError: "storage capacity cannot be decreased",
 		},
 	}
 	for name, tc := range tests {

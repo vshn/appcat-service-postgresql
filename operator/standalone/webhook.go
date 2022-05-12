@@ -49,11 +49,15 @@ func (v *PostgresqlStandaloneValidator) ValidateCreate(ctx context.Context, obj 
 // ValidateUpdate implements admission.CustomValidator.
 // This validator:
 //  - prevents selecting another major version (major version upgrade is currently unsupported)
+//  - prevents storage capacity to be decreased
 func (v *PostgresqlStandaloneValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) error {
 	newInstance := newObj.(*v1alpha1.PostgresqlStandalone)
 	oldInstance := oldObj.(*v1alpha1.PostgresqlStandalone)
 	if newInstance.Spec.Parameters.MajorVersion != oldInstance.Spec.Parameters.MajorVersion {
 		return fmt.Errorf("major version cannot be changed once specified at creation time")
+	}
+	if newInstance.Spec.Parameters.Resources.StorageCapacity.Cmp(*oldInstance.Spec.Parameters.Resources.StorageCapacity) == -1 {
+		return fmt.Errorf("storage capacity cannot be decreased")
 	}
 	return nil
 }
