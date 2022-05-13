@@ -25,6 +25,15 @@ jobs:
         with:
           fetch-depth: '0'
 
+      - uses: actions/setup-go@v3
+
+      - uses: actions/cache@v3
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
       - name: Configure Git
         run: |
           git config user.name "$GITHUB_ACTOR"
@@ -35,7 +44,6 @@ jobs:
 
       - name: Get chart versions
         run: |
-          git tag --sort=taggerdate --list "provider-postgresql-*"
           echo "CHART_VERSION=$(yq e '.version' charts/${CHART_NAME}/Chart.yaml)" >> $GITHUB_ENV
           echo "PREVIOUS_CHART_VERSION=$(git tag --sort=taggerdate --list "provider-postgresql-*" | tail -n 2 | head -n 1 | grep --perl-regexp --only-matching '[0-9.]+')" >> $GITHUB_ENV
 

@@ -16,5 +16,7 @@ jobs:
         with:
           fetch-depth: '0'
 
+      - uses: actions/setup-go@v3
+
       - name: Verify charts are upt-do-date
         run: make chart-lint
