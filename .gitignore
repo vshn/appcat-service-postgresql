@@ -14,5 +14,7 @@ node_modules/
 # kind
 .kind/
 
-# Crossplane
-package/*.xpkg
+# Charts
+charts/.artifacts
+.cr-release-packages/
+.cr-index/

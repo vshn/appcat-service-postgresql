@@ -9,8 +9,9 @@ $(helm_docs_bin):
 	cd charts && go build -o $@ github.com/norwoodj/helm-docs/cmd/helm-docs
 
 .PHONY: chart-prepare
-chart-prepare: ## Prepare the Helm charts
-	@find charts -type f -name Makefile | sed 's|/[^/]*$$||' | xargs -I '%' make -C '%' prepare
+chart-prepare: generate-go ## Prepare the Helm charts
+	@mkdir -p charts/.artifacts
+	@find charts -type f -name Makefile | sed 's|/[^/]*$$||' | xargs -I '%' make -C '%' clean prepare
 
 .PHONY: chart-docs
 chart-docs: $(helm_docs_bin) ## Creates the Chart READMEs from template and values.yaml files
@@ -20,9 +21,4 @@ chart-docs: $(helm_docs_bin) ## Creates the Chart READMEs from template and valu
 		--template-files ./.github/helm-docs-footer.gotmpl.md
 
 .PHONY: chart-lint
-chart-lint: export charts_dir = charts
-chart-lint: ## Checks if chart versions have been changed
-	@echo "    If this target fails, one of the listed charts below has not its version updated!"
-	@changed_charts=$$(git diff --dirstat=files,0 origin/master..HEAD -- $(charts_dir) | cut -d '/' -f 2 | uniq) ; \
-	  echo $$changed_charts ; echo ;  \
-	  for dir in $$changed_charts; do git diff origin/master..HEAD -- "$(charts_dir)/$${dir}/Chart.yaml" | grep -H --label=$${dir} "+version"; done
+chart-lint: chart-prepare chart-docs ## Lint charts
