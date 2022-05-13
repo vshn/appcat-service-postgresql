@@ -22,3 +22,5 @@ chart-docs: $(helm_docs_bin) ## Creates the Chart READMEs from template and valu
 
 .PHONY: chart-lint
 chart-lint: chart-prepare chart-docs ## Lint charts
+	@echo 'Check for uncommitted changes ...'
+	git diff --exit-code
