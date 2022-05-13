@@ -43,8 +43,9 @@ jobs:
 
       - name: Package Helm chart
         run: |
-          cr package charts/${CHART_NAME}
           mkdir -p .cr-index
+          cr package charts/${CHART_NAME}
+          cr upload
           cr index --push
         env:
           CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
