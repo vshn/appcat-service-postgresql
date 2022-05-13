@@ -40,5 +40,6 @@ func SetupWebhook(mgr ctrl.Manager) error {
 		WithValidator(&PostgresqlStandaloneValidator{
 			kube: mgr.GetClient(),
 		}).
+		WithDefaulter(&PostgresqlStandaloneDefaulter{}).
 		Complete()
 }

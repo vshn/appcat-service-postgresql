@@ -12,8 +12,7 @@ spec:
     resources:
       memoryLimit: 256Mi
       storageCapacity: 1Gi
-  writeConnectionSecretToRef:
-    name: my-secret
+  writeConnectionSecretToRef: {}
 status:
   conditions:
   - lastTransitionTime: "2022-04-27T15:20:13Z"
