@@ -1,7 +1,7 @@
-webhook_gen_src = templates/manifests.yaml
+webhook_gen_src = ../../package/webhook/manifests.yaml
 webhook_gen_tgt = templates/webhook.yaml
 
-rbac_gen_src = templates/role.yaml
+rbac_gen_src = ../../package/rbac/role.yaml
 rbac_gen_tgt = templates/clusterrole.yaml
 
 ifeq ($(shell uname -s),Darwin)
@@ -11,20 +11,24 @@ else
 endif
 
 $(webhook_gen_tgt):
-	@yq -i e '.metadata.name="{{ include \"provider-postgresql.fullname\" . }}", del(.metadata.creationTimestamp)' $(webhook_gen_src)
-	@yq -i e '.metadata.labels.replace="LABELS"' $(webhook_gen_src)
-	@yq -i e '.webhooks[0].clientConfig.caBundle="{{ .Values.webhook.caBundle }}"' $(webhook_gen_src)
-	@yq -i e '.webhooks[0].clientConfig.service.name="{{ include \"provider-postgresql.fullname\" . }}"' $(webhook_gen_src)
-	@yq -i e '.webhooks[0].clientConfig.service.namespace="{{ .Release.Namespace }}"' $(webhook_gen_src)
-	@$(sed) -e 's/replace: LABELS/{{- include "provider-postgresql.labels" . | nindent 4 }}/g' $(webhook_gen_src)
-	@mv $(webhook_gen_src) $(webhook_gen_tgt)
+	@cp $(webhook_gen_src) $@
+	@yq -i e '.metadata.name="{{ include \"provider-postgresql.fullname\" . }}", del(.metadata.creationTimestamp)' $@
+	@yq -i e '.metadata.labels.replace="LABELS"' $@
+	@yq -i e '.webhooks[0].clientConfig.caBundle="{{ .Values.webhook.caBundle }}"' $@
+	@yq -i e '.webhooks[0].clientConfig.service.name="{{ include \"provider-postgresql.fullname\" . }}"' $@
+	@yq -i e '.webhooks[0].clientConfig.service.namespace="{{ .Release.Namespace }}"' $@
+	@$(sed) -e 's/replace: LABELS/{{- include "provider-postgresql.labels" . | nindent 4 }}/g' $@
 
 $(rbac_gen_tgt):
-	@yq -i e '.metadata.name="{{ include \"provider-postgresql.fullname\" . }}", del(.metadata.creationTimestamp)' $(rbac_gen_src)
-	@yq -i e '.metadata.labels.replace="LABELS"' $(rbac_gen_src)
-	@$(sed) -e 's/replace: LABELS/{{- include "provider-postgresql.labels" . | nindent 4 }}/g' $(rbac_gen_src)
-	@mv $(rbac_gen_src) $(rbac_gen_tgt)
+	@cp $(rbac_gen_src) $@
+	@yq -i e '.metadata.name="{{ include \"provider-postgresql.fullname\" . }}", del(.metadata.creationTimestamp)' $@
+	@yq -i e '.metadata.labels.replace="LABELS"' $@
+	@$(sed) -e 's/replace: LABELS/{{- include "provider-postgresql.labels" . | nindent 4 }}/g' $@
 
 .PHONY: prepare
 prepare: $(rbac_gen_tgt) $(webhook_gen_tgt) ## Helmify generated artifacts
-	cat ../../package/crds/*.yaml | yq > crds.yaml
+	cat ../../package/crds/*.yaml | yq > ../.artifacts/crds.yaml
+
+.PHONY: clean
+clean: ## Clean generated artifacts
+	rm -rf $(rbac_gen_tgt) $(webhook_gen_tgt)

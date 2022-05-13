@@ -21,15 +21,17 @@ The PR template reminds you how to separate and label PRs.
 
 == Operator Release
 
-Releasing a new version of the operator requires pushing a new Git tag, following the SemVer schema with a `v` prefix.
+Releasing a new version of the operator requires pushing a **new Git tag**, following the SemVer schema with a **`v` prefix**.
 Optionally, for prereleases they may contain a ascending release candidate suffix with `-rc#`.
 
-Examples:
-
+.Possible Operator Git tags
+[example]
+====
 - `v0.1.2`
 - `v1.4.0`
 - `v2.0.0-rc1`
 - `v2.0.0-rc2`
+====
 
 The changelog will be automatically created and is based on merged PRs.
 PRs that affect Helm charts are excluded.
@@ -42,12 +44,19 @@ Once the operator is released, consider creating another PR that updates the Hel
 
 == Helm Chart Release
 
-Releasing a new version of a Helm chart requires merging the chart changes to `master` branch.
-It's recommended to create a PR for each Helm chart separately.
+Releasing a new version of a Helm chart requires pushing a **new Git tag**, following the SemVer schema with a **chart name prefix**, for example `provider-postgresql-1.2.3`.
+It's recommended to create a PR for each Helm chart change separately.
+After merging a PR for a Helm chart it's _not_ required to immediately release it.
 
 The PR should only contain changes in the `charts/` directory.
-Each affected chart _must_ increase the version in `Chart.yaml` to an appropriate next version following SemVer.
+Each affected chart _must_ set the version in `Chart.yaml` to the same as the Git tag, following SemVer.
 The chart README _must_ be generated using `make chart-docs` to ensure that the README is generated using special comments in `values.yaml`.
+
+.Possible Helm chart Git tags
+[example]
+====
+- `provider-postgresql-1.2.3`
+====
 
 The changelog will be automatically created and is based on merged PRs.
 PRs that affect code changes are excluded.
@@ -58,3 +67,8 @@ The following labels must exist on a PR to be included in the changelog:
 - one of [`bug`, `enhancement`, `documentation`, `change`, `breaking`, `dependency`]
 
 If the Helm chart updates the image tag for the operator, it's recommended to set a title like `Update image tag to vx.y.z` or similar and set the `dependency` label.
+
+[NOTE]
+====
+Prereleases for Helm charts are currently not supported.
+====

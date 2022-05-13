@@ -58,14 +58,11 @@ lint: fmt vet generate chart-docs ## All-in-one linting
 	git diff --exit-code
 
 .PHONY: generate
-generate: generate-go generate-helm generate-docs ## All-in-one code generation
+generate: generate-go generate-docs ## All-in-one code generation
 
 .PHONY: generate-go
 generate-go: ## Generate Go artifacts
 	@go generate ./...
-
-.PHONY: generate-helm
-generate-helm: generate-go chart-prepare  ## 'Helmifies' artifacts that Kubebuilder generates
 
 .PHONY: generate-docs
 generate-docs: generate-go ## Generate example code snippets for documentation
