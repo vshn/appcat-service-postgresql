@@ -35,11 +35,15 @@ jobs:
 
       - name: Get chart versions
         run: |
+          git tag --sort=taggerdate --list "provider-postgresql-*"
           echo "CHART_VERSION=$(yq e '.version' charts/${CHART_NAME}/Chart.yaml)" >> $GITHUB_ENV
-          echo "PREVIOUS_CHART_VERSION=$(git for-each-ref --sort=-taggerdate --count=2 --format="%(refname:short)" "refs/tags/${CHART_NAME}-*" | tail -n 1 | grep --perl-regexp --only-matching '[0-9.]+')" >> $GITHUB_ENV
+          echo "PREVIOUS_CHART_VERSION=$(git tag --sort=taggerdate --list "provider-postgresql-*" | tail -n 2 | head -n 1 | grep --perl-regexp --only-matching '[0-9.]+')" >> $GITHUB_ENV
 
       - name: Prepare changelog config
         run: .github/changelog-charts.sh ${CHART_NAME}
+
+      - name: Generate additional artifacts
+        run: make chart-prepare
 
       - name: Package Helm chart
         run: |
