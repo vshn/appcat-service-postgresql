@@ -233,12 +233,12 @@ Otherwise, there could be issues with the release automation and the generated c
 <h2 id="_operator_release"><a class="anchor" href="#_operator_release"></a>Operator Release</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Releasing a new version of the operator requires pushing a new Git tag, following the SemVer schema with a <code>v</code> prefix.
+<p>Releasing a new version of the operator requires pushing a <strong>new Git tag</strong>, following the SemVer schema with a <strong><code>v</code> prefix</strong>.
 Optionally, for prereleases they may contain a ascending release candidate suffix with <code>-rc#</code>.</p>
 </div>
-<div class="paragraph">
-<p>Examples:</p>
-</div>
+<div class="exampleblock">
+<div class="title">Example 1. Possible Operator Git tags</div>
+<div class="content">
 <div class="ulist">
 <ul>
 <li>
@@ -254,6 +254,8 @@ Optionally, for prereleases they may contain a ascending release candidate suffi
 <p><code>v2.0.0-rc2</code></p>
 </li>
 </ul>
+</div>
+</div>
 </div>
 <div class="paragraph">
 <p>The changelog will be automatically created and is based on merged PRs.
@@ -279,13 +281,26 @@ The following labels must exist on a PR to be included in the changelog:</p>
 <h2 id="_helm_chart_release"><a class="anchor" href="#_helm_chart_release"></a>Helm Chart Release</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Releasing a new version of a Helm chart requires merging the chart changes to <code>master</code> branch.
-It&#8217;s recommended to create a PR for each Helm chart separately.</p>
+<p>Releasing a new version of a Helm chart requires pushing a <strong>new Git tag</strong>, following the SemVer schema with a <strong>chart name prefix</strong>, for example <code>provider-postgresql-1.2.3</code>.
+It&#8217;s recommended to create a PR for each Helm chart change separately.
+After merging a PR for a Helm chart it&#8217;s <em>not</em> required to immediately release it.</p>
 </div>
 <div class="paragraph">
 <p>The PR should only contain changes in the <code>charts/</code> directory.
-Each affected chart <em>must</em> increase the version in <code>Chart.yaml</code> to an appropriate next version following SemVer.
+Each affected chart <em>must</em> set the version in <code>Chart.yaml</code> to the same as the Git tag, following SemVer.
 The chart README <em>must</em> be generated using <code>make chart-docs</code> to ensure that the README is generated using special comments in <code>values.yaml</code>.</p>
+</div>
+<div class="exampleblock">
+<div class="title">Example 2. Possible Helm chart Git tags</div>
+<div class="content">
+<div class="ulist">
+<ul>
+<li>
+<p><code>provider-postgresql-1.2.3</code></p>
+</li>
+</ul>
+</div>
+</div>
 </div>
 <div class="paragraph">
 <p>The changelog will be automatically created and is based on merged PRs.
@@ -307,6 +322,20 @@ The following labels must exist on a PR to be included in the changelog:</p>
 </div>
 <div class="paragraph">
 <p>If the Helm chart updates the image tag for the operator, it&#8217;s recommended to set a title like <code>Update image tag to vx.y.z</code> or similar and set the <code>dependency</code> label.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Prereleases for Helm charts are currently not supported.</p>
+</div>
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
