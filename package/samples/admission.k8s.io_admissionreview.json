@@ -41,6 +41,9 @@
         "creationTimestamp": null
       },
       "spec": {
+        "writeConnectionSecretToRef": {
+          "name": "my-secret"
+        },
         "forInstance": {
           "resources": {
             "memoryLimit": "256Mi",

@@ -122,6 +122,7 @@ func newPostgresqlStandaloneSample() *v1alpha1.PostgresqlStandalone {
 		},
 		ObjectMeta: metav1.ObjectMeta{Name: "my-instance", Namespace: "default", Generation: 1},
 		Spec: v1alpha1.PostgresqlStandaloneSpec{
+			ConnectableInstance: v1alpha1.ConnectableInstance{WriteConnectionSecretToRef: v1alpha1.ConnectionSecretRef{Name: "my-secret"}},
 			Parameters: v1alpha1.PostgresqlStandaloneParameters{
 				Resources: v1alpha1.Resources{
 					ComputeResources: v1alpha1.ComputeResources{MemoryLimit: parseResource("256Mi")},

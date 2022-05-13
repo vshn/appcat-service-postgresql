@@ -39,6 +39,8 @@ type PostgresqlStandaloneParameters struct {
 
 // PostgresqlStandaloneSpec defines the desired state of a PostgresqlStandalone.
 type PostgresqlStandaloneSpec struct {
+	ConnectableInstance `json:",inline"`
+
 	// Parameters defines the PostgreSQL specific settings.
 	Parameters PostgresqlStandaloneParameters `json:"forInstance,omitempty"`
 }
