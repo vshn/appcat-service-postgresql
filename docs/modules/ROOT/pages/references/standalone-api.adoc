@@ -1,0 +1,42 @@
+= API: PostgresqlStandalone
+
+.PostgresqlStandalone Kubernetes API spec
+[example]
+====
+[source,yaml]
+----
+include::example$standalone.yaml[]
+----
+====
+
+== `forInstance`
+
+=== `enableSuperUser`
+
+Exposes the credentials for the `postgres` super user into the connection secret.
+This allows complete control over the database server.
+
+For example, users can create multiple databases and users on the same instance.
+
+=== `majorVersion`
+
+The major version for PostgreSQL to install.
+
+[IMPORTANT]
+====
+Once the instance resource is created using a specific major version, it cannot be changed afterwards.
+====
+
+=== `resources`
+
+`memoryLimit`::
+Maximum memory the instance can use (shared over all databases).
+If the usage exceeds this limit, an OOM (Out-of-Memory) exception causes the instance to crash.
+In such cases the instance automatically restarted by Kubernetes.
+
+`storageCapacity`::
+Maximum storage capacity allocated for the instance (shared over all databases).
+If the disk usage exceeds this limit, PostgreSQL will encounter Out-of-Space errors and crash.
+In such cases the user must manually increase the storage limit.
++
+NOTE: Storage capacity can only be increased (grow).
