@@ -9,7 +9,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -21,19 +20,6 @@ var (
 	// ServiceNamespacePrefix is the namespace prefix which the controller uses to create the namespaces where the PostgreSQL instances are actually deployed in.
 	ServiceNamespacePrefix = "sv-postgresql-s-"
 )
-
-// SetupController adds a controller that reconciles v1alpha1.PostgresqlStandalone managed resources.
-func SetupController(mgr ctrl.Manager) error {
-	name := strings.ToLower(v1alpha1.PostgresqlStandaloneGroupKind)
-
-	return ctrl.NewControllerManagedBy(mgr).
-		Named(name).
-		For(&v1alpha1.PostgresqlStandalone{}).
-		WithEventFilter(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{}, predicate.LabelChangedPredicate{})).
-		Complete(&PostgresStandaloneReconciler{
-			client: mgr.GetClient(),
-		})
-}
 
 // +kubebuilder:rbac:groups=postgresql.appcat.vshn.io,resources=postgresqlstandalones,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=postgresql.appcat.vshn.io,resources=postgresqlstandalones/status;postgresqlstandalones/finalizers,verbs=get;update;patch

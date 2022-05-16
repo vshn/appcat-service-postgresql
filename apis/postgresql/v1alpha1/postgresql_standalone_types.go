@@ -39,6 +39,8 @@ type PostgresqlStandaloneParameters struct {
 
 // PostgresqlStandaloneSpec defines the desired state of a PostgresqlStandalone.
 type PostgresqlStandaloneSpec struct {
+	ConnectableInstance `json:",inline"`
+
 	// Parameters defines the PostgreSQL specific settings.
 	Parameters PostgresqlStandaloneParameters `json:"forInstance,omitempty"`
 }
@@ -56,6 +58,7 @@ type PostgresqlStandaloneStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced,categories={appcat,postgresql}
 // +kubebuilder:webhook:verbs=create;update;delete,path=/validate-postgresql-appcat-vshn-io-v1alpha1-postgresqlstandalone,mutating=false,failurePolicy=fail,groups=postgresql.appcat.vshn.io,resources=postgresqlstandalones,versions=v1alpha1,name=postgresqlstandalones.postgresql.appcat.vshn.io,sideEffects=None,admissionReviewVersions=v1
+// +kubebuilder:webhook:verbs=create;update,path=/mutate-postgresql-appcat-vshn-io-v1alpha1-postgresqlstandalone,mutating=true,failurePolicy=fail,groups=postgresql.appcat.vshn.io,resources=postgresqlstandalones,versions=v1alpha1,name=postgresqlstandalones.postgresql.appcat.vshn.io,sideEffects=None,admissionReviewVersions=v1
 
 // PostgresqlStandalone is the user-facing and consumer-friendly API that abstracts the provisioning of standalone Postgresql service instances.
 type PostgresqlStandalone struct {

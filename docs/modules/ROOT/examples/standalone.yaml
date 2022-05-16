@@ -10,3 +10,4 @@ spec:
     resources:
       memoryLimit: 256Mi
       storageCapacity: 1Gi
+  writeConnectionSecretToRef: {}

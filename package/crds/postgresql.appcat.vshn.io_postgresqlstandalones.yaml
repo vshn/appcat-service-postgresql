@@ -88,6 +88,15 @@ spec:
                         x-kubernetes-int-or-string: true
                     type: object
                 type: object
+              writeConnectionSecretToRef:
+                description: ConnectionSecretRef contains the reference where connection
+                  details should be made available.
+                properties:
+                  name:
+                    description: Name is the Secret name to where the connection details
+                      should be written to after creating an instance.
+                    type: string
+                type: object
             type: object
           status:
             description: PostgresqlStandaloneStatus represents the observed state
