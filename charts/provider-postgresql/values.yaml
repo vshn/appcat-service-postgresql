@@ -58,6 +58,8 @@ service:
   port: 80
 
 webhook:
+  # -- Enable admission webhooks
+  enabled: true
   # -- Certificate in PEM format for the ValidatingWebhookConfiguration.
   caBundle: ""
   # -- Certificate in PEM format for the TLS secret.

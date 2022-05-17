@@ -17,7 +17,9 @@ $(webhook_gen_tgt):
 	@yq -i e '.webhooks[0].clientConfig.caBundle="{{ .Values.webhook.caBundle }}"' $@
 	@yq -i e '.webhooks[0].clientConfig.service.name="{{ include \"provider-postgresql.fullname\" . }}"' $@
 	@yq -i e '.webhooks[0].clientConfig.service.namespace="{{ .Release.Namespace }}"' $@
+	@$(sed) -e '1s/^/{{- if .Values.webhook.enabled -}}\n/' $@
 	@$(sed) -e 's/replace: LABELS/{{- include "provider-postgresql.labels" . | nindent 4 }}/g' $@
+	@echo "{{- end -}}" >> $@
 
 $(rbac_gen_tgt):
 	@cp $(rbac_gen_src) $@
