@@ -57,6 +57,7 @@ Document your changes in values.yaml and let `make chart-docs` generate this sec
 | tolerations | list | `[]` |  |
 | webhook.caBundle | string | `""` | Certificate in PEM format for the ValidatingWebhookConfiguration. |
 | webhook.certificate | string | `""` | Certificate in PEM format for the TLS secret. |
+| webhook.enabled | bool | `true` | Enable admission webhooks |
 | webhook.privateKey | string | `""` | Private key in PEM format for the TLS secret. |
 
 <!---

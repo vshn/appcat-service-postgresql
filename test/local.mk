@@ -30,7 +30,7 @@ local-install: crossplane-setup kind-load-image install-crd webhook-cert ## Inst
 		--set "operator.args[1]=operator" \
 		--set podAnnotations.date="$(shell date)" \
 		--values $(webhook_values) \
-		--wait
+		--wait $(local_install_args)
 
 .PHONY: kind-run-operator
 kind-run-operator: export KUBECONFIG = $(KIND_KUBECONFIG)
