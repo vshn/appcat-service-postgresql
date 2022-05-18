@@ -23,6 +23,9 @@ var (
 
 // +kubebuilder:rbac:groups=postgresql.appcat.vshn.io,resources=postgresqlstandalones,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=postgresql.appcat.vshn.io,resources=postgresqlstandalones/status;postgresqlstandalones/finalizers,verbs=get;update;patch
+// +kubebuilder:rbac:groups=postgresql.appcat.vshn.io,resources=postgresqlstandaloneoperatorconfigs,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=postgresql.appcat.vshn.io,resources=postgresqlstandaloneoperatorconfigs/status;postgresqlstandaloneoperatorconfigs/finalizers,verbs=get;update;patch
+
 // +kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;create;update
