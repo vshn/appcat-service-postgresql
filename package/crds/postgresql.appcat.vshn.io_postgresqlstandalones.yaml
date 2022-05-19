@@ -176,7 +176,13 @@ spec:
               helmChart:
                 description: HelmChart is the observed deployed Helm chart version.
                 properties:
+                  deploymentNamespace:
+                    description: DeploymentNamespace is the observed namespace name
+                      where the instance is deployed.
+                    type: string
                   modifiedAt:
+                    description: ModifiedAt is the timestamp when the helm release
+                      has been last modified.
                     format: date-time
                     type: string
                   name:

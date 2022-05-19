@@ -16,6 +16,9 @@ type ChartMeta struct {
 
 // ChartMetaStatus contains metadata to a deployed Helm chart.
 type ChartMetaStatus struct {
-	ChartMeta  `json:",inline"`
-	ModifiedAt *metav1.Time `json:"modifiedAt,omitempty"`
+	ChartMeta `json:",inline"`
+	// ModifiedAt is the timestamp when the helm release has been last modified.
+	ModifiedAt metav1.Time `json:"modifiedAt,omitempty"`
+	// DeploymentNamespace is the observed namespace name where the instance is deployed.
+	DeploymentNamespace string `json:"deploymentNamespace,omitempty"`
 }

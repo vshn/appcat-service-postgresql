@@ -107,7 +107,7 @@ func generatePostgresStandaloneSample() {
 					Version:    "11.1.23",
 					Name:       "postgresql",
 				},
-				ModifiedAt: &modified,
+				ModifiedAt: modified,
 			},
 		},
 	}

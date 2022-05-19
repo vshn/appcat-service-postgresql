@@ -104,7 +104,7 @@ func (r *PostgresStandaloneReconciler) Update(ctx context.Context, instance *v1a
 		return reconcile.Result{}, err
 	}
 	// ensure status conditions are up-to-date.
-	instance.Status.SetObservedGeneration(instance.ObjectMeta)
+	instance.Status.SetObservedGeneration(instance)
 	err = r.client.Status().Update(ctx, instance.DeepCopy())
 	return reconcile.Result{}, err
 }

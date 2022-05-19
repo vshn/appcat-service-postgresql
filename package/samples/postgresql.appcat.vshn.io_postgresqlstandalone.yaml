@@ -17,7 +17,7 @@ status:
   conditions:
   - lastTransitionTime: "2022-04-27T15:20:13Z"
     message: ""
-    reason: The resource is ready
+    reason: Available
     status: "True"
     type: Ready
   deploymentStrategy: HelmChart
