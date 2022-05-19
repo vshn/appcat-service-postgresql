@@ -10,8 +10,10 @@ import (
 	helmv1beta1 "github.com/crossplane-contrib/provider-helm/apis/release/v1beta1"
 	crossplanev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/lucasepe/codename"
+	"github.com/vshn/appcat-service-postgresql/apis/conditions"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilrand "k8s.io/apimachinery/pkg/util/rand"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -64,11 +66,28 @@ func (p *CreateStandalonePipeline) RunPipeline(ctx context.Context) error {
 				pipeline.NewStepFromFunc("apply values from instance", p.applyValuesFromInstance),
 			),
 
+			pipeline.NewStepFromFunc("add finalizer", addFinalizerFn(p.instance, finalizer)),
+			pipeline.NewStepFromFunc("set creating condition", setConditionFn(p.instance, &p.instance.Status.Conditions, conditions.Creating())),
+
 			pipeline.NewPipeline().WithNestedSteps("deploy resources",
 				pipeline.NewStepFromFunc("ensure deployment namespace", p.ensureDeploymentNamespace),
 				pipeline.NewStepFromFunc("ensure credentials secret", p.ensureCredentialsSecret),
-				pipeline.NewStepFromFunc("ensure helmrelease exists", p.ensureHelmRelease),
+				pipeline.NewStepFromFunc("ensure helm release", p.ensureHelmRelease),
 			),
+
+			pipeline.NewStepFromFunc("enrich status with chart meta", p.enrichStatus),
+		).
+		RunWithContext(ctx).Err()
+}
+
+// WaitUntilAllResourceReady runs a pipeline that verifies if all dependent resources are ready.
+// It will add the conditions.TypeReady condition to the status field (and update it) if it's considered ready.
+// No error is returned in case the instance is not considered ready.
+func (p *CreateStandalonePipeline) WaitUntilAllResourceReady(ctx context.Context) error {
+	return pipeline.NewPipeline().
+		WithSteps(
+			pipeline.NewStepFromFunc("check if helm release is ready", p.checkHelmRelease),
+			pipeline.If(p.isHelmReleaseReady, pipeline.NewStepFromFunc("mark instance ready", p.markInstanceAsReady)),
 		).
 		RunWithContext(ctx).Err()
 }
@@ -226,6 +245,47 @@ func (p *CreateStandalonePipeline) ensureHelmRelease(ctx context.Context) error 
 		},
 	}
 	return Upsert(ctx, p.client, helmRelease)
+}
+
+func (p *CreateStandalonePipeline) enrichStatus(ctx context.Context) error {
+	p.instance.Status.HelmChart = &v1alpha1.ChartMetaStatus{
+		ChartMeta:           *p.helmChart,
+		DeploymentNamespace: p.deploymentNamespace.Name,
+	}
+	p.instance.Status.DeploymentStrategy = v1alpha1.StrategyHelmChart
+	p.instance.Status.SetObservedGeneration(p.instance)
+	err := p.client.Status().Update(ctx, p.instance)
+	return err
+}
+
+// checkHelmRelease fetches the Helm release for the given instance.
+func (p *CreateStandalonePipeline) checkHelmRelease(ctx context.Context) error {
+	p.deploymentNamespace = &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: p.instance.Status.HelmChart.DeploymentNamespace}}
+	helmRelease := &helmv1beta1.Release{}
+	err := p.client.Get(ctx, client.ObjectKey{Name: p.instance.Status.HelmChart.DeploymentNamespace}, helmRelease)
+	if err != nil {
+		return err
+	}
+	if helmRelease.Status.Synced {
+		if readyCondition := FindCrossplaneCondition(helmRelease.Status.Conditions, crossplanev1.TypeReady); readyCondition != nil && readyCondition.Status == corev1.ConditionTrue {
+			p.instance.Status.HelmChart.ModifiedAt = readyCondition.LastTransitionTime
+		}
+	}
+	return nil
+}
+
+// isHelmReleaseReady returns true if the ModifiedAt is non-zero.
+//
+// Note: This only works for first-time deployments. In the future another mechanism might be better.
+func (p *CreateStandalonePipeline) isHelmReleaseReady(_ context.Context) bool {
+	return !p.instance.Status.HelmChart.ModifiedAt.IsZero()
+}
+
+// markInstanceAsReady marks an instance immediately as ready by updating the status conditions.
+func (p *CreateStandalonePipeline) markInstanceAsReady(ctx context.Context) error {
+	meta.SetStatusCondition(&p.instance.Status.Conditions, conditions.Ready())
+	meta.RemoveStatusCondition(&p.instance.Status.Conditions, conditions.TypeCreating)
+	return p.client.Status().Update(ctx, p.instance)
 }
 
 func getCredentialSecretName() string {
