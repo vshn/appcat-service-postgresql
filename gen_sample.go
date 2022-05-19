@@ -51,7 +51,7 @@ func generatePostgresStandaloneConfigSample() {
 			Kind:       v1alpha1.PostgresqlStandaloneOperatorConfigKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "platform-config",
+			Name:      "platform-config-v14",
 			Namespace: "postgresql-system",
 			Labels: map[string]string{
 				v1alpha1.PostgresqlMajorVersionLabelKey: v1alpha1.PostgresqlVersion14.String(),
