@@ -268,17 +268,17 @@ func (p *CreateStandalonePipeline) checkHelmRelease(ctx context.Context) error {
 	}
 	if helmRelease.Status.Synced {
 		if readyCondition := FindCrossplaneCondition(helmRelease.Status.Conditions, crossplanev1.TypeReady); readyCondition != nil && readyCondition.Status == corev1.ConditionTrue {
-			p.instance.Status.HelmChart.ModifiedAt = readyCondition.LastTransitionTime
+			p.instance.Status.HelmChart.ModifiedTime = readyCondition.LastTransitionTime
 		}
 	}
 	return nil
 }
 
-// isHelmReleaseReady returns true if the ModifiedAt is non-zero.
+// isHelmReleaseReady returns true if the ModifiedTime is non-zero.
 //
 // Note: This only works for first-time deployments. In the future another mechanism might be better.
 func (p *CreateStandalonePipeline) isHelmReleaseReady(_ context.Context) bool {
-	return !p.instance.Status.HelmChart.ModifiedAt.IsZero()
+	return !p.instance.Status.HelmChart.ModifiedTime.IsZero()
 }
 
 // markInstanceAsReady marks an instance immediately as ready by updating the status conditions.

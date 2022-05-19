@@ -180,7 +180,7 @@ func (ts *CreateStandalonePipelineSuite) Test_EnrichStatus() {
 	ts.Assert().Equal(p.helmChart.Repository, result.Status.HelmChart.Repository, "helm chart repo")
 	ts.Assert().Equal(p.helmChart.Version, result.Status.HelmChart.Version, "helm chart version")
 	ts.Assert().Equal(p.deploymentNamespace.Name, result.Status.HelmChart.DeploymentNamespace, "deployment namespace")
-	ts.Assert().True(result.Status.HelmChart.ModifiedAt.IsZero(), "modification date comes later")
+	ts.Assert().True(result.Status.HelmChart.ModifiedTime.IsZero(), "modification date comes later")
 }
 
 func (ts *CreateStandalonePipelineSuite) Test_CheckHelmRelease() {
@@ -204,7 +204,7 @@ func (ts *CreateStandalonePipelineSuite) Test_CheckHelmRelease() {
 		ts.Require().NoError(err)
 
 		// Assert
-		ts.Assert().True(p.instance.Status.HelmChart.ModifiedAt.IsZero())
+		ts.Assert().True(p.instance.Status.HelmChart.ModifiedTime.IsZero())
 	})
 
 	ts.Run("check ready release", func() {
@@ -227,6 +227,6 @@ func (ts *CreateStandalonePipelineSuite) Test_CheckHelmRelease() {
 		ts.Require().NoError(err)
 
 		// Assert
-		ts.Assert().Equal(modifiedDate, p.instance.Status.HelmChart.ModifiedAt)
+		ts.Assert().Equal(modifiedDate, p.instance.Status.HelmChart.ModifiedTime)
 	})
 }
