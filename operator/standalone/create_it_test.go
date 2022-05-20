@@ -126,7 +126,7 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureCredentialSecret() {
 
 	// Assert
 	result := &corev1.Secret{}
-	ts.FetchResource(types.NamespacedName{Namespace: ns, Name: "instance-credentials"}, result)
+	ts.FetchResource(types.NamespacedName{Namespace: ns, Name: "postgresql-credentials"}, result)
 	ts.Assert().Equal("instance", result.Labels["app.kubernetes.io/instance"], "instance label")
 	// Note: Even though we access "Data", the content is not encoded in base64 in envtest.
 	ts.Assert().Len(result.Data["password"], 40, "password length")

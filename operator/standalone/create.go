@@ -141,7 +141,7 @@ func (p *CreateStandalonePipeline) applyValuesFromInstance(_ context.Context) er
 	resources := HelmValues{
 		"auth": HelmValues{
 			"enablePostgresUser": p.instance.Spec.Parameters.EnableSuperUser,
-			"existingSecret":     getCredentialSecretName(p.instance),
+			"existingSecret":     getCredentialSecretName(),
 			"database":           p.instance.Name,
 		},
 		"primary": HelmValues{
@@ -154,6 +154,7 @@ func (p *CreateStandalonePipeline) applyValuesFromInstance(_ context.Context) er
 				"size": p.instance.Spec.Parameters.Resources.StorageCapacity.String(),
 			},
 		},
+		"fullnameOverride": getDeploymentName(),
 	}
 	p.helmValues.MergeWith(resources)
 	return nil
@@ -181,7 +182,7 @@ func (p *CreateStandalonePipeline) ensureCredentialsSecret(ctx context.Context) 
 	// https://github.com/bitnami/charts/tree/master/bitnami/postgresql
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      getCredentialSecretName(p.instance),
+			Name:      getCredentialSecretName(),
 			Namespace: p.deploymentNamespace.Name,
 			Labels:    getCommonLabels(p.instance.Name),
 		},
@@ -227,8 +228,12 @@ func (p *CreateStandalonePipeline) ensureHelmRelease(ctx context.Context) error 
 	return Upsert(ctx, p.client, helmRelease)
 }
 
-func getCredentialSecretName(obj client.Object) string {
-	return fmt.Sprintf("%s-credentials", obj.GetName())
+func getCredentialSecretName() string {
+	return fmt.Sprintf("%s-credentials", getDeploymentName())
+}
+
+func getDeploymentName() string {
+	return "postgresql"
 }
 
 func getCommonLabels(instanceName string) map[string]string {
