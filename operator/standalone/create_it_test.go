@@ -6,11 +6,9 @@ import (
 	"context"
 	"math/rand"
 	"testing"
-	"time"
 
 	pipeline "github.com/ccremer/go-command-pipeline"
 	helmv1beta1 "github.com/crossplane-contrib/provider-helm/apis/release/v1beta1"
-	crossplanev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/stretchr/testify/suite"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
 	"github.com/vshn/appcat-service-postgresql/operator/operatortest"
@@ -183,50 +181,24 @@ func (ts *CreateStandalonePipelineSuite) Test_EnrichStatus() {
 	ts.Assert().True(result.Status.HelmChart.ModifiedTime.IsZero(), "modification date comes later")
 }
 
-func (ts *CreateStandalonePipelineSuite) Test_CheckHelmRelease() {
+func (ts *CreateStandalonePipelineSuite) Test_FetchHelmRelease() {
 	// Arrange
 	p := &CreateStandalonePipeline{
-		instance: newInstance("check-release"),
+		instance: newInstance("fetch-release"),
 		client:   ts.Client,
 	}
 	p.instance.Status.HelmChart = &v1alpha1.ChartMetaStatus{
 		DeploymentNamespace: generateClusterScopedNameForInstance(),
 	}
-	modifiedDate := metav1.Date(2022, 05, 17, 17, 52, 35, 0, time.Local)
 	helmRelease := &helmv1beta1.Release{
 		ObjectMeta: metav1.ObjectMeta{Name: p.instance.Status.HelmChart.DeploymentNamespace},
 	}
 	ts.EnsureResources(helmRelease)
 
-	ts.Run("check non-ready release", func() {
-		// Act
-		err := p.checkHelmRelease(ts.Context)
-		ts.Require().NoError(err)
+	// Act
+	err := p.fetchHelmRelease(ts.Context)
+	ts.Require().NoError(err)
 
-		// Assert
-		ts.Assert().True(p.instance.Status.HelmChart.ModifiedTime.IsZero())
-	})
-
-	ts.Run("check ready release", func() {
-		helmRelease.Status = helmv1beta1.ReleaseStatus{
-			ResourceStatus: crossplanev1.ResourceStatus{
-				ConditionedStatus: crossplanev1.ConditionedStatus{Conditions: []crossplanev1.Condition{
-					{
-						Type:               crossplanev1.TypeReady,
-						Status:             corev1.ConditionTrue,
-						LastTransitionTime: modifiedDate,
-					},
-				}},
-			},
-			Synced: true,
-		}
-		ts.UpdateStatus(helmRelease)
-
-		// Act
-		err := p.checkHelmRelease(ts.Context)
-		ts.Require().NoError(err)
-
-		// Assert
-		ts.Assert().Equal(modifiedDate, p.instance.Status.HelmChart.ModifiedTime)
-	})
+	// Assert
+	ts.Assert().Equal(helmRelease, p.helmRelease)
 }

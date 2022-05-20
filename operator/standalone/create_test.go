@@ -2,10 +2,14 @@ package standalone
 
 import (
 	"testing"
+	"time"
 
+	helmv1beta1 "github.com/crossplane-contrib/provider-helm/apis/release/v1beta1"
+	crossplanev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -112,7 +116,6 @@ func TestCreateStandalonePipeline_ApplyValuesFromInstance(t *testing.T) {
 		config:   newPostgresqlStandaloneOperatorConfig("cfg", "postgresql-system"),
 		instance: newInstance("instance"),
 	}
-	p.instance.UID = "1aa230ee-63f7-4e7f-9ade-46818595e337"
 	err := p.applyValuesFromInstance(nil)
 	require.NoError(t, err)
 	assert.Equal(t, HelmValues{
@@ -133,6 +136,48 @@ func TestCreateStandalonePipeline_ApplyValuesFromInstance(t *testing.T) {
 		},
 		"fullnameOverride": "postgresql",
 	}, p.helmValues)
+}
+
+func TestCreateStandalonePipeline_IsHelmReleaseReady(t *testing.T) {
+	p := CreateStandalonePipeline{
+		instance: newInstance("release-ready"),
+	}
+	p.instance.Status.HelmChart = &v1alpha1.ChartMetaStatus{}
+
+	modifiedDate := metav1.Date(2022, 05, 17, 17, 52, 35, 0, time.Local)
+	p.helmRelease = &helmv1beta1.Release{
+		ObjectMeta: metav1.ObjectMeta{Name: generateClusterScopedNameForInstance()},
+	}
+	t.Run("check non-ready release", func(t *testing.T) {
+		// Act
+		result := p.isHelmReleaseReady(nil)
+
+		// Assert
+		assert.False(t, result)
+		assert.True(t, p.instance.Status.HelmChart.ModifiedTime.IsZero())
+	})
+
+	t.Run("check ready release", func(t *testing.T) {
+		p.helmRelease.Status = helmv1beta1.ReleaseStatus{
+			ResourceStatus: crossplanev1.ResourceStatus{
+				ConditionedStatus: crossplanev1.ConditionedStatus{Conditions: []crossplanev1.Condition{
+					{
+						Type:               crossplanev1.TypeReady,
+						Status:             corev1.ConditionTrue,
+						LastTransitionTime: modifiedDate,
+					},
+				}},
+			},
+			Synced: true,
+		}
+
+		// Act
+		result := p.isHelmReleaseReady(nil)
+
+		// Assert
+		assert.Equal(t, modifiedDate, p.instance.Status.HelmChart.ModifiedTime)
+		assert.True(t, result)
+	})
 }
 
 func newPostgresqlStandaloneOperatorConfig(name string, namespace string) *v1alpha1.PostgresqlStandaloneOperatorConfig {

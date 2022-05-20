@@ -42,6 +42,7 @@ type CreateStandalonePipeline struct {
 	helmValues          HelmValues
 	helmChart           *v1alpha1.ChartMeta
 	deploymentNamespace *corev1.Namespace
+	helmRelease         *helmv1beta1.Release
 }
 
 // NewCreateStandalonePipeline creates a new pipeline with the required dependencies.
@@ -86,7 +87,7 @@ func (p *CreateStandalonePipeline) RunPipeline(ctx context.Context) error {
 func (p *CreateStandalonePipeline) WaitUntilAllResourceReady(ctx context.Context) error {
 	return pipeline.NewPipeline().
 		WithSteps(
-			pipeline.NewStepFromFunc("check if helm release is ready", p.checkHelmRelease),
+			pipeline.NewStepFromFunc("fetch helm release", p.fetchHelmRelease),
 			pipeline.If(p.isHelmReleaseReady, pipeline.NewStepFromFunc("mark instance ready", p.markInstanceAsReady)),
 		).
 		RunWithContext(ctx).Err()
@@ -225,7 +226,7 @@ func (p *CreateStandalonePipeline) ensureHelmRelease(ctx context.Context) error 
 	if err != nil {
 		return err
 	}
-	helmRelease := &helmv1beta1.Release{
+	p.helmRelease = &helmv1beta1.Release{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   p.deploymentNamespace.Name,
 			Labels: getCommonLabels(p.instance.Name),
@@ -244,7 +245,7 @@ func (p *CreateStandalonePipeline) ensureHelmRelease(ctx context.Context) error 
 			},
 		},
 	}
-	return Upsert(ctx, p.client, helmRelease)
+	return Upsert(ctx, p.client, p.helmRelease)
 }
 
 func (p *CreateStandalonePipeline) enrichStatus(ctx context.Context) error {
@@ -258,27 +259,29 @@ func (p *CreateStandalonePipeline) enrichStatus(ctx context.Context) error {
 	return err
 }
 
-// checkHelmRelease fetches the Helm release for the given instance.
-func (p *CreateStandalonePipeline) checkHelmRelease(ctx context.Context) error {
-	p.deploymentNamespace = &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: p.instance.Status.HelmChart.DeploymentNamespace}}
+// fetchHelmRelease fetches the Helm release for the given instance.
+func (p *CreateStandalonePipeline) fetchHelmRelease(ctx context.Context) error {
 	helmRelease := &helmv1beta1.Release{}
 	err := p.client.Get(ctx, client.ObjectKey{Name: p.instance.Status.HelmChart.DeploymentNamespace}, helmRelease)
-	if err != nil {
-		return err
-	}
-	if helmRelease.Status.Synced {
-		if readyCondition := FindCrossplaneCondition(helmRelease.Status.Conditions, crossplanev1.TypeReady); readyCondition != nil && readyCondition.Status == corev1.ConditionTrue {
-			p.instance.Status.HelmChart.ModifiedTime = readyCondition.LastTransitionTime
-		}
-	}
-	return nil
+	p.helmRelease = helmRelease
+	return err
 }
 
 // isHelmReleaseReady returns true if the ModifiedTime is non-zero.
 //
 // Note: This only works for first-time deployments. In the future another mechanism might be better.
+// This step requires that fetchHelmRelease has run before.
 func (p *CreateStandalonePipeline) isHelmReleaseReady(_ context.Context) bool {
-	return !p.instance.Status.HelmChart.ModifiedTime.IsZero()
+	if p.instance.Status.HelmChart != nil && !p.instance.Status.HelmChart.ModifiedTime.IsZero() {
+		return true
+	}
+	if p.helmRelease.Status.Synced {
+		if readyCondition := FindCrossplaneCondition(p.helmRelease.Status.Conditions, crossplanev1.TypeReady); readyCondition != nil && readyCondition.Status == corev1.ConditionTrue {
+			p.instance.Status.HelmChart.ModifiedTime = readyCondition.LastTransitionTime
+			return true
+		}
+	}
+	return false
 }
 
 // markInstanceAsReady marks an instance immediately as ready by updating the status conditions.
