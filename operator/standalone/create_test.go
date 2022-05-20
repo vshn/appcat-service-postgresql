@@ -117,7 +117,7 @@ func TestCreateStandalonePipeline_ApplyValuesFromInstance(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, HelmValues{
 		"auth": HelmValues{
-			"existingSecret":     "instance-credentials",
+			"existingSecret":     "postgresql-credentials",
 			"database":           "instance",
 			"enablePostgresUser": true,
 		},
@@ -131,6 +131,7 @@ func TestCreateStandalonePipeline_ApplyValuesFromInstance(t *testing.T) {
 				},
 			},
 		},
+		"fullnameOverride": "postgresql",
 	}, p.helmValues)
 }
 
