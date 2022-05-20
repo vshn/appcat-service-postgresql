@@ -286,7 +286,7 @@ func (p *CreateStandalonePipeline) isHelmReleaseReady(_ context.Context) bool {
 
 // markInstanceAsReady marks an instance immediately as ready by updating the status conditions.
 func (p *CreateStandalonePipeline) markInstanceAsReady(ctx context.Context) error {
-	meta.SetStatusCondition(&p.instance.Status.Conditions, conditions.Ready())
+	meta.SetStatusCondition(&p.instance.Status.Conditions, conditions.Builder().With(conditions.Ready()).WithGeneration(p.instance).Build())
 	meta.RemoveStatusCondition(&p.instance.Status.Conditions, conditions.TypeCreating)
 	return p.client.Status().Update(ctx, p.instance)
 }
