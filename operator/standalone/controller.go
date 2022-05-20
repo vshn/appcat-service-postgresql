@@ -64,14 +64,14 @@ func (r *PostgresStandaloneReconciler) Reconcile(ctx context.Context, request re
 	}
 	if readyCondition := meta.FindStatusCondition(obj.Status.Conditions, conditions.TypeReady); readyCondition == nil {
 		// Ready condition is not present, it's a fresh object
-		res, err := r.Create(ctx, obj)
+		res, err := r.CreateDeployment(ctx, obj)
 		return res, err
 	}
 	return r.Update(ctx, obj)
 }
 
-// Create creates the given instance.
-func (r *PostgresStandaloneReconciler) Create(ctx context.Context, instance *v1alpha1.PostgresqlStandalone) (reconcile.Result, error) {
+// CreateDeployment creates the given instance deployment.
+func (r *PostgresStandaloneReconciler) CreateDeployment(ctx context.Context, instance *v1alpha1.PostgresqlStandalone) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 	p := NewCreateStandalonePipeline(r.client, instance, OperatorNamespace)
 	if meta.IsStatusConditionTrue(instance.Status.Conditions, conditions.TypeCreating) {
