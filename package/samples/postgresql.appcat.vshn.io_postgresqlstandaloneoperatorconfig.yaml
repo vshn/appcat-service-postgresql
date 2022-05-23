@@ -4,7 +4,7 @@ metadata:
   creationTimestamp: null
   labels:
     postgresql.appcat.vshn.io/major-version: v14
-  name: platform-config
+  name: platform-config-v14
   namespace: postgresql-system
 spec:
   defaultDeploymentStrategy: HelmChart

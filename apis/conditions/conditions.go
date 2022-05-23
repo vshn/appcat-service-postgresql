@@ -9,7 +9,9 @@ const (
 	ReasonMaintenanceProgressing = "MaintenanceProgressing"
 	ReasonMaintenanceSuccess     = "MaintenanceFinishedSuccessfully"
 	ReasonMaintenanceFailure     = "MaintenanceFinishedWithError"
-	ReasonReady                  = "The resource is ready"
+	ReasonReady                  = "Available"
+	ReasonCreating               = "CreatingResources"
+	ReasonProvisioning           = "Progressing"
 )
 
 const (
@@ -17,6 +19,10 @@ const (
 	TypeInMaintenance = "InMaintenance"
 	// TypeReady indicates that an instance is ready to serve.
 	TypeReady = "Ready"
+	// TypeProvisioning indicates that an instance is being provisioned.
+	TypeProvisioning = "Provisioning"
+	// TypeCreating indicates that an instance is being created for the first time.
+	TypeCreating = "Creating"
 )
 
 // Ready creates a condition with TypeReady, ReasonReady and empty message.
@@ -26,6 +32,26 @@ func Ready() metav1.Condition {
 		Status:             metav1.ConditionTrue,
 		LastTransitionTime: metav1.Now(),
 		Reason:             ReasonReady,
+	}
+}
+
+// Provisioning creates a condition with TypeProvisioning, ReasonProvisioning and empty message.
+func Provisioning() metav1.Condition {
+	return metav1.Condition{
+		Type:               TypeProvisioning,
+		Status:             metav1.ConditionTrue,
+		LastTransitionTime: metav1.Now(),
+		Reason:             ReasonProvisioning,
+	}
+}
+
+// Creating creates a condition with TypeCreating, ReasonCreating and empty message.
+func Creating() metav1.Condition {
+	return metav1.Condition{
+		Type:               TypeCreating,
+		Status:             metav1.ConditionTrue,
+		LastTransitionTime: metav1.Now(),
+		Reason:             ReasonCreating,
 	}
 }
 

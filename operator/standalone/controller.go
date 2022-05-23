@@ -3,9 +3,13 @@ package standalone
 import (
 	"context"
 	"strings"
+	"time"
 
+	pipeline "github.com/ccremer/go-command-pipeline"
+	"github.com/vshn/appcat-service-postgresql/apis/conditions"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -39,8 +43,12 @@ type PostgresStandaloneReconciler struct {
 
 // Reconcile implements reconcile.Reconciler.
 func (r *PostgresStandaloneReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := ctrl.LoggerFrom(ctx)
+	ctx = pipeline.MutableContext(ctx)
+	setClientInContext(ctx, r.client)
 	obj := &v1alpha1.PostgresqlStandalone{}
+	setInstanceInContext(ctx, obj)
+
+	log := ctrl.LoggerFrom(ctx)
 	log.V(1).Info("Reconciling")
 	err := r.client.Get(ctx, request.NamespacedName, obj)
 	if err != nil && apierrors.IsNotFound(err) {
@@ -54,34 +62,30 @@ func (r *PostgresStandaloneReconciler) Reconcile(ctx context.Context, request re
 	if !obj.DeletionTimestamp.IsZero() {
 		return r.Delete(ctx, obj)
 	}
-	if !controllerutil.ContainsFinalizer(obj, finalizer) {
-		controllerutil.AddFinalizer(obj, finalizer)
-		res, err := r.Create(ctx, obj)
-		if err != nil {
-			log.Error(err, "couldn't reconcile instance")
-		}
+	if readyCondition := meta.FindStatusCondition(obj.Status.Conditions, conditions.TypeReady); readyCondition == nil {
+		// Ready condition is not present, it's a fresh object
+		res, err := r.CreateDeployment(ctx, obj)
 		return res, err
 	}
 	return r.Update(ctx, obj)
 }
 
-// Create creates the given instance.
-func (r *PostgresStandaloneReconciler) Create(ctx context.Context, instance *v1alpha1.PostgresqlStandalone) (reconcile.Result, error) {
+// CreateDeployment creates the given instance deployment.
+func (r *PostgresStandaloneReconciler) CreateDeployment(ctx context.Context, instance *v1alpha1.PostgresqlStandalone) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	log.Info("Creating")
 	p := NewCreateStandalonePipeline(r.client, instance, OperatorNamespace)
+	if meta.IsStatusConditionTrue(instance.Status.Conditions, conditions.TypeCreating) {
+		// The instance has created all the resources, now we'll have to wait until everything is ready.
+		log.Info("Waiting until instance becomes ready")
+		err := p.WaitUntilAllResourceReady(ctx)
+		if !meta.IsStatusConditionTrue(instance.Status.Conditions, conditions.TypeReady) {
+			return reconcile.Result{RequeueAfter: 2 * time.Second}, err
+		}
+		return reconcile.Result{}, err
+	}
+	log.Info("Creating new instance for first time")
 	err := p.RunPipeline(ctx)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	err = r.client.Update(ctx, instance)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	// also add some status condition here
-	instance.Status.SetObservedGeneration(instance.ObjectMeta)
-	err = r.client.Status().Update(ctx, instance.DeepCopy())
-	return reconcile.Result{}, err
+	return reconcile.Result{RequeueAfter: 10 * time.Second}, err
 }
 
 // Delete prepares the given instance for deletion.
@@ -104,7 +108,7 @@ func (r *PostgresStandaloneReconciler) Update(ctx context.Context, instance *v1a
 		return reconcile.Result{}, err
 	}
 	// ensure status conditions are up-to-date.
-	instance.Status.SetObservedGeneration(instance.ObjectMeta)
+	instance.Status.SetObservedGeneration(instance)
 	err = r.client.Status().Update(ctx, instance.DeepCopy())
 	return reconcile.Result{}, err
 }

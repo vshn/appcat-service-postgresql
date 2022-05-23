@@ -154,3 +154,51 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureHelmRelease() {
 	ts.Assert().Equal(result.Spec.ForProvider.Namespace, targetNs, "target namespace")
 	ts.Assert().JSONEq(`{"key":"value"}`, string(result.Spec.ForProvider.Values.Raw))
 }
+
+func (ts *CreateStandalonePipelineSuite) Test_EnrichStatus() {
+	// Arrange
+	p := &CreateStandalonePipeline{
+		instance:            newInstance("enrich-status"),
+		client:              ts.Client,
+		helmChart:           &v1alpha1.ChartMeta{Repository: "https://host/path", Version: "version", Name: "postgres"},
+		deploymentNamespace: &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: generateClusterScopedNameForInstance()}},
+	}
+	ts.EnsureNS(p.instance.Namespace)
+	ts.EnsureResources(p.instance)
+
+	// Act
+	err := p.enrichStatus(ts.Context)
+	ts.Require().NoError(err)
+
+	// Assert
+	result := &v1alpha1.PostgresqlStandalone{}
+	ts.FetchResource(types.NamespacedName{Name: p.instance.Name, Namespace: p.instance.Namespace}, result)
+	ts.Assert().Equal(v1alpha1.StrategyHelmChart, result.Status.DeploymentStrategy, "deployment strategy")
+	ts.Assert().Equal(p.helmChart.Name, result.Status.HelmChart.Name, "helm chart name")
+	ts.Assert().Equal(p.helmChart.Repository, result.Status.HelmChart.Repository, "helm chart repo")
+	ts.Assert().Equal(p.helmChart.Version, result.Status.HelmChart.Version, "helm chart version")
+	ts.Assert().Equal(p.deploymentNamespace.Name, result.Status.HelmChart.DeploymentNamespace, "deployment namespace")
+	ts.Assert().True(result.Status.HelmChart.ModifiedTime.IsZero(), "modification date comes later")
+}
+
+func (ts *CreateStandalonePipelineSuite) Test_FetchHelmRelease() {
+	// Arrange
+	p := &CreateStandalonePipeline{
+		instance: newInstance("fetch-release"),
+		client:   ts.Client,
+	}
+	p.instance.Status.HelmChart = &v1alpha1.ChartMetaStatus{
+		DeploymentNamespace: generateClusterScopedNameForInstance(),
+	}
+	helmRelease := &helmv1beta1.Release{
+		ObjectMeta: metav1.ObjectMeta{Name: p.instance.Status.HelmChart.DeploymentNamespace},
+	}
+	ts.EnsureResources(helmRelease)
+
+	// Act
+	err := p.fetchHelmRelease(ts.Context)
+	ts.Require().NoError(err)
+
+	// Assert
+	ts.Assert().Equal(helmRelease, p.helmRelease)
+}
