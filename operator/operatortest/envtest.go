@@ -13,6 +13,7 @@ import (
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
 	"go.uber.org/zap/zaptest"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -129,7 +130,11 @@ func (ts *Suite) NewNS(nsName string) *corev1.Namespace {
 func (ts *Suite) EnsureNS(nsName string) {
 	ns := ts.NewNS(nsName)
 	ts.T().Logf("creating namespace '%s'", nsName)
-	ts.Require().NoError(ts.Client.Create(ts.Context, ns))
+	err := ts.Client.Create(ts.Context, ns)
+	if err != nil && apierrors.IsAlreadyExists(err) {
+		return
+	}
+	ts.Require().NoError(err)
 }
 
 // EnsureResources ensures that the given resources are existing in the suite. Each error will fail the test.
