@@ -27,6 +27,7 @@ func TestCreateStandalonePipeline(t *testing.T) {
 
 func (ts *CreateStandalonePipelineSuite) BeforeTest(suiteName, testName string) {
 	ts.Context = pipeline.MutableContext(context.Background())
+	setClientInContext(ts.Context, ts.Client)
 	ts.RegisterScheme(helmv1beta1.SchemeBuilder.AddToScheme)
 }
 
@@ -201,4 +202,67 @@ func (ts *CreateStandalonePipelineSuite) Test_FetchHelmRelease() {
 
 	// Assert
 	ts.Assert().Equal(helmRelease, p.helmRelease)
+}
+
+func (ts *CreateStandalonePipelineSuite) Test_FetchCredentialSecret() {
+	// Arrange
+	p := CreateStandalonePipeline{
+		instance: newInstance("fetch-credentials"),
+	}
+	credentialSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "postgresql-credentials",
+			Namespace: generateClusterScopedNameForInstance(),
+		},
+		Data: map[string][]byte{
+			"password":          []byte("user-password"),
+			"postgres-password": []byte("superuser-password"),
+		},
+	}
+	ts.EnsureNS("my-app")
+	ts.EnsureNS(credentialSecret.Namespace)
+	ts.EnsureResources(credentialSecret)
+	p.instance.Status.HelmChart = &v1alpha1.ChartMetaStatus{DeploymentNamespace: credentialSecret.Namespace}
+
+	// Act
+	err := p.fetchCredentialSecret(ts.Context)
+	ts.Require().NoError(err)
+
+	// Assert
+	ts.Require().Len(p.connectionSecret.Data, 2, "data field")
+	ts.Require().Len(p.connectionSecret.StringData, 2, "stringData field")
+	ts.Assert().Equal("user-password", string(p.connectionSecret.Data["POSTGRESQL_PASSWORD"]))
+	ts.Assert().Equal("superuser-password", string(p.connectionSecret.Data["POSTGRESQL_POSTGRES_PASSWORD"]))
+	ts.Assert().Equal("fetch-credentials", p.connectionSecret.StringData["POSTGRESQL_USER"])
+	ts.Assert().Equal("fetch-credentials", p.connectionSecret.StringData["POSTGRESQL_DATABASE"])
+}
+
+func (ts *CreateStandalonePipelineSuite) Test_FetchService() {
+	// Arrange
+	p := CreateStandalonePipeline{
+		instance: newInstance("fetch-service"),
+	}
+	service := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "postgresql",
+			Namespace: "service-ns",
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{{Port: 5432}},
+		},
+	}
+	ts.EnsureNS("my-app")
+	ts.EnsureNS(service.Namespace)
+	ts.EnsureResources(service)
+	p.instance.Status.HelmChart = &v1alpha1.ChartMetaStatus{DeploymentNamespace: service.Namespace}
+
+	// Act
+	err := p.fetchService(ts.Context)
+	ts.Require().NoError(err)
+
+	// Assert
+	ts.Require().Len(p.connectionSecret.StringData, 3, "stringData field")
+	ts.Assert().Equal("postgresql.service-ns.svc.cluster.local", p.connectionSecret.StringData["POSTGRESQL_SERVICE_NAME"], "service name")
+	ts.Assert().Equal("postgresql://postgresql.service-ns.svc.cluster.local:5432", p.connectionSecret.StringData["POSTGRESQL_SERVICE_URL"], "service url")
+	ts.Assert().Equal("5432", p.connectionSecret.StringData["POSTGRESQL_SERVICE_PORT"], "service port")
 }
