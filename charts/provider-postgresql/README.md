@@ -1,6 +1,6 @@
 # provider-postgresql
 
-![Version: 0.1.6](https://img.shields.io/badge/Version-0.1.6-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
+![Version: 0.1.7](https://img.shields.io/badge/Version-0.1.7-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 
 VSHN-opinionated PostgreSQL operator for AppCat
 
@@ -11,7 +11,7 @@ helm repo add appcat-service-postgresql https://vshn.github.io/appcat-service-po
 helm install provider-postgresql appcat-service-postgresql/provider-postgresql
 ```
 ```bash
-kubectl apply -f https://github.com/vshn/appcat-service-postgresql/releases/download/provider-postgresql-0.1.6/crds.yaml
+kubectl apply -f https://github.com/vshn/appcat-service-postgresql/releases/download/provider-postgresql-0.1.7/crds.yaml
 ```
 
 <!---
