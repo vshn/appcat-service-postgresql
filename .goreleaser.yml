@@ -10,6 +10,7 @@ builds:
   - linux
   goarm:
   - 8
+  binary: provider-postgresql
 
 archives:
 - format: binary
