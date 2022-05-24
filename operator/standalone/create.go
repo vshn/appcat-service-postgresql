@@ -191,6 +191,17 @@ func (p *CreateStandalonePipeline) applyValuesFromInstance(_ context.Context) er
 			},
 		},
 		"fullnameOverride": getDeploymentName(),
+		"networkPolicy": helmvalues.V{
+			"enabled": true,
+			"ingressRules": helmvalues.V{
+				"primaryAccessOnlyFrom": helmvalues.V{
+					"enabled": true,
+					"namespaceSelector": helmvalues.V{
+						"kubernetes.io/metadata.name": p.instance.Namespace,
+					},
+				},
+			},
+		},
 	}
 	helmvalues.Merge(resources, &p.helmValues)
 	return nil
