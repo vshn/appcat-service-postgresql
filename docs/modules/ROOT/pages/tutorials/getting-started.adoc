@@ -1,0 +1,64 @@
+= Getting Started
+
+This page describes how to create a new instance after you have installed the operator.
+
+== Prerequisites
+
+* `kubectl`
+* Already running Operator
+
+== Create An Instance
+
+. Create a file with the instance spec
++
+.standalone.yaml
+[source,yaml]
+----
+include::example$standalone.yaml[]
+----
+
+. Apply the spec in the cluster
++
+[source,bash]
+----
+kubectl apply -f standalone.yaml
+----
+
+. Wait until the operator has provisioned the instance
++
+[source,bash]
+----
+kubectl wait --for condition=Ready postgresqlstandalone/my-instance
+----
++
+TIP: When the instance is ready, there should be a connection `Secret` created in the same namespace as `my-instance`.
++
+[NOTE]
+====
+If you already have a `Secret` named `my-instance`, it will get overwritten.
+Set `spec.writeConnectionSecretToRef.name` to another name.
+====
+
+. Inspect the connection `Secret`
++
+[source,bash]
+----
+kubectl get secret my-instance -o yaml
+----
+
+. Connect to the PostgreSQL Database
++
+.connect-instance.yaml
+[source,yaml]
+----
+include::example$connect-instance.yaml[]
+----
+
+. Deploy the client and verify its output
++
+[source,bash]
+----
+kubectl apply -f connect-instance.yaml
+kubectl wait --for condition=Complete job/tutorial
+kubectl logs job/tutorial
+----

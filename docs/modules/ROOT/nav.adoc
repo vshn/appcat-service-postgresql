@@ -2,7 +2,7 @@
 * https://github.com/vshn/appcat-service-postgresql/releases[Changelog,window=_blank] 🔗
 
 .Tutorials
-//* xref:tutorials/example.adoc[Example Tutorial]
+* xref:tutorials/getting-started.adoc[Getting Started]
 
 .How To
 * xref:how-tos/create-releases.adoc[Create Releases]

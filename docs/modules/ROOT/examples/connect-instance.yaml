@@ -1,0 +1,23 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: tutorial
+  namespace: default
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: pgsql
+          image: docker.io/bitnami/postgresql:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - secretRef:
+                name: my-instance
+          securityContext:
+            runAsUser: 0
+          command:
+            - /bin/sh
+            - -c
+          args:
+            - PGDATABASE="$POSTGRESQL_DATABASE" PGUSER="$POSTGRESQL_USER" PGPASSWORD="$POSTGRESQL_PASSWORD" psql --host="$POSTGRESQL_SERVICE_NAME" -c "select 1";
