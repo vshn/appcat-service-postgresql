@@ -1,4 +1,4 @@
-package standalone
+package helmvalues
 
 import (
 	"encoding/json"
@@ -7,50 +7,53 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// HelmValues contains the Helm values tree.
-type HelmValues map[string]interface{}
+// We are not doing `type V map[string]interface{}` as this breaks type assertion when deep-merging.
+// For example, if m is `V` then ok in `vals, ok := m.(map[string]interface{}` will be false.
 
-// Unmarshal sets the values from a runtime.RawExtension.
-func (v *HelmValues) Unmarshal(raw runtime.RawExtension) error {
+// V contains the Helm values tree.
+type V = map[string]interface{}
+
+// Unmarshal  the values from a runtime.RawExtension.
+func Unmarshal(from runtime.RawExtension, into *V) error {
 	newMap := map[string]interface{}{}
-	err := json.Unmarshal(raw.Raw, &newMap)
+	err := json.Unmarshal(from.Raw, &newMap)
 	if err == nil {
-		*v = newMap
+		*into = newMap
 	}
 	return err
 }
 
 // MustUnmarshal is like Unmarshal but panics if there's an error.
-func (v *HelmValues) MustUnmarshal(raw runtime.RawExtension) {
-	err := v.Unmarshal(raw)
+func MustUnmarshal(from runtime.RawExtension, into *V) {
+	err := Unmarshal(from, into)
 	if err != nil {
 		panic(fmt.Errorf("cannot unmarshal map: %w", err))
 	}
 }
 
 // Marshal returns a runtime.RawExtension object.
-func (v HelmValues) Marshal() (runtime.RawExtension, error) {
+func Marshal(v V) (runtime.RawExtension, error) {
 	raw, err := json.Marshal(v)
 	return runtime.RawExtension{Raw: raw}, err
 }
 
 // MustMarshal is like Marshal but panics if there's an error.
-func (v HelmValues) MustMarshal() runtime.RawExtension {
-	raw, err := v.Marshal()
+func MustMarshal(v V) runtime.RawExtension {
+	raw, err := Marshal(v)
 	if err != nil {
 		panic(fmt.Errorf("cannot marshal values: %w", err))
 	}
 	return raw
 }
 
-// MergeWith deep-merges the given values into this object.
-func (v *HelmValues) MergeWith(values HelmValues) {
-	dest := *v
+// Merge deep-merges the given values into this object.
+func Merge(values V, into *V) {
+	dest := *into
 	if dest == nil {
 		dest = map[string]interface{}{}
 	}
 	customMerge(values, dest)
-	*v = dest
+	*into = dest
 }
 
 // Copied from github.com/knadh/koanf/maps/maps.go (v1.4.1)

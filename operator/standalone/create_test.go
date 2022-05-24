@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
+	"github.com/vshn/appcat-service-postgresql/operator/helmvalues"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,7 +27,7 @@ func TestCreateStandalonePipeline_UseTemplateValues(t *testing.T) {
 	}
 	err := p.useTemplateValues(nil)
 	assert.NoError(t, err)
-	expectedValues := HelmValues{
+	expectedValues := helmvalues.V{
 		"key": "value",
 	}
 	expectedChart := &v1alpha1.ChartMeta{
@@ -41,25 +42,25 @@ func TestCreateStandalonePipeline_UseTemplateValues(t *testing.T) {
 func TestCreateStandalonePipeline_OverrideTemplateValues(t *testing.T) {
 	tests := map[string]struct {
 		givenSpec      v1alpha1.PostgresqlStandaloneOperatorConfigSpec
-		expectedValues HelmValues
+		expectedValues helmvalues.V
 		expectedChart  v1alpha1.ChartMeta
 		expectedError  string
 	}{
 		"GivenSpecificReleaseExists_WhenMergeEnabled_ThenMergeWithExistingValues": {
 			givenSpec: v1alpha1.PostgresqlStandaloneOperatorConfigSpec{
 				HelmReleaseTemplate: &v1alpha1.HelmReleaseConfig{
-					Values: HelmValues{"key": "value", "existing": "untouched"}.MustMarshal(),
+					Values: helmvalues.MustMarshal(helmvalues.V{"key": "value", "existing": "untouched"}),
 					Chart:  v1alpha1.ChartMeta{Version: "version"},
 				},
 				HelmReleases: []v1alpha1.HelmReleaseConfig{
 					{
 						MergeValuesFromTemplate: true,
 						Chart:                   v1alpha1.ChartMeta{Version: "version"},
-						Values:                  HelmValues{"key": map[string]interface{}{"nested": "value"}, "merged": "newValue"}.MustMarshal(),
+						Values:                  helmvalues.MustMarshal(helmvalues.V{"key": map[string]interface{}{"nested": "value"}, "merged": "newValue"}),
 					},
 				},
 			},
-			expectedValues: HelmValues{
+			expectedValues: helmvalues.V{
 				"key": map[string]interface{}{
 					"nested": "value",
 				},
@@ -71,17 +72,17 @@ func TestCreateStandalonePipeline_OverrideTemplateValues(t *testing.T) {
 		"GivenSpecificReleaseExists_WhenMergeDisabled_ThenOverwriteExistingValues": {
 			givenSpec: v1alpha1.PostgresqlStandaloneOperatorConfigSpec{
 				HelmReleaseTemplate: &v1alpha1.HelmReleaseConfig{
-					Values: HelmValues{"key": "value", "existing": "untouched"}.MustMarshal(),
+					Values: helmvalues.MustMarshal(helmvalues.V{"key": "value", "existing": "untouched"}),
 					Chart:  v1alpha1.ChartMeta{Version: "version"},
 				},
 				HelmReleases: []v1alpha1.HelmReleaseConfig{
 					{
 						Chart:  v1alpha1.ChartMeta{Version: "version", Name: "alternative", Repository: "fork"},
-						Values: HelmValues{"key": map[string]interface{}{"nested": "value"}, "merged": "newValue"}.MustMarshal(),
+						Values: helmvalues.MustMarshal(helmvalues.V{"key": helmvalues.V{"nested": "value"}, "merged": "newValue"}),
 					},
 				},
 			},
-			expectedValues: HelmValues{
+			expectedValues: helmvalues.V{
 				"key": map[string]interface{}{
 					"nested": "value",
 				},
@@ -92,8 +93,8 @@ func TestCreateStandalonePipeline_OverrideTemplateValues(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			vals := HelmValues{}
-			vals.MustUnmarshal(tc.givenSpec.HelmReleaseTemplate.Values)
+			vals := helmvalues.V{}
+			helmvalues.MustUnmarshal(tc.givenSpec.HelmReleaseTemplate.Values, &vals)
 			p := &CreateStandalonePipeline{
 				config:     &v1alpha1.PostgresqlStandaloneOperatorConfig{Spec: tc.givenSpec},
 				helmValues: vals,
@@ -118,19 +119,19 @@ func TestCreateStandalonePipeline_ApplyValuesFromInstance(t *testing.T) {
 	}
 	err := p.applyValuesFromInstance(nil)
 	require.NoError(t, err)
-	assert.Equal(t, HelmValues{
-		"auth": HelmValues{
+	assert.Equal(t, helmvalues.V{
+		"auth": helmvalues.V{
 			"existingSecret":     "postgresql-credentials",
 			"database":           "instance",
 			"enablePostgresUser": true,
 			"username":           "instance",
 		},
-		"primary": HelmValues{
-			"persistence": HelmValues{
+		"primary": helmvalues.V{
+			"persistence": helmvalues.V{
 				"size": "1Gi",
 			},
-			"resources": HelmValues{
-				"limits": HelmValues{
+			"resources": helmvalues.V{
+				"limits": helmvalues.V{
 					"memory": "2Gi",
 				},
 			},

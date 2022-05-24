@@ -1,4 +1,4 @@
-package standalone
+package helmvalues
 
 import (
 	"encoding/json"
@@ -11,7 +11,7 @@ import (
 
 func TestHelmValues_Marshal(t *testing.T) {
 	tests := map[string]struct {
-		givenMap      HelmValues
+		givenMap      V
 		expectedJSON  string
 		expectedError string
 	}{
@@ -20,37 +20,37 @@ func TestHelmValues_Marshal(t *testing.T) {
 			expectedJSON: "null",
 		},
 		"GivenEmptyMap_ThenReturnEmptyObject": {
-			givenMap:     HelmValues{},
+			givenMap:     V{},
 			expectedJSON: "{}",
 		},
 		"GivenMapWithValues_ThenReturnJSONObject": {
-			givenMap:     HelmValues{"key": "value"},
+			givenMap:     V{"key": "value"},
 			expectedJSON: `{"key":"value"}`,
 		},
 		"GivenMapWithNestedMap_ThenReturnJSONObject": {
-			givenMap:     HelmValues{"key": HelmValues{"nested": "value"}},
+			givenMap:     V{"key": V{"nested": "value"}},
 			expectedJSON: `{"key":{"nested":"value"}}`,
 		},
 		"GivenMapWithEmptyNestedMap_ThenReturnEmptyJSONObject": {
-			givenMap:     HelmValues{"key": HelmValues{}},
+			givenMap:     V{"key": V{}},
 			expectedJSON: `{"key":{}}`,
 		},
 		"GivenMapWithNilValue_ThenReturnNull": {
-			givenMap:     HelmValues{"key": nil},
+			givenMap:     V{"key": nil},
 			expectedJSON: `{"key":null}`,
 		},
 		"GivenMapWithSlice_ThenReturnArray": {
-			givenMap:     HelmValues{"array": []string{"string"}},
+			givenMap:     V{"array": []string{"string"}},
 			expectedJSON: `{"array":["string"]}`,
 		},
 		"GivenMapWithEmptySlice_ThenReturnEmptyArray": {
-			givenMap:     HelmValues{"array": []interface{}{}},
+			givenMap:     V{"array": []interface{}{}},
 			expectedJSON: `{"array":[]}`,
 		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			result, err := tc.givenMap.Marshal()
+			result, err := Marshal(tc.givenMap)
 			if tc.expectedError != "" {
 				assert.EqualError(t, err, tc.expectedError, "marshalling error")
 				return
@@ -63,9 +63,9 @@ func TestHelmValues_Marshal(t *testing.T) {
 
 func TestHelmValues_Unmarshal(t *testing.T) {
 	tests := map[string]struct {
-		givenMap      HelmValues
+		givenMap      V
 		givenRawJSON  string
-		expectedMap   HelmValues
+		expectedMap   V
 		expectedError string
 	}{
 		"GivenNull_ThenKeepEmpty": {
@@ -74,61 +74,61 @@ func TestHelmValues_Unmarshal(t *testing.T) {
 			expectedMap:  nil,
 		},
 		"GivenEmptyMap_WhenUnmarshallingEmptyObject_ThenReturnEmptyObject": {
-			givenMap:     HelmValues{},
+			givenMap:     V{},
 			givenRawJSON: "{}",
-			expectedMap:  HelmValues{},
+			expectedMap:  V{},
 		},
 		"GivenNilMap_WhenUnmarshallingEmptyObject_ThenReturnEmptyMap": {
 			givenMap:     nil,
 			givenRawJSON: "{}",
-			expectedMap:  HelmValues{},
+			expectedMap:  V{},
 		},
 		"GivenMapWithValues_WhenUnmarshallingEmptyObject_ThenDeleteExistingValues": {
-			givenMap: HelmValues{
+			givenMap: V{
 				"key": "value",
 			},
 			givenRawJSON: `{}`,
-			expectedMap:  HelmValues{},
+			expectedMap:  V{},
 		},
 		"GivenEmptyMap_WhenUnmarshallingObject_ThenCreateValues": {
-			givenMap:     HelmValues{},
+			givenMap:     V{},
 			givenRawJSON: `{"key":"value"}`,
-			expectedMap:  HelmValues{"key": "value"},
+			expectedMap:  V{"key": "value"},
 		},
 		"GivenEmptyMap_WhenUnmarshallingNestedObject_ThenCreateNestedObject": {
-			givenMap:     HelmValues{},
+			givenMap:     V{},
 			givenRawJSON: `{"key":{"nested":"value"}}`,
-			expectedMap:  HelmValues{"key": map[string]interface{}{"nested": "value"}},
+			expectedMap:  V{"key": map[string]interface{}{"nested": "value"}},
 		},
 		"GivenEmptyMap_WhenUnmarshallingNestedEmptyObject_ThenSetToEmpty": {
-			givenMap:     HelmValues{},
+			givenMap:     V{},
 			givenRawJSON: `{"key":{}}`,
-			expectedMap:  HelmValues{"key": map[string]interface{}{}},
+			expectedMap:  V{"key": map[string]interface{}{}},
 		},
 		"GivenEmptyMap_WhenUnmarshallingNestedNullObject_ThenSetToNil": {
-			givenMap:     HelmValues{},
+			givenMap:     V{},
 			givenRawJSON: `{"key":null}`,
-			expectedMap:  HelmValues{"key": nil},
+			expectedMap:  V{"key": nil},
 		},
 		"GivenEmptyMap_WhenUnmarshallingEmptyArrays_ThenSetToEmptyArray": {
-			givenMap:     HelmValues{},
+			givenMap:     V{},
 			givenRawJSON: `{"array":[]}`,
-			expectedMap:  HelmValues{"array": []interface{}{}},
+			expectedMap:  V{"array": []interface{}{}},
 		},
 		"GivenEmptyMap_WhenUnmarshallingArrays_ThenSetToArray": {
-			givenMap:     HelmValues{},
+			givenMap:     V{},
 			givenRawJSON: `{"array":["string"]}`,
-			expectedMap:  HelmValues{"array": []interface{}{"string"}},
+			expectedMap:  V{"array": []interface{}{"string"}},
 		},
 		"GivenNonEmptyMap_WhenUnmarshalling_ThenSetNewValues": {
-			givenMap:     HelmValues{"key": "existing"},
+			givenMap:     V{"key": "existing"},
 			givenRawJSON: `{"key":"value"}`,
-			expectedMap:  HelmValues{"key": "value"},
+			expectedMap:  V{"key": "value"},
 		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			err := tc.givenMap.Unmarshal(runtime.RawExtension{Raw: []byte(tc.givenRawJSON)})
+			err := Unmarshal(runtime.RawExtension{Raw: []byte(tc.givenRawJSON)}, &tc.givenMap)
 			if tc.expectedError != "" {
 				assert.EqualError(t, err, tc.expectedError, "marshalling error")
 				return
@@ -141,64 +141,84 @@ func TestHelmValues_Unmarshal(t *testing.T) {
 
 func TestHelmValues_MergeWith(t *testing.T) {
 	tests := map[string]struct {
-		givenMap      HelmValues
-		mergeWith     HelmValues
-		expectedMap   HelmValues
+		givenMap      V
+		mergeWith     V
+		expectedMap   V
 		expectedError string
 	}{
 		"GivenNilMap_ThenCreateFromArgument": {
 			givenMap:    nil,
-			mergeWith:   HelmValues{"key": "value"},
-			expectedMap: HelmValues{"key": "value"},
+			mergeWith:   V{"key": "value"},
+			expectedMap: V{"key": "value"},
 		},
 		"GivenEmptyMap_ThenCreateFromArgument": {
-			givenMap:    HelmValues{},
-			mergeWith:   HelmValues{"key": "value"},
-			expectedMap: HelmValues{"key": "value"},
+			givenMap:    V{},
+			mergeWith:   V{"key": "value"},
+			expectedMap: V{"key": "value"},
 		},
 		"GivenMapWithExistingValue_WhenNilObjectMerged_ThenOverwriteExistingWithNilObject": {
-			givenMap:    HelmValues{"key": map[string]interface{}{"nested": "value"}},
-			mergeWith:   HelmValues{"key": nil},
-			expectedMap: HelmValues{"key": nil},
+			givenMap:    V{"key": map[string]interface{}{"nested": "value"}},
+			mergeWith:   V{"key": nil},
+			expectedMap: V{"key": nil},
 		},
 		"GivenMapWithExistingValue_WhenEmptyObjectMerged_ThenOverwriteExistingWithEmptyObject": {
-			givenMap:    HelmValues{"key": map[string]interface{}{"nested": "value"}},
-			mergeWith:   HelmValues{"key": map[string]interface{}{}},
-			expectedMap: HelmValues{"key": map[string]interface{}{}},
+			givenMap:    V{"key": map[string]interface{}{"nested": "value"}},
+			mergeWith:   V{"key": map[string]interface{}{}},
+			expectedMap: V{"key": map[string]interface{}{}},
 		},
 		"GivenMapWithExistingValue_WhenObjectMerged_ThenKeepExistingKeys": {
-			givenMap:    HelmValues{"key": map[string]interface{}{"nested": "value"}},
-			mergeWith:   HelmValues{"key": map[string]interface{}{"another": "value2"}},
-			expectedMap: HelmValues{"key": map[string]interface{}{"nested": "value", "another": "value2"}},
+			givenMap:    V{"key": map[string]interface{}{"nested": "value"}},
+			mergeWith:   V{"key": map[string]interface{}{"another": "value2"}},
+			expectedMap: V{"key": map[string]interface{}{"nested": "value", "another": "value2"}},
 		},
 		"GivenMapWithExistingValue_WhenObjectHasNestedKeys_ThenOverwriteExistingKeys": {
-			givenMap:    HelmValues{"key": "value"},
-			mergeWith:   HelmValues{"key": map[string]interface{}{"another": "value2"}},
-			expectedMap: HelmValues{"key": map[string]interface{}{"another": "value2"}},
+			givenMap:    V{"key": "value"},
+			mergeWith:   V{"key": map[string]interface{}{"another": "value2"}},
+			expectedMap: V{"key": map[string]interface{}{"another": "value2"}},
 		},
 		"GivenMapWithExistingArray_WhenMergingArray_ThenOverwriteExistingWithNewArray": {
-			givenMap:    HelmValues{"array": []string{"string"}},
-			mergeWith:   HelmValues{"array": []string{"overwrite"}},
-			expectedMap: HelmValues{"array": []string{"overwrite"}},
+			givenMap:    V{"array": []string{"string"}},
+			mergeWith:   V{"array": []string{"overwrite"}},
+			expectedMap: V{"array": []string{"overwrite"}},
 		},
 		"GivenMapWithExistingArray_WhenMergingEmptyArray_ThenOverwriteExistingWithEmptyArray": {
-			givenMap:    HelmValues{"array": []string{"string"}},
-			mergeWith:   HelmValues{"array": []string{}},
-			expectedMap: HelmValues{"array": []string{}},
+			givenMap:    V{"array": []string{"string"}},
+			mergeWith:   V{"array": []string{}},
+			expectedMap: V{"array": []string{}},
 		},
 		"GivenMap_WhenMergingArray_ThenCreateNewArray": {
-			givenMap:    HelmValues{},
-			mergeWith:   HelmValues{"array": []string{"value"}},
-			expectedMap: HelmValues{"array": []string{"value"}},
+			givenMap:    V{},
+			mergeWith:   V{"array": []string{"value"}},
+			expectedMap: V{"array": []string{"value"}},
 		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			tc.givenMap.MergeWith(tc.mergeWith)
+			Merge(tc.mergeWith, &tc.givenMap)
 			assert.Equal(t, tc.expectedMap, tc.givenMap)
 			b, err := json.Marshal(tc.givenMap)
 			require.NoError(t, err, "json marshal")
 			t.Log(string(b))
 		})
 	}
+}
+
+func TestMustMarshal(t *testing.T) {
+	assert.NotPanics(t, func() {
+		MustMarshal(nil)
+	}, "should not panic")
+}
+
+func TestMustUnmarshal(t *testing.T) {
+	assert.Panics(t, func() {
+		MustUnmarshal(runtime.RawExtension{}, nil)
+	}, "should panic if JSON is not there")
+
+	assert.Panics(t, func() {
+		MustUnmarshal(runtime.RawExtension{Raw: []byte("{}")}, nil)
+	}, "should panic if dst is nil")
+
+	assert.NotPanics(t, func() {
+		MustUnmarshal(runtime.RawExtension{Raw: []byte("{}")}, &map[string]interface{}{})
+	}, "should not panic")
 }
