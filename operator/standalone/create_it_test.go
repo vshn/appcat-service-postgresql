@@ -11,6 +11,7 @@ import (
 	helmv1beta1 "github.com/crossplane-contrib/provider-helm/apis/release/v1beta1"
 	"github.com/stretchr/testify/suite"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
+	"github.com/vshn/appcat-service-postgresql/operator/helmvalues"
 	"github.com/vshn/appcat-service-postgresql/operator/operatortest"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -139,7 +140,7 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureHelmRelease() {
 		instance:   newInstance("instance"),
 		client:     ts.Client,
 		helmChart:  &v1alpha1.ChartMeta{Repository: "https://host/path", Version: "version", Name: "postgres"},
-		helmValues: HelmValues{"key": "value"},
+		helmValues: helmvalues.V{"key": "value"},
 		config:     newPostgresqlStandaloneOperatorConfig("config", "postgresql-system"),
 	}
 	targetNs := ServiceNamespacePrefix + "my-app-" + p.instance.Name

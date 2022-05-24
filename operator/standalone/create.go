@@ -12,6 +12,7 @@ import (
 	"github.com/lucasepe/codename"
 	"github.com/vshn/appcat-service-postgresql/apis/conditions"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
+	"github.com/vshn/appcat-service-postgresql/operator/helmvalues"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -41,7 +42,7 @@ type CreateStandalonePipeline struct {
 
 	instance            *v1alpha1.PostgresqlStandalone
 	config              *v1alpha1.PostgresqlStandaloneOperatorConfig
-	helmValues          HelmValues
+	helmValues          helmvalues.V
 	helmChart           *v1alpha1.ChartMeta
 	deploymentNamespace *corev1.Namespace
 	helmRelease         *helmv1beta1.Release
@@ -134,8 +135,8 @@ func (p *CreateStandalonePipeline) fetchOperatorConfig(ctx context.Context) erro
 //
 // This step assumes that the config has been fetched first via fetchOperatorConfig.
 func (p *CreateStandalonePipeline) useTemplateValues(_ context.Context) error {
-	values := HelmValues{}
-	err := values.Unmarshal(p.config.Spec.HelmReleaseTemplate.Values)
+	values := helmvalues.V{}
+	err := helmvalues.Unmarshal(p.config.Spec.HelmReleaseTemplate.Values, &values)
 	p.helmValues = values
 	p.helmChart = &p.config.Spec.HelmReleaseTemplate.Chart
 	return err
@@ -149,13 +150,13 @@ func (p *CreateStandalonePipeline) overrideTemplateValues(_ context.Context) err
 	for _, release := range p.config.Spec.HelmReleases {
 		// TODO: maybe a better semver comparison later on?
 		if release.Chart.Version == p.config.Spec.HelmReleaseTemplate.Chart.Version {
-			overrides := HelmValues{}
-			err := overrides.Unmarshal(release.Values)
+			overrides := helmvalues.V{}
+			err := helmvalues.Unmarshal(release.Values, &overrides)
 			if err != nil {
 				return err
 			}
 			if release.MergeValuesFromTemplate {
-				p.helmValues.MergeWith(overrides)
+				helmvalues.Merge(overrides, &p.helmValues)
 			} else {
 				p.helmValues = overrides
 			}
@@ -172,26 +173,26 @@ func (p *CreateStandalonePipeline) overrideTemplateValues(_ context.Context) err
 
 // applyValuesFromInstance merges the user-defined and -exposed Helm values into the current Helm values map.
 func (p *CreateStandalonePipeline) applyValuesFromInstance(_ context.Context) error {
-	resources := HelmValues{
-		"auth": HelmValues{
+	resources := helmvalues.V{
+		"auth": helmvalues.V{
 			"enablePostgresUser": p.instance.Spec.Parameters.EnableSuperUser,
 			"existingSecret":     getCredentialSecretName(),
 			"database":           p.instance.Name,
 			"username":           p.instance.Name,
 		},
-		"primary": HelmValues{
-			"resources": HelmValues{
-				"limits": HelmValues{
+		"primary": helmvalues.V{
+			"resources": helmvalues.V{
+				"limits": helmvalues.V{
 					"memory": p.instance.Spec.Parameters.Resources.MemoryLimit.String(),
 				},
 			},
-			"persistence": HelmValues{
+			"persistence": helmvalues.V{
 				"size": p.instance.Spec.Parameters.Resources.StorageCapacity.String(),
 			},
 		},
 		"fullnameOverride": getDeploymentName(),
 	}
-	p.helmValues.MergeWith(resources)
+	helmvalues.Merge(resources, &p.helmValues)
 	return nil
 }
 
@@ -237,7 +238,7 @@ func (p *CreateStandalonePipeline) ensureCredentialsSecret(ctx context.Context) 
 //
 // This step requires that provider-helm from Crossplane is running on the cluster (https://github.com/crossplane-contrib/provider-helm).
 func (p *CreateStandalonePipeline) ensureHelmRelease(ctx context.Context) error {
-	helmValues, err := p.helmValues.Marshal()
+	helmValues, err := helmvalues.Marshal(p.helmValues)
 	if err != nil {
 		return err
 	}
