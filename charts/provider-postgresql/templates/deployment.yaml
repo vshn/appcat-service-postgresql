@@ -32,8 +32,10 @@ spec:
           image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
+          {{- if .Values.webhook.enabled }}
             - name: WEBHOOK_TLS_CERT_DIR
               value: /webhook/tls
+          {{- end }}
             - name: OPERATOR_NAMESPACE
               valueFrom:
                 fieldRef:
