@@ -54,6 +54,7 @@ spec:
           #     port: webhook
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.webhook.enabled }}
           volumeMounts:
             - name: webhook-tls
               readOnly: true
@@ -62,6 +63,7 @@ spec:
         - name: webhook-tls
           secret:
             secretName: {{ include "provider-postgresql.fullname" . }}-webhook-tls
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
