@@ -137,6 +137,17 @@ func TestCreateStandalonePipeline_ApplyValuesFromInstance(t *testing.T) {
 			},
 		},
 		"fullnameOverride": "postgresql",
+		"networkPolicy": helmvalues.V{
+			"enabled": true,
+			"ingressRules": helmvalues.V{
+				"primaryAccessOnlyFrom": helmvalues.V{
+					"enabled": true,
+					"namespaceSelector": helmvalues.V{
+						"kubernetes.io/metadata.name": "my-app",
+					},
+				},
+			},
+		},
 	}, p.helmValues)
 }
 
