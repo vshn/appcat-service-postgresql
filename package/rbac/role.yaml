@@ -39,6 +39,14 @@ rules:
   - update
   - watch
 - apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - helm.crossplane.io
   resources:
   - providerconfigs

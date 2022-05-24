@@ -123,6 +123,7 @@ func TestCreateStandalonePipeline_ApplyValuesFromInstance(t *testing.T) {
 			"existingSecret":     "postgresql-credentials",
 			"database":           "instance",
 			"enablePostgresUser": true,
+			"username":           "instance",
 		},
 		"primary": HelmValues{
 			"persistence": HelmValues{

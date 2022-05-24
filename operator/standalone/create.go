@@ -15,8 +15,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	utilrand "k8s.io/apimachinery/pkg/util/rand"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 var namegeneratorRNG *rand.Rand
@@ -43,6 +45,8 @@ type CreateStandalonePipeline struct {
 	helmChart           *v1alpha1.ChartMeta
 	deploymentNamespace *corev1.Namespace
 	helmRelease         *helmv1beta1.Release
+
+	connectionSecret *corev1.Secret
 }
 
 // NewCreateStandalonePipeline creates a new pipeline with the required dependencies.
@@ -88,7 +92,17 @@ func (p *CreateStandalonePipeline) WaitUntilAllResourceReady(ctx context.Context
 	return pipeline.NewPipeline().
 		WithSteps(
 			pipeline.NewStepFromFunc("fetch helm release", p.fetchHelmRelease),
-			pipeline.If(p.isHelmReleaseReady, pipeline.NewStepFromFunc("mark instance ready", p.markInstanceAsReady)),
+			pipeline.If(p.isHelmReleaseReady,
+				pipeline.NewPipeline().WithNestedSteps("finish creation",
+					pipeline.NewPipeline().WithNestedSteps("create connection secret",
+						pipeline.NewStepFromFunc("fetch credentials", p.fetchCredentialSecret),
+						pipeline.NewStepFromFunc("fetch service", p.fetchService),
+						pipeline.NewStepFromFunc("set owner reference to connection secret", p.setOwnerReference),
+						pipeline.NewStepFromFunc("ensure connection secret", p.ensureConnectionSecret),
+					),
+					pipeline.NewStepFromFunc("mark instance ready", p.markInstanceAsReady),
+				),
+			),
 		).
 		RunWithContext(ctx).Err()
 }
@@ -163,6 +177,7 @@ func (p *CreateStandalonePipeline) applyValuesFromInstance(_ context.Context) er
 			"enablePostgresUser": p.instance.Spec.Parameters.EnableSuperUser,
 			"existingSecret":     getCredentialSecretName(),
 			"database":           p.instance.Name,
+			"username":           p.instance.Name,
 		},
 		"primary": HelmValues{
 			"resources": HelmValues{
@@ -289,6 +304,74 @@ func (p *CreateStandalonePipeline) markInstanceAsReady(ctx context.Context) erro
 	meta.SetStatusCondition(&p.instance.Status.Conditions, conditions.Builder().With(conditions.Ready()).WithGeneration(p.instance).Build())
 	meta.RemoveStatusCondition(&p.instance.Status.Conditions, conditions.TypeCreating)
 	return p.client.Status().Update(ctx, p.instance)
+}
+
+// ensureConnectionSecret creates the connection secret in the instance's namespace.
+func (p *CreateStandalonePipeline) ensureConnectionSecret(ctx context.Context) error {
+	err := Upsert(ctx, getClientFromContext(ctx), p.connectionSecret)
+	return err
+}
+
+// fetchCredentialSecret gets the credential secret and puts the credentials for postgresql into the connection secret.
+func (p *CreateStandalonePipeline) fetchCredentialSecret(ctx context.Context) error {
+	secret := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{
+		Name:      getCredentialSecretName(),
+		Namespace: p.instance.Status.HelmChart.DeploymentNamespace,
+	}}
+	err := getClientFromContext(ctx).Get(ctx, types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace}, secret)
+	if err != nil {
+		return err
+	}
+	if p.instance.Spec.Parameters.EnableSuperUser {
+		p.addDataToConnectionSecret("POSTGRESQL_POSTGRES_PASSWORD", secret.Data["postgres-password"])
+	}
+	p.addDataToConnectionSecret("POSTGRESQL_PASSWORD", secret.Data["password"])
+	p.addStringDataToConnectionSecret("POSTGRESQL_DATABASE", p.instance.Name)
+	p.addStringDataToConnectionSecret("POSTGRESQL_USER", p.instance.Name)
+	return err
+}
+
+// fetchService gets the service object and puts the DNS records into the connection secret.
+func (p *CreateStandalonePipeline) fetchService(ctx context.Context) error {
+	service := &corev1.Service{}
+	err := getClientFromContext(ctx).Get(ctx, client.ObjectKey{Name: "postgresql", Namespace: p.instance.Status.HelmChart.DeploymentNamespace}, service)
+	if err != nil {
+		return err
+	}
+	p.addStringDataToConnectionSecret("POSTGRESQL_SERVICE_NAME", fmt.Sprintf("%s.%s.svc.cluster.local", service.Name, service.Namespace))
+	p.addStringDataToConnectionSecret("POSTGRESQL_SERVICE_URL", fmt.Sprintf("postgresql://%s.%s.svc.cluster.local:%d", service.Name, service.Namespace, service.Spec.Ports[0].Port))
+	p.addStringDataToConnectionSecret("POSTGRESQL_SERVICE_PORT", fmt.Sprintf("%d", service.Spec.Ports[0].Port))
+	return nil
+}
+
+func (p *CreateStandalonePipeline) addDataToConnectionSecret(key string, data []byte) {
+	if p.connectionSecret == nil {
+		p.connectionSecret = p.newConnectionSecret()
+	}
+	p.connectionSecret.Data[key] = data
+}
+
+func (p *CreateStandalonePipeline) addStringDataToConnectionSecret(key, data string) {
+	if p.connectionSecret == nil {
+		p.connectionSecret = p.newConnectionSecret()
+	}
+	p.connectionSecret.StringData[key] = data
+}
+
+func (p *CreateStandalonePipeline) newConnectionSecret() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      p.instance.Spec.WriteConnectionSecretToRef.Name,
+			Namespace: p.instance.Namespace,
+			Labels:    getCommonLabels(p.instance.Name),
+		},
+		StringData: map[string]string{},
+		Data:       map[string][]byte{},
+	}
+}
+
+func (p *CreateStandalonePipeline) setOwnerReference(ctx context.Context) error {
+	return controllerutil.SetOwnerReference(p.instance, p.connectionSecret, getClientFromContext(ctx).Scheme())
 }
 
 func getCredentialSecretName() string {
