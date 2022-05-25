@@ -7,3 +7,5 @@ metadata:
 spec:
   # https://github.com/crossplane-contrib/provider-helm
   package: crossplane/provider-helm:$version
+  controllerConfigRef:
+    name: provider-helm
