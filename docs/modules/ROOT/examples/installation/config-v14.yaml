@@ -1,0 +1,23 @@
+apiVersion: postgresql.appcat.vshn.io/v1alpha1
+kind: PostgresqlStandaloneOperatorConfig
+metadata:
+  labels:
+    postgresql.appcat.vshn.io/major-version: v14
+  name: platform-config-v14
+  namespace: postgresql-system
+spec:
+  defaultDeploymentStrategy: HelmChart
+  helmProviderConfigReference: provider-helm
+  helmReleaseTemplate:
+    chart:
+      name: postgresql
+      repository: https://charts.bitnami.com/bitnami
+      version: 11.1.23
+    values:
+      key: value
+  resourceMaxima:
+    memoryLimit: 6Gi
+    storageCapacity: 500Gi
+  resourceMinima:
+    memoryLimit: 512Mi
+    storageCapacity: 5Gi

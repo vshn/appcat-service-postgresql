@@ -1,0 +1,83 @@
+= Installation
+
+This tutorial goes through the steps required to get the operator up and running.
+
+== Prerequisites
+
+* `kubectl`
+* `helm` v3
+* `yq`
+* `base64`
+* `openssl`
+* A running Kubernetes cluster with cluster-admin permissions
+
+== Steps
+
+. Install Crossplane
++
+[source,bash]
+----
+helm repo add crossplane https://charts.crossplane.io/stable
+helm upgrade --install crossplane crossplane/crossplane \
+  --create-namespace --namespace crossplane-system \
+  --wait
+----
+
+. Install provider-helm
++
+[source,yaml]
+----
+kubectl apply -f - << EOF
+include::example$installation/rbac.yaml[]
+EOF
+
+kubectl apply -f - << EOF
+include::example$installation/controller-config.yaml[]
+EOF
+
+kubectl apply -f - << EOF
+include::example$installation/provider-helm.yaml[]
+EOF
+
+kubectl apply -f - << EOF
+include::example$installation/providerconfig-helm.yaml[]
+EOF
+
+kubectl wait --for condition=Healthy provider.pkg.crossplane.io/provider-helm --timeout 60s
+----
+
+. Generate webhook certificates
++
+[source,bash]
+----
+webhook_service_name="provider-postgresql.postgresql-system.svc"
+if [[ $(uname -s) == "Linux" ]]; then b64args='-w0'; fi
+openssl req -x509 -newkey rsa:4096 -nodes -keyout tls.key -out tls.crt -days 3650 -subj "/CN=${webhook_service_name}" -addext "subjectAltName = DNS:${webhook_service_name}"
+yq -n '.webhook.caBundle="'$(base64 $b64args tls.crt)'" | .webhook.certificate="'$(base64 $b64args tls.crt)'" | .webhook.privateKey="'$(base64 $b64args tls.key)'"' > webhook-values.yaml
+----
+
+. Install provider-postgresql
++
+[source,bash]
+----
+helm repo add appcat-service-postgresql https://vshn.github.io/appcat-service-postgresql
+kubectl apply -f https://github.com/vshn/appcat-service-postgresql/releases/latest/download/crds.yaml
+helm upgrade --install provider-postgresql appcat-service-postgresql/provider-postgresql \
+  --create-namespace --namespace postgresql-system \
+  --values webhook-values.yaml \
+  --wait
+----
+
+. Apply the configuration for a PostgreSQL major version.
++
+[source,yaml]
+----
+kubectl apply -f - << EOF
+include::example$installation/config-v14.yaml[]
+EOF
+----
+
+== Conclusion
+
+Now that you have the basic Operator running, it's time to get started with deploying instances.
+See xref:tutorials/getting-started.adoc[Tutorial: Getting Started] to get started.

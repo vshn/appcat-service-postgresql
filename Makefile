@@ -66,7 +66,11 @@ generate-go: ## Generate Go artifacts
 
 .PHONY: generate-docs
 generate-docs: generate-go ## Generate example code snippets for documentation
-	@yq e 'del(.metadata.creationTimestamp) | del(.metadata.generation) | del(.status)' package/samples/postgresql.appcat.vshn.io_postgresqlstandalone.yaml > docs/modules/ROOT/examples/standalone.yaml
+	@yq e 'del(.metadata.creationTimestamp) | del(.metadata.generation) | del(.status)' package/samples/postgresql.appcat.vshn.io_postgresqlstandalone.yaml > $(docs_moduleroot_dir)/examples/standalone.yaml
+	@yq e '.spec.package="crossplane/provider-helm:$(provider_helm_version)"' test/provider-helm.yaml > $(docs_moduleroot_dir)/examples/installation/provider-helm.yaml
+	@yq e 'del(.spec.helmReleases) | del(.metadata.creationTimestamp) | del(.status)' package/samples/postgresql.appcat.vshn.io_postgresqlstandaloneoperatorconfig.yaml > $(docs_moduleroot_dir)/examples/installation/config-v14.yaml
+	@yq e 'del(.metadata.creationTimestamp) | del(.status)' package/samples/helm.crossplane.io_providerconfig.yaml > $(docs_moduleroot_dir)/examples/installation/providerconfig-helm.yaml
+	@cp test/rbac.yaml test/controller-config.yaml $(docs_moduleroot_dir)/examples/installation/
 
 .PHONY: install-crd
 install-crd: export KUBECONFIG = $(KIND_KUBECONFIG)
