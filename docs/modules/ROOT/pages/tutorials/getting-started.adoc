@@ -5,9 +5,10 @@ This page describes how to create a new instance after you have installed the op
 == Prerequisites
 
 * `kubectl`
-* Already running Operator
+* Already running Kubernetes cluster
+* Installed Operator
 
-== Create An Instance
+== Steps
 
 . Create a file with the instance spec
 +
