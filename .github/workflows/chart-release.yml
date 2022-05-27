@@ -70,7 +70,7 @@ jobs:
         with:
           configuration: ".github/configuration.json"
           ignorePreReleases: true
-          outputFile: charts/.artifacts/CHANGELOG.md
+          outputFile: .github/release-notes.md
           fromTag: ${{ env.CHART_NAME }}-${{ env.PREVIOUS_CHART_VERSION }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -78,7 +78,7 @@ jobs:
       # there doesn't seem to be any maintained GitHub actions that allow uploading assets after release has been made.
       - name: Update release
         run: |
-          gh release upload ${CHART_NAME}-${CHART_VERSION} charts/.artifacts/crds.yaml
-          gh release edit   ${CHART_NAME}-${CHART_VERSION} --notes-file charts/.artifacts/CHANGELOG.md
+          gh release upload ${CHART_NAME}-${CHART_VERSION} .github/crds.yaml
+          gh release edit   ${CHART_NAME}-${CHART_VERSION} --notes-file .github/release-notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

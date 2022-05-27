@@ -10,7 +10,6 @@ $(helm_docs_bin):
 
 .PHONY: chart-prepare
 chart-prepare: generate-go ## Prepare the Helm charts
-	@mkdir -p charts/.artifacts
 	@find charts -type f -name Makefile | sed 's|/[^/]*$$||' | xargs -I '%' make -C '%' clean prepare
 
 .PHONY: chart-docs
