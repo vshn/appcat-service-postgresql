@@ -19,7 +19,7 @@ $(crossplane_sentinel): $(KIND_KUBECONFIG)
 
 $(provider_helm_sentinel): export KUBECONFIG = $(KIND_KUBECONFIG)
 $(provider_helm_sentinel): $(crossplane_sentinel)
+	kubectl apply -f $(test_dir)/controller-config.yaml -f $(test_dir)/rbac.yaml
 	yq e '.spec.package="crossplane/provider-helm:$(provider_helm_version)"' $(test_dir)/provider-helm.yaml | kubectl apply -f -
 	kubectl wait --for condition=Healthy provider.pkg.crossplane.io/provider-helm --timeout 60s
-	yq e '.subjects[0].name="'$$(kubectl get sa -n crossplane-system -o yaml | yq e '.items[].metadata.name | select(match("provider-helm"))')'"' $(test_dir)/clusterrolebinding-provider-helm.yaml | kubectl apply -f -
 	@touch $@
