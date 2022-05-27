@@ -58,10 +58,15 @@ yq -n '.webhook.caBundle="'$(base64 $b64args tls.crt)'" | .webhook.certificate="
 
 . Install provider-postgresql
 +
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
 helm repo add appcat-service-postgresql https://vshn.github.io/appcat-service-postgresql
+ifeval::["{releaseVersion}" == "latest"]
 kubectl apply -f https://github.com/vshn/appcat-service-postgresql/releases/latest/download/crds.yaml
+endif::[]
+ifeval::["{releaseVersion}" != "latest"]
+kubectl apply -f https://github.com/vshn/appcat-service-postgresql/releases/download/{releaseVersion}/crds.yaml
+endif::[]
 helm upgrade --install provider-postgresql appcat-service-postgresql/provider-postgresql \
   --create-namespace --namespace postgresql-system \
   --values webhook-values.yaml \
