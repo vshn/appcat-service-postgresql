@@ -61,7 +61,7 @@ func (r *PostgresStandaloneReconciler) Reconcile(ctx context.Context, request re
 		return reconcile.Result{}, err
 	}
 	if !obj.DeletionTimestamp.IsZero() {
-		return r.Delete(ctx, obj)
+		return r.DeleteDeployment(ctx, obj)
 	}
 	if readyCondition := meta.FindStatusCondition(obj.Status.Conditions, conditions.TypeReady); readyCondition == nil {
 		// Ready condition is not present, it's a fresh object
@@ -89,15 +89,13 @@ func (r *PostgresStandaloneReconciler) CreateDeployment(ctx context.Context, ins
 	return reconcile.Result{RequeueAfter: 10 * time.Second}, err
 }
 
-// Delete prepares the given instance for deletion.
-func (r *PostgresStandaloneReconciler) Delete(ctx context.Context, instance *v1alpha1.PostgresqlStandalone) (reconcile.Result, error) {
-	// we don't need to delete it by ourselves, since the deletion timestamp is already set.
-	// Just remove all finalizers
+// DeleteDeployment prepares the given instance for deletion.
+func (r *PostgresStandaloneReconciler) DeleteDeployment(ctx context.Context, instance *v1alpha1.PostgresqlStandalone) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	controllerutil.RemoveFinalizer(instance, finalizer)
-	log.Info("Deleting")
-	err := r.client.Update(ctx, instance)
-	return reconcile.Result{}, err
+	d := NewDeleteStandalonePipeline(r.client, instance)
+	log.Info("Deleting instance")
+	err := d.RunPipeline(ctx)
+	return reconcile.Result{RequeueAfter: 1 * time.Second}, err
 }
 
 // Update saves the given spec in Kubernetes.
