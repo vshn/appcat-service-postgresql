@@ -6,7 +6,7 @@ k8up-setup: minio-setup $(k8up_sentinel) ## Install K8up operator
 
 $(k8up_sentinel): export KUBECONFIG = $(KIND_KUBECONFIG)
 $(k8up_sentinel): $(KIND_KUBECONFIG)
-	helm repo add appuio https://charts.appuio.ch
+	helm repo add --force-update appuio https://charts.appuio.ch
 	kubectl apply -f https://github.com/k8up-io/k8up/releases/latest/download/k8up-crd.yaml
 	helm upgrade --install k8up appuio/k8up \
 		--create-namespace --namespace k8up-system \
@@ -19,7 +19,7 @@ minio-setup: $(minio_sentinel) ## Install Minio S3
 
 $(minio_sentinel): export KUBECONFIG = $(KIND_KUBECONFIG)
 $(minio_sentinel): $(KIND_KUBECONFIG)
-	helm repo add minio https://charts.min.io
+	helm repo add --force-update minio https://charts.min.io
 	helm upgrade --install minio minio/minio \
 		--create-namespace --namespace minio-system \
 		--values test/minio-values.yaml \
