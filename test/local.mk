@@ -23,7 +23,7 @@ endif
 
 .PHONY: local-install
 local-install: export KUBECONFIG = $(KIND_KUBECONFIG)
-local-install: crossplane-setup kind-load-image install-crd webhook-cert ## Install Operator in local cluster
+local-install: crossplane-setup kind-load-image install-crd webhook-cert k8up-setup ## Install Operator in local cluster
 	helm upgrade --install provider-postgresql charts/provider-postgresql \
 		--create-namespace --namespace postgresql-system \
 		--set "operator.args[0]=--log-level=2" \
@@ -80,3 +80,13 @@ $(envtest_crd_dir)/helm.crossplane.io_providerconfigs.yaml: $(.envtest_crd_dir)
 	curl -sSL -o $@ $(provider_helm_download_root)/helm.crossplane.io_providerconfigs.yaml
 
 .envtest_crds: .envtest_crd_dir $(envtest_crd_dir)/helm.crossplane.io_releases.yaml $(envtest_crd_dir)/helm.crossplane.io_providerconfigs.yaml
+
+####
+#### S3 Bucket
+####
+
+bucket_namespace ?= default
+
+.PHONY: s3-credentials
+s3-credentials: minio-setup ## Copies Minio's S3 Bucket credentials to $(bucket_namespace)
+	kubectl -n minio-system get secret minio-server -o yaml | yq e 'del(.metadata) | .metadata.name = "s3-credentials"' | kubectl -n $(bucket_namespace) apply -f -

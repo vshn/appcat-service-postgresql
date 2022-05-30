@@ -1,0 +1,11 @@
+fullnameOverride: minio-server
+replicas: 1
+resources:
+  requests:
+    memory: 128Mi
+persistence:
+  size: 1Gi
+mode: standalone
+buckets:
+  - name: k8up-backup
+    policy: none
