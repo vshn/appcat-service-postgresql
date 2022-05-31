@@ -44,6 +44,91 @@ spec:
             description: A PostgresqlStandaloneOperatorConfigSpec defines the desired
               state of a PostgresqlStandaloneOperatorConfig.
             properties:
+              backupConfigSpec:
+                description: BackupConfigSpec defines settings for instance backups.
+                properties:
+                  s3BucketSecret:
+                    description: S3BucketSecret configures the bucket settings for
+                      backup buckets.
+                    properties:
+                      accessKeyRef:
+                        description: AccessKeyRef selects the access key credential
+                          for the bucket.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                      bucketRef:
+                        description: BucketRef selects the secret and key for retrieving
+                          the bucket name.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                      endpointRef:
+                        description: EndpointRef selects the secret and key for retrieving
+                          the endpoint name.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                      secretKeyRef:
+                        description: SecretKeyRef selects the secret key credential
+                          for the bucket.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or its key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                        type: object
+                    type: object
+                type: object
               defaultDeploymentStrategy:
                 description: DeploymentStrategy defines the DeploymentStrategy in
                   case there isn't a 1:1 match.

@@ -6,6 +6,20 @@ metadata:
   name: platform-config-v14
   namespace: postgresql-system
 spec:
+  backupConfigSpec:
+    s3BucketSecret:
+      accessKeyRef:
+        key: accessKey
+        name: s3-credentials
+      bucketRef:
+        key: bucket
+        name: s3-credentials
+      endpointRef:
+        key: endpoint
+        name: s3-credentials
+      secretKeyRef:
+        key: secretKey
+        name: s3-credentials
   defaultDeploymentStrategy: HelmChart
   helmProviderConfigReference: provider-helm
   helmReleaseTemplate:
