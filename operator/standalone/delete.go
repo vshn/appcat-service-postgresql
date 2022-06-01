@@ -50,15 +50,14 @@ func (d *DeleteStandalonePipeline) RunPipeline(ctx context.Context) error {
 func (d *DeleteStandalonePipeline) deleteHelmRelease(ctx context.Context) error {
 	helmRelease := &helmv1beta1.Release{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      d.instance.Status.HelmChart.DeploymentNamespace,
-			Namespace: d.instance.Status.HelmChart.DeploymentNamespace,
+			Name: d.instance.Status.HelmChart.DeploymentNamespace,
 		},
 	}
 	err := d.client.Delete(ctx, helmRelease)
 	if err != nil && apierrors.IsNotFound(err) {
 		d.helmReleaseDeleted = true
 	}
-	return skipOnNotFound(err)
+	return client.IgnoreNotFound(err)
 }
 
 // deleteNamespace removes the namespace of the PostgreSQL instance
@@ -66,11 +65,14 @@ func (d *DeleteStandalonePipeline) deleteHelmRelease(ctx context.Context) error 
 func (d *DeleteStandalonePipeline) deleteNamespace(ctx context.Context) error {
 	deploymentNamespace := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      d.instance.Status.HelmChart.DeploymentNamespace,
-			Namespace: d.instance.Status.HelmChart.DeploymentNamespace,
+			Name: d.instance.Status.HelmChart.DeploymentNamespace,
 		},
 	}
-	return skipOnNotFound(d.client.Delete(ctx, deploymentNamespace))
+	propagation := metav1.DeletePropagationBackground
+	deleteOptions := &client.DeleteOptions{
+		PropagationPolicy: &propagation,
+	}
+	return client.IgnoreNotFound(d.client.Delete(ctx, deploymentNamespace, deleteOptions))
 }
 
 // deleteConnectionSecret removes the connection secret of the PostgreSQL instance
@@ -81,24 +83,18 @@ func (d *DeleteStandalonePipeline) deleteConnectionSecret(ctx context.Context) e
 			Namespace: d.instance.Namespace,
 		},
 	}
-	return skipOnNotFound(d.client.Delete(ctx, connectionSecret))
+	return client.IgnoreNotFound(d.client.Delete(ctx, connectionSecret))
 }
 
 // removeFinalizer removes the finalizer from the PostgreSQL CRD
 func (d *DeleteStandalonePipeline) removeFinalizer(ctx context.Context) error {
-	controllerutil.RemoveFinalizer(d.instance, finalizer)
-	return d.client.Update(ctx, d.instance)
+	if controllerutil.RemoveFinalizer(d.instance, finalizer) {
+		return d.client.Update(ctx, d.instance)
+	}
+	return nil
 }
 
 // isHelmReleaseDeleted checks whether the Release was completely deleted
 func (d *DeleteStandalonePipeline) isHelmReleaseDeleted(_ context.Context) bool {
 	return d.helmReleaseDeleted
-}
-
-// skipOnNotFound treats not found error as nil
-func skipOnNotFound(err error) error {
-	if err != nil && !apierrors.IsNotFound(err) {
-		return err
-	}
-	return nil
 }
