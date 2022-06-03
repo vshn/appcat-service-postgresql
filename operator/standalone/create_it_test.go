@@ -76,7 +76,7 @@ func (ts *CreateStandalonePipelineSuite) Test_FetchOperatorConfig() {
 			p := &CreateStandalonePipeline{
 				operatorNamespace: tc.givenNamespace,
 				client:            ts.Client,
-				instance:          newInstance("instance"),
+				instance:          newInstance("instance", "my-app"),
 			}
 			tc.prepare()
 			err := p.fetchOperatorConfig(ts.Context)
@@ -93,7 +93,7 @@ func (ts *CreateStandalonePipelineSuite) Test_FetchOperatorConfig() {
 func (ts *CreateStandalonePipelineSuite) Test_EnsureDeploymentNamespace() {
 	// Arrange
 	p := &CreateStandalonePipeline{
-		instance: newInstance("test-ensure-namespace"),
+		instance: newInstance("test-ensure-namespace", "my-app"),
 		client:   ts.Client,
 	}
 	currentRand := namegeneratorRNG
@@ -117,7 +117,7 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureCredentialSecret() {
 	ns := ServiceNamespacePrefix + "my-app-instance"
 	ts.EnsureNS(ns)
 	p := &CreateStandalonePipeline{
-		instance:            newInstance("instance"),
+		instance:            newInstance("instance", "my-app"),
 		client:              ts.Client,
 		deploymentNamespace: &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: ns}},
 	}
@@ -137,7 +137,7 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureCredentialSecret() {
 func (ts *CreateStandalonePipelineSuite) Test_EnsureHelmRelease() {
 	// Arrange
 	p := &CreateStandalonePipeline{
-		instance:   newInstance("instance"),
+		instance:   newInstance("instance", "my-app"),
 		client:     ts.Client,
 		helmChart:  &v1alpha1.ChartMeta{Repository: "https://host/path", Version: "version", Name: "postgres"},
 		helmValues: helmvalues.V{"key": "value"},
@@ -160,7 +160,7 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureHelmRelease() {
 func (ts *CreateStandalonePipelineSuite) Test_EnrichStatus() {
 	// Arrange
 	p := &CreateStandalonePipeline{
-		instance:            newInstance("enrich-status"),
+		instance:            newInstance("enrich-status", "my-app"),
 		client:              ts.Client,
 		helmChart:           &v1alpha1.ChartMeta{Repository: "https://host/path", Version: "version", Name: "postgres"},
 		deploymentNamespace: &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: generateClusterScopedNameForInstance()}},
@@ -186,7 +186,7 @@ func (ts *CreateStandalonePipelineSuite) Test_EnrichStatus() {
 func (ts *CreateStandalonePipelineSuite) Test_FetchHelmRelease() {
 	// Arrange
 	p := &CreateStandalonePipeline{
-		instance: newInstance("fetch-release"),
+		instance: newInstance("fetch-release", "my-app"),
 		client:   ts.Client,
 	}
 	p.instance.Status.HelmChart = &v1alpha1.ChartMetaStatus{
@@ -208,7 +208,7 @@ func (ts *CreateStandalonePipelineSuite) Test_FetchHelmRelease() {
 func (ts *CreateStandalonePipelineSuite) Test_FetchCredentialSecret() {
 	// Arrange
 	p := CreateStandalonePipeline{
-		instance: newInstance("fetch-credentials"),
+		instance: newInstance("fetch-credentials", "my-app"),
 	}
 	credentialSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -241,7 +241,7 @@ func (ts *CreateStandalonePipelineSuite) Test_FetchCredentialSecret() {
 func (ts *CreateStandalonePipelineSuite) Test_FetchService() {
 	// Arrange
 	p := CreateStandalonePipeline{
-		instance: newInstance("fetch-service"),
+		instance: newInstance("fetch-service", "my-app"),
 	}
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{

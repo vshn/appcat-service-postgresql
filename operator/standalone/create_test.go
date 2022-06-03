@@ -115,7 +115,7 @@ func TestCreateStandalonePipeline_OverrideTemplateValues(t *testing.T) {
 func TestCreateStandalonePipeline_ApplyValuesFromInstance(t *testing.T) {
 	p := CreateStandalonePipeline{
 		config:   newPostgresqlStandaloneOperatorConfig("cfg", "postgresql-system"),
-		instance: newInstance("instance"),
+		instance: newInstance("instance", "my-app"),
 	}
 	err := p.applyValuesFromInstance(nil)
 	require.NoError(t, err)
@@ -153,7 +153,7 @@ func TestCreateStandalonePipeline_ApplyValuesFromInstance(t *testing.T) {
 
 func TestCreateStandalonePipeline_IsHelmReleaseReady(t *testing.T) {
 	p := CreateStandalonePipeline{
-		instance: newInstance("release-ready"),
+		instance: newInstance("release-ready", "my-app"),
 	}
 	p.instance.Status.HelmChart = &v1alpha1.ChartMetaStatus{}
 
@@ -207,9 +207,9 @@ func newPostgresqlStandaloneOperatorConfig(name string, namespace string) *v1alp
 		},
 	}
 }
-func newInstance(name string) *v1alpha1.PostgresqlStandalone {
+func newInstance(name string, namespace string) *v1alpha1.PostgresqlStandalone {
 	return &v1alpha1.PostgresqlStandalone{
-		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "my-app"},
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
 		Spec: v1alpha1.PostgresqlStandaloneSpec{
 			Parameters: v1alpha1.PostgresqlStandaloneParameters{
 				MajorVersion:    v1alpha1.PostgresqlVersion14,

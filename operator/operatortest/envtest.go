@@ -60,8 +60,8 @@ func (ts *Suite) SetupSuite() {
 
 	info, err := os.Stat(envtestAssets)
 	absEnvtestAssets, _ := filepath.Abs(envtestAssets)
-	ts.Require().NoErrorf(err, "'%s' does not seem to exist. Check KUBEBUILDER_ASSETS and make sure you run `make integration-test` before you run this test in your IDE.", absEnvtestAssets)
-	ts.Require().Truef(info.IsDir(), "'%s' does not seem to be a directory. Check KUBEBUILDER_ASSETS and make sure you run `make integration-test` before you run this test in your IDE.", absEnvtestAssets)
+	ts.Require().NoErrorf(err, "'%s' does not seem to exist. Check KUBEBUILDER_ASSETS and make sure you run `make test-integration` before you run this test in your IDE.", absEnvtestAssets)
+	ts.Require().Truef(info.IsDir(), "'%s' does not seem to be a directory. Check KUBEBUILDER_ASSETS and make sure you run `make test-integration` before you run this test in your IDE.", absEnvtestAssets)
 
 	absCrds, _ := filepath.Abs(crdDir)
 	info, err = os.Stat(crdDir)
