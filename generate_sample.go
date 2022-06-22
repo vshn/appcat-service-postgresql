@@ -4,7 +4,7 @@
 //go:generate rm -rf package/samples/*
 
 // Generate sample files
-//go:generate go run gen_sample.go package/samples
+//go:generate go run generate_sample.go package/samples
 
 package main
 
