@@ -291,6 +291,11 @@ func (b *PostgresqlStandaloneBuilder) setConnectionSecret(secret string) *Postgr
 	return b
 }
 
+func (b *PostgresqlStandaloneBuilder) setBackup(enabled bool) *PostgresqlStandaloneBuilder {
+	b.Spec.Backup.Enabled = enabled
+	return b
+}
+
 func (b *PostgresqlStandaloneBuilder) setFinalizers(finalizers ...string) *PostgresqlStandaloneBuilder {
 	b.Finalizers = finalizers
 	return b

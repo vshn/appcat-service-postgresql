@@ -33,6 +33,8 @@ func NewDeleteStandalonePipeline(client client.Client, instance *v1alpha1.Postgr
 func (d *DeleteStandalonePipeline) RunPipeline(ctx context.Context) error {
 	return pipeline.NewPipeline().
 		WithSteps(
+			//TODO In case the instance is deleted before connection secret is created the deletion of secret returns an error and blocks the pipeline.
+			// Check if connection secret exist before calling deleteConnectionSecret
 			pipeline.NewStepFromFunc("delete connection secret", d.deleteConnectionSecret),
 			pipeline.NewStepFromFunc("delete helm release", d.deleteHelmRelease),
 			pipeline.If(d.isHelmReleaseDeleted,

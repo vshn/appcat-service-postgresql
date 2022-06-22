@@ -4,7 +4,10 @@ package standalone
 
 import (
 	"context"
+	"fmt"
+	k8upv1 "github.com/k8up-io/k8up/v2/api/v1"
 	"math/rand"
+	"strings"
 	"testing"
 
 	pipeline "github.com/ccremer/go-command-pipeline"
@@ -30,6 +33,7 @@ func (ts *CreateStandalonePipelineSuite) BeforeTest(suiteName, testName string) 
 	ts.Context = pipeline.MutableContext(context.Background())
 	setClientInContext(ts.Context, ts.Client)
 	ts.RegisterScheme(helmv1beta1.SchemeBuilder.AddToScheme)
+	ts.RegisterScheme(k8upv1.SchemeBuilder.AddToScheme)
 }
 
 func (ts *CreateStandalonePipelineSuite) Test_FetchOperatorConfig() {
@@ -266,4 +270,294 @@ func (ts *CreateStandalonePipelineSuite) Test_FetchService() {
 	ts.Assert().Equal("postgresql.service-ns.svc.cluster.local", p.connectionSecret.StringData["POSTGRESQL_SERVICE_NAME"], "service name")
 	ts.Assert().Equal("postgresql://postgresql.service-ns.svc.cluster.local:5432", p.connectionSecret.StringData["POSTGRESQL_SERVICE_URL"], "service url")
 	ts.Assert().Equal("5432", p.connectionSecret.StringData["POSTGRESQL_SERVICE_PORT"], "service port")
+}
+
+func (ts *CreateStandalonePipelineSuite) Test_EnsureK8upSchedule() {
+	tests := map[string]struct {
+		prepare                 func()
+		givenBackup             bool
+		givenInstance           *v1alpha1.PostgresqlStandalone
+		givenS3BucketSecret     *corev1.Secret
+		givenConfig             *v1alpha1.PostgresqlStandaloneOperatorConfig
+		expectedAccessKeyRef    *corev1.SecretKeySelector
+		expectedSecretKeyRef    *corev1.SecretKeySelector
+		expectedBucket          string
+		expectedEndpoint        string
+		expectedResticKey       string
+		expectedResticRef       string
+		expectedBackupFrequency string
+		expectedOtherFrequency  string
+		expectedError           string
+	}{
+		"GivenPostgresqlStandaloneCRD_WhenBackupTrue_ThenExpectSchedule": {
+			prepare: func() {
+				ts.EnsureNS("scheduled-namespace")
+			},
+			givenBackup: true,
+			givenInstance: newBuilderInstance("instance", "postgresql-instance").
+				setDeploymentNamespace("scheduled-namespace").
+				setBackup(true).
+				get(),
+			givenS3BucketSecret: &corev1.Secret{
+				Data: map[string][]byte{
+					"accessKey": []byte("access"),
+					"secretKey": []byte("secret"),
+					"bucket":    []byte("k8up-bucket"),
+					"endpoint":  []byte("http://minio:9000"),
+				},
+			},
+			givenConfig: &v1alpha1.PostgresqlStandaloneOperatorConfig{
+				Spec: v1alpha1.PostgresqlStandaloneOperatorConfigSpec{
+					BackupConfigSpec: v1alpha1.BackupConfigSpec{
+						S3BucketSecret: v1alpha1.S3BucketConfigSpec{
+							AccessKeyRef: corev1.SecretKeySelector{
+								Key:                  "accessKey",
+								LocalObjectReference: corev1.LocalObjectReference{Name: "s3-credentials"},
+							},
+							SecretKeyRef: corev1.SecretKeySelector{
+								Key:                  "secretKey",
+								LocalObjectReference: corev1.LocalObjectReference{Name: "s3-credentials"},
+							},
+							BucketRef: corev1.SecretKeySelector{
+								Key:                  "bucket",
+								LocalObjectReference: corev1.LocalObjectReference{Name: "s3-credentials"},
+							},
+							EndpointRef: corev1.SecretKeySelector{
+								Key:                  "endpoint",
+								LocalObjectReference: corev1.LocalObjectReference{Name: "s3-credentials"},
+							},
+						},
+					},
+				},
+			},
+			expectedAccessKeyRef: &corev1.SecretKeySelector{
+				Key:                  "accessKey",
+				LocalObjectReference: corev1.LocalObjectReference{Name: "s3-credentials"}},
+			expectedSecretKeyRef: &corev1.SecretKeySelector{
+				Key:                  "secretKey",
+				LocalObjectReference: corev1.LocalObjectReference{Name: "s3-credentials"}},
+			expectedBucket:          "k8up-bucket",
+			expectedEndpoint:        "http://minio:9000",
+			expectedResticKey:       "repository",
+			expectedResticRef:       "postgresql-restic",
+			expectedBackupFrequency: "@daily-random",
+			expectedOtherFrequency:  "@weekly-random",
+			expectedError:           "",
+		},
+		"GivenPostgresqlStandaloneCRD_WhenBackupFalse_ThenExpectNoSchedule": {
+			prepare: func() {
+				ts.EnsureNS("scheduled-namespace")
+			},
+			givenBackup: false,
+			givenInstance: newBuilderInstance("instance", "postgresql-instance").
+				setDeploymentNamespace("scheduled-namespace").
+				setBackup(false).
+				get(),
+			givenS3BucketSecret: nil,
+			givenConfig:         nil,
+			expectedError:       "schedules.k8up.io \"postgresql\" not found",
+		},
+	}
+	for name, tc := range tests {
+		ts.Run(name, func() {
+			// given
+			p := &CreateStandalonePipeline{
+				operatorNamespace: "operator-namespace",
+				client:            ts.Client,
+				instance:          tc.givenInstance,
+				s3BucketSecret:    tc.givenS3BucketSecret,
+				config:            tc.givenConfig,
+			}
+			tc.prepare()
+
+			// act
+			err := p.ensureK8upSchedule(ts.Context)
+
+			// assert
+			ts.Assert().NoError(err)
+
+			actualSchedule := k8upv1.Schedule{}
+			err = ts.Client.Get(ts.Context, types.NamespacedName{Name: "postgresql", Namespace: "scheduled-namespace"}, &actualSchedule)
+
+			if tc.givenBackup == false {
+				ts.Assert().EqualError(err, tc.expectedError)
+				return
+			}
+
+			ts.Assert().Equal(actualSchedule.Spec.Backup.ScheduleCommon.Schedule.String(), tc.expectedBackupFrequency)
+			ts.Assert().Equal(actualSchedule.Spec.Archive.ScheduleCommon.Schedule.String(), tc.expectedOtherFrequency)
+			ts.Assert().Equal(actualSchedule.Spec.Prune.ScheduleCommon.Schedule.String(), tc.expectedOtherFrequency)
+			ts.Assert().Equal(actualSchedule.Spec.Check.ScheduleCommon.Schedule.String(), tc.expectedOtherFrequency)
+			ts.Assert().Equal(actualSchedule.Spec.Backend.RepoPasswordSecretRef.Key, tc.expectedResticKey)
+			ts.Assert().Equal(actualSchedule.Spec.Backend.RepoPasswordSecretRef.LocalObjectReference.Name, tc.expectedResticRef)
+			ts.Assert().Equal(actualSchedule.Spec.Backend.S3.Endpoint, tc.expectedEndpoint)
+			ts.Assert().Equal(actualSchedule.Spec.Backend.S3.Bucket, tc.expectedBucket)
+			ts.Assert().Equal(actualSchedule.Spec.Backend.S3.AccessKeyIDSecretRef, tc.expectedAccessKeyRef)
+			ts.Assert().Equal(actualSchedule.Spec.Backend.S3.SecretAccessKeySecretRef, tc.expectedSecretKeyRef)
+		})
+	}
+}
+
+func (ts *CreateStandalonePipelineSuite) Test_EnsureResticRepositorySecret() {
+	tests := map[string]struct {
+		prepare                  func(deplymentNamespace string)
+		givenInstance            *v1alpha1.PostgresqlStandalone
+		givenDeploymentNamespace string
+		expectedName             string
+		expectedLabels           map[string]string
+		expectedDataKey          string
+		expectedError            string
+	}{
+		"GivenPostgresqlStandaloneCRD_WhenEnsureResticRepositorySecret_ThenExpectSecret": {
+			prepare: func(deploymentNamespace string) {
+				ts.EnsureNS(deploymentNamespace)
+			},
+			givenInstance:            newBuilderInstance("instance", "postgresql-instance").get(),
+			givenDeploymentNamespace: "instance-namespace",
+			expectedName:             "postgresql-restic",
+			expectedLabels: map[string]string{
+				"app.kubernetes.io/instance":   "instance",
+				"app.kubernetes.io/managed-by": v1alpha1.Group,
+				"app.kubernetes.io/created-by": fmt.Sprintf("controller-%s", strings.ToLower(v1alpha1.PostgresqlStandaloneKind)),
+			},
+			expectedDataKey: "repository",
+			expectedError:   "",
+		},
+		"GivenPostgresqlStandaloneCRDWithoutDeploymentNamespace_WhenEnsureResticRepositorySecret_ThenExpectError": {
+			prepare: func(deploymentNamespace string) {
+				ts.EnsureNS("another-namespace")
+			},
+			givenInstance:            newBuilderInstance("instance", "postgresql-instance").get(),
+			givenDeploymentNamespace: "",
+			expectedName:             "",
+			expectedLabels:           map[string]string{},
+			expectedDataKey:          "",
+			expectedError:            "an empty namespace may not be set when a resource name is provided",
+		},
+	}
+	for name, tc := range tests {
+		ts.Run(name, func() {
+			// given
+			p := &CreateStandalonePipeline{
+				operatorNamespace:   "operator-namespace",
+				client:              ts.Client,
+				instance:            tc.givenInstance,
+				deploymentNamespace: &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: tc.givenDeploymentNamespace}},
+			}
+			setInstanceInContext(ts.Context, tc.givenInstance)
+			tc.prepare(tc.givenDeploymentNamespace)
+
+			// act
+			err := p.ensureResticRepositorySecret(ts.Context)
+
+			// assert
+			if tc.expectedError != "" {
+				ts.Assert().EqualError(err, tc.expectedError)
+				return
+			}
+
+			ts.Assert().NoError(err)
+			actualSecret := corev1.Secret{}
+			err = ts.Client.Get(ts.Context, types.NamespacedName{Name: tc.expectedName, Namespace: tc.givenDeploymentNamespace}, &actualSecret)
+
+			ts.Assert().NoError(err)
+			ts.Assert().Equal(tc.expectedLabels, actualSecret.Labels)
+			ts.Assert().Contains(actualSecret.Data, tc.expectedDataKey)
+			ts.Assert().NotEmpty(actualSecret.Data[tc.expectedDataKey])
+		})
+	}
+}
+
+func (ts *CreateStandalonePipelineSuite) Test_FetchS3BucketSecret() {
+	tests := map[string]struct {
+		prepare                  func(deplymentNamespace string)
+		givenInstance            *v1alpha1.PostgresqlStandalone
+		givenConfig              *v1alpha1.PostgresqlStandaloneOperatorConfig
+		givenDeploymentNamespace string
+		expectedName             string
+		expectedBucket           []uint8
+		expectedError            string
+	}{
+		"GivenPostgresqlStandaloneCRD_WhenFetchS3BucketSecret_ThenExpectSecret": {
+			prepare: func(deploymentNamespace string) {
+				ts.EnsureNS(deploymentNamespace)
+				ts.EnsureResources(&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{Name: "s3-credentials", Namespace: deploymentNamespace},
+					Data: map[string][]byte{
+						"bucket": []byte("some-bucket"),
+					},
+				})
+			},
+			givenInstance: newBuilderInstance("instance", "postgresql-instance").
+				setDeploymentNamespace("secret-namespace").
+				get(),
+			givenDeploymentNamespace: "secret-namespace",
+			givenConfig: &v1alpha1.PostgresqlStandaloneOperatorConfig{
+				Spec: v1alpha1.PostgresqlStandaloneOperatorConfigSpec{
+					BackupConfigSpec: v1alpha1.BackupConfigSpec{
+						S3BucketSecret: v1alpha1.S3BucketConfigSpec{
+							BucketRef: corev1.SecretKeySelector{
+								Key:                  "bucket",
+								LocalObjectReference: corev1.LocalObjectReference{Name: "s3-credentials"},
+							},
+						},
+					},
+				},
+			},
+			expectedName:   "s3-credentials",
+			expectedBucket: []uint8("some-bucket"),
+			expectedError:  "",
+		},
+		"GivenPostgresqlStandaloneCRD_WhenFetchS3BucketMissingSecret_ThenExpectError": {
+			prepare: func(deploymentNamespace string) {
+				ts.EnsureNS(deploymentNamespace)
+			},
+			givenInstance: newBuilderInstance("instance", "postgresql-instance").
+				setDeploymentNamespace("secret-namespace").
+				get(),
+			givenDeploymentNamespace: "secret-namespace",
+			givenConfig: &v1alpha1.PostgresqlStandaloneOperatorConfig{
+				Spec: v1alpha1.PostgresqlStandaloneOperatorConfigSpec{
+					BackupConfigSpec: v1alpha1.BackupConfigSpec{
+						S3BucketSecret: v1alpha1.S3BucketConfigSpec{
+							BucketRef: corev1.SecretKeySelector{
+								Key:                  "bucket",
+								LocalObjectReference: corev1.LocalObjectReference{Name: "missing-s3-credentials"},
+							},
+						},
+					},
+				},
+			},
+			expectedName:   "",
+			expectedBucket: []uint8(""),
+			expectedError:  "secrets \"missing-s3-credentials\" not found",
+		},
+	}
+	for name, tc := range tests {
+		ts.Run(name, func() {
+			// given
+			p := &CreateStandalonePipeline{
+				operatorNamespace: "operator-namespace",
+				client:            ts.Client,
+				instance:          tc.givenInstance,
+				config:            tc.givenConfig,
+			}
+			tc.prepare(tc.givenDeploymentNamespace)
+
+			// act
+			err := p.fetchS3BucketSecret(ts.Context)
+
+			// assert
+			if tc.expectedError != "" {
+				ts.Assert().EqualError(err, tc.expectedError)
+				return
+			}
+			ts.Assert().NoError(err)
+			actualSecret := corev1.Secret{}
+			err = ts.Client.Get(ts.Context, types.NamespacedName{Name: tc.expectedName, Namespace: tc.givenDeploymentNamespace}, &actualSecret)
+			ts.Assert().NoError(err)
+			ts.Assert().NotEmpty(actualSecret.Data)
+			ts.Assert().Equal(tc.expectedBucket, actualSecret.Data["bucket"])
+		})
+	}
 }
