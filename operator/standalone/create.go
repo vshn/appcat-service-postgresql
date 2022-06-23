@@ -3,12 +3,14 @@ package standalone
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/labels"
 	"math/rand"
 	"strings"
 
 	pipeline "github.com/ccremer/go-command-pipeline"
 	helmv1beta1 "github.com/crossplane-contrib/provider-helm/apis/release/v1beta1"
 	crossplanev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
+	k8upv1 "github.com/k8up-io/k8up/v2/api/v1"
 	"github.com/lucasepe/codename"
 	"github.com/vshn/appcat-service-postgresql/apis/conditions"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
@@ -18,6 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilrand "k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -48,6 +51,9 @@ type CreateStandalonePipeline struct {
 	helmRelease         *helmv1beta1.Release
 
 	connectionSecret *corev1.Secret
+
+	k8upschedule   *k8upv1.Schedule
+	s3BucketSecret *corev1.Secret
 }
 
 // NewCreateStandalonePipeline creates a new pipeline with the required dependencies.
@@ -59,9 +65,9 @@ func NewCreateStandalonePipeline(client client.Client, instance *v1alpha1.Postgr
 	}
 }
 
-// RunPipeline executes the pipeline with configured business logic steps.
+// RunFirstPass executes the pipeline with configured business logic steps.
 // This should only be executed once per pipeline as it stores intermediate results in the struct.
-func (p *CreateStandalonePipeline) RunPipeline(ctx context.Context) error {
+func (p *CreateStandalonePipeline) RunFirstPass(ctx context.Context) error {
 	return pipeline.NewPipeline().
 		WithSteps(
 			pipeline.NewStepFromFunc("fetch operator config", p.fetchOperatorConfig),
@@ -79,6 +85,12 @@ func (p *CreateStandalonePipeline) RunPipeline(ctx context.Context) error {
 				pipeline.NewStepFromFunc("ensure deployment namespace", p.ensureDeploymentNamespace),
 				pipeline.NewStepFromFunc("ensure credentials secret", p.ensureCredentialsSecret),
 				pipeline.NewStepFromFunc("ensure helm release", p.ensureHelmRelease),
+				pipeline.If(pipeline.Bool(p.instance.Spec.Backup.Enabled),
+					pipeline.NewPipeline().WithNestedSteps("ensure backup",
+						pipeline.NewStepFromFunc("ensure encryption secret", p.ensureResticRepositorySecret),
+						// TODO: add step to provision S3 bucket
+					),
+				),
 			),
 
 			pipeline.NewStepFromFunc("enrich status with chart meta", p.enrichStatus),
@@ -86,19 +98,27 @@ func (p *CreateStandalonePipeline) RunPipeline(ctx context.Context) error {
 		RunWithContext(ctx).Err()
 }
 
-// WaitUntilAllResourceReady runs a pipeline that verifies if all dependent resources are ready.
+// RunSecondPass runs a pipeline that verifies if all dependent resources are ready.
 // It will add the conditions.TypeReady condition to the status field (and update it) if it's considered ready.
 // No error is returned in case the instance is not considered ready.
-func (p *CreateStandalonePipeline) WaitUntilAllResourceReady(ctx context.Context) error {
+func (p *CreateStandalonePipeline) RunSecondPass(ctx context.Context) error {
 	return pipeline.NewPipeline().
 		WithSteps(
+			pipeline.NewStepFromFunc("fetch operator config", p.fetchOperatorConfig),
 			pipeline.NewStepFromFunc("fetch helm release", p.fetchHelmRelease),
+			pipeline.If(p.isBackupEnabledPredicate(),
+				pipeline.NewPipeline().WithNestedSteps("ensure backup",
+					pipeline.NewStepFromFunc("fetch bucket secret", p.fetchS3BucketSecret),
+					pipeline.NewStepFromFunc("ensure k8up schedule", p.ensureK8upSchedule),
+				),
+			),
+			pipeline.If(pipeline.Not(p.isBackupEnabledPredicate()), pipeline.NewStepFromFunc("delete k8up schedule", deleteK8upSchedule)),
 			pipeline.If(p.isHelmReleaseReady,
 				pipeline.NewPipeline().WithNestedSteps("finish creation",
 					pipeline.NewPipeline().WithNestedSteps("create connection secret",
 						pipeline.NewStepFromFunc("fetch credentials", p.fetchCredentialSecret),
 						pipeline.NewStepFromFunc("fetch service", p.fetchService),
-						pipeline.NewStepFromFunc("set owner reference to connection secret", p.setOwnerReference),
+						pipeline.NewStepFromFunc("set owner reference to connection secret", p.setOwnerReferenceInConnectionSecret),
 						pipeline.NewStepFromFunc("ensure connection secret", p.ensureConnectionSecret),
 					),
 					pipeline.NewStepFromFunc("mark instance ready", p.markInstanceAsReady),
@@ -106,6 +126,10 @@ func (p *CreateStandalonePipeline) WaitUntilAllResourceReady(ctx context.Context
 			),
 		).
 		RunWithContext(ctx).Err()
+}
+
+func (p *CreateStandalonePipeline) isBackupEnabledPredicate() pipeline.Predicate {
+	return pipeline.BoolPtr(&p.instance.Spec.Backup.Enabled)
 }
 
 // fetchOperatorConfig fetches a matching v1alpha1.PostgresqlStandaloneOperatorConfig from the OperatorNamespace.
@@ -239,8 +263,6 @@ func (p *CreateStandalonePipeline) ensureCredentialsSecret(ctx context.Context) 
 			"replication-password": generatePassword(),
 		},
 	}
-	// TODO: Add OwnerReference to Crossplane's HelmRelease
-	// Note: We cannot set the reference to the instance, since cross-namespace references aren't allowed.
 	return Upsert(ctx, p.client, secret)
 }
 
@@ -273,6 +295,106 @@ func (p *CreateStandalonePipeline) ensureHelmRelease(ctx context.Context) error 
 		},
 	}
 	return Upsert(ctx, p.client, p.helmRelease)
+}
+
+// ensureK8upSchedule creates the K8up schedule object.
+func (p *CreateStandalonePipeline) ensureK8upSchedule(ctx context.Context) error {
+	schedule := &k8upv1.Schedule{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "postgresql",
+			Namespace: p.instance.Status.HelmChart.DeploymentNamespace,
+		},
+	}
+
+	_, err := controllerutil.CreateOrUpdate(ctx, p.client, schedule, func() error {
+		schedule.Spec = k8upv1.ScheduleSpec{
+			Backup: &k8upv1.BackupSchedule{
+				BackupSpec:     k8upv1.BackupSpec{},
+				ScheduleCommon: &k8upv1.ScheduleCommon{Schedule: "@daily-random"},
+			},
+			Archive: &k8upv1.ArchiveSchedule{
+				ScheduleCommon: &k8upv1.ScheduleCommon{Schedule: "@weekly-random"},
+			},
+			Check: &k8upv1.CheckSchedule{
+				ScheduleCommon: &k8upv1.ScheduleCommon{Schedule: "@weekly-random"},
+			},
+			Prune: &k8upv1.PruneSchedule{
+				ScheduleCommon: &k8upv1.ScheduleCommon{Schedule: "@weekly-random"},
+			},
+			Backend: &k8upv1.Backend{
+				RepoPasswordSecretRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: getResticRepositorySecretName()},
+					Key:                  "repository",
+				},
+				S3: &k8upv1.S3Spec{
+					Endpoint:                 string(p.s3BucketSecret.Data[p.config.Spec.BackupConfigSpec.S3BucketSecret.EndpointRef.Key]),
+					Bucket:                   string(p.s3BucketSecret.Data[p.config.Spec.BackupConfigSpec.S3BucketSecret.BucketRef.Key]),
+					AccessKeyIDSecretRef:     &p.config.Spec.BackupConfigSpec.S3BucketSecret.AccessKeyRef,
+					SecretAccessKeySecretRef: &p.config.Spec.BackupConfigSpec.S3BucketSecret.SecretKeyRef,
+				},
+			},
+			FailedJobsHistoryLimit:     pointer.Int(2),
+			SuccessfulJobsHistoryLimit: pointer.Int(2),
+		}
+		return nil
+	})
+	return err
+}
+
+func deleteK8upSchedule(ctx context.Context) error {
+	instance := getInstanceFromContext(ctx)
+	if instance.Status.HelmChart == nil || instance.Status.HelmChart.DeploymentNamespace == "" {
+		// deployment namespace is unknown, we assume it has not been created
+		return nil
+	}
+	schedule := newK8upSchedule(instance)
+	err := getClientFromContext(ctx).Delete(ctx, schedule)
+	return client.IgnoreNotFound(err)
+}
+
+func (p *CreateStandalonePipeline) ensureResticRepositorySecret(ctx context.Context) error {
+	// NOTE: we should not delete the Restic Repository secret.
+	// There could be cases where the user temporarily disables backups and then re-enables.
+	// This case shouldn't result in a new encryption password that renders the previously created backups unusable.
+	// All this is under assumption that the Bucket is not immediately removed when backups are disabled.
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      getResticRepositorySecretName(),
+			Namespace: p.deploymentNamespace.Name,
+		},
+	}
+	secretKey := "repository"
+	_, err := controllerutil.CreateOrUpdate(ctx, getClientFromContext(ctx), secret, func() error {
+		secret.Labels = getCommonLabels(getInstanceFromContext(ctx).Name)
+		if val, exists := secret.Data[secretKey]; exists && len(val) > 0 {
+			// password already set, let's reset every other key
+			secret.Data = map[string][]byte{
+				secretKey: val,
+			}
+			return nil
+		}
+		password := generatePassword()
+		if val, exists := secret.StringData[secretKey]; exists && val != "" {
+			// only generate a password on new object, not existing ones
+			password = val
+		}
+		secret.StringData = map[string]string{
+			secretKey: password,
+		}
+		return nil
+	})
+	return err
+}
+
+// fetchS3BucketSecret fetches a secret that contains the bucket configuration.
+// It assumes that there is another provisioner that deploys S3 bucket ready for use.
+func (p *CreateStandalonePipeline) fetchS3BucketSecret(ctx context.Context) error {
+	p.s3BucketSecret = &corev1.Secret{ObjectMeta: metav1.ObjectMeta{
+		Name:      p.config.Spec.BackupConfigSpec.S3BucketSecret.BucketRef.Name,
+		Namespace: p.instance.Status.HelmChart.DeploymentNamespace,
+	}}
+	err := p.client.Get(ctx, client.ObjectKeyFromObject(p.s3BucketSecret), p.s3BucketSecret)
+	return err
 }
 
 func (p *CreateStandalonePipeline) enrichStatus(ctx context.Context) error {
@@ -360,12 +482,18 @@ func (p *CreateStandalonePipeline) addDataToConnectionSecret(key string, data []
 	if p.connectionSecret == nil {
 		p.connectionSecret = p.newConnectionSecret()
 	}
+	if p.connectionSecret.Data == nil {
+		p.connectionSecret.Data = map[string][]byte{}
+	}
 	p.connectionSecret.Data[key] = data
 }
 
 func (p *CreateStandalonePipeline) addStringDataToConnectionSecret(key, data string) {
 	if p.connectionSecret == nil {
 		p.connectionSecret = p.newConnectionSecret()
+	}
+	if p.connectionSecret.StringData == nil {
+		p.connectionSecret.StringData = map[string]string{}
 	}
 	p.connectionSecret.StringData[key] = data
 }
@@ -382,21 +510,23 @@ func (p *CreateStandalonePipeline) newConnectionSecret() *corev1.Secret {
 	}
 }
 
-func (p *CreateStandalonePipeline) setOwnerReference(ctx context.Context) error {
+func (p *CreateStandalonePipeline) setOwnerReferenceInConnectionSecret(ctx context.Context) error {
 	return controllerutil.SetOwnerReference(p.instance, p.connectionSecret, getClientFromContext(ctx).Scheme())
 }
 
 func getCredentialSecretName() string {
 	return fmt.Sprintf("%s-credentials", getDeploymentName())
 }
-
+func getResticRepositorySecretName() string {
+	return fmt.Sprintf("%s-restic", getDeploymentName())
+}
 func getDeploymentName() string {
 	return "postgresql"
 }
 
-func getCommonLabels(instanceName string) map[string]string {
+func getCommonLabels(instanceName string) labels.Set {
 	// https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
-	return map[string]string{
+	return labels.Set{
 		"app.kubernetes.io/instance":   instanceName,
 		"app.kubernetes.io/managed-by": v1alpha1.Group,
 		"app.kubernetes.io/created-by": fmt.Sprintf("controller-%s", strings.ToLower(v1alpha1.PostgresqlStandaloneKind)),
@@ -416,4 +546,13 @@ func generateClusterScopedNameForInstance() string {
 
 func generatePassword() string {
 	return utilrand.String(40)
+}
+
+func newK8upSchedule(instance *v1alpha1.PostgresqlStandalone) *k8upv1.Schedule {
+	return &k8upv1.Schedule{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "postgresql",
+			Namespace: instance.Status.HelmChart.DeploymentNamespace,
+		},
+	}
 }

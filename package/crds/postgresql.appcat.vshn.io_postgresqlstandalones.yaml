@@ -46,6 +46,15 @@ spec:
           spec:
             description: PostgresqlStandaloneSpec defines the desired state of a PostgresqlStandalone.
             properties:
+              backup:
+                description: Backup configures the settings related to backing up
+                  the instance.
+                properties:
+                  enabled:
+                    description: Enabled configures whether instances are generally
+                      being backed up.
+                    type: boolean
+                type: object
               forInstance:
                 description: Parameters defines the PostgreSQL specific settings.
                 properties:

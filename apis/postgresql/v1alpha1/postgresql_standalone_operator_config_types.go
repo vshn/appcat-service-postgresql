@@ -29,6 +29,9 @@ type PostgresqlStandaloneOperatorConfigSpec struct {
 	// HelmProviderConfigReference is the name of the ProviderConfig CR from crossplane-contrib/provider-helm.
 	// Used when DeploymentStrategy is StrategyHelmChart.
 	HelmProviderConfigReference string `json:"helmProviderConfigReference,omitempty"`
+
+	// BackupConfigSpec defines settings for instance backups.
+	BackupConfigSpec BackupConfigSpec `json:"backupConfigSpec,omitempty"`
 }
 
 // HelmReleaseConfig describes a Helm chart release.

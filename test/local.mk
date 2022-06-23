@@ -67,7 +67,9 @@ test-integration: $(setup_envtest_bin) .envtest_crds ## Run integration tests ag
 envtest_crd_dir ?= $(kind_dir)/crds
 # Getting the version from go.mod. Doesn't work if it references a specific commit
 provider_helm_version ?= $(shell go mod edit -json | jq -r '.Require[] | select(.Path == "github.com/crossplane-contrib/provider-helm") | .Version')
+k8up_version ?= $(shell go mod edit -json | jq -r '.Require[] | select(.Path == "github.com/k8up-io/k8up/v2") | .Version')
 provider_helm_download_root ?= https://raw.githubusercontent.com/crossplane-contrib/provider-helm/$(provider_helm_version)/package/crds
+k8up_download_root ?= https://raw.githubusercontent.com/k8up-io/k8up/$(k8up_version)/config/crd/apiextensions.k8s.io/v1/base/
 
 .envtest_crd_dir:
 	@mkdir -p $(envtest_crd_dir)
@@ -79,14 +81,23 @@ $(envtest_crd_dir)/helm.crossplane.io_releases.yaml: $(.envtest_crd_dir)
 $(envtest_crd_dir)/helm.crossplane.io_providerconfigs.yaml: $(.envtest_crd_dir)
 	curl -sSL -o $@ $(provider_helm_download_root)/helm.crossplane.io_providerconfigs.yaml
 
-.envtest_crds: .envtest_crd_dir $(envtest_crd_dir)/helm.crossplane.io_releases.yaml $(envtest_crd_dir)/helm.crossplane.io_providerconfigs.yaml
+$(envtest_crd_dir)/k8up.io_schedules.yaml: $(.envtest_crd_dir)
+	curl -sSL -o $@ $(k8up_download_root)/k8up.io_schedules.yaml
+
+.envtest_crds: .envtest_crd_dir $(envtest_crd_dir)/helm.crossplane.io_releases.yaml $(envtest_crd_dir)/helm.crossplane.io_providerconfigs.yaml  $(envtest_crd_dir)/k8up.io_schedules.yaml
 
 ####
 #### S3 Bucket
 ####
 
-bucket_namespace ?= default
-
 .PHONY: s3-credentials
-s3-credentials: minio-setup ## Copies Minio's S3 Bucket credentials to $(bucket_namespace)
-	kubectl -n minio-system get secret minio-server -o yaml | yq e 'del(.metadata) | .metadata.name = "s3-credentials"' | kubectl -n $(bucket_namespace) apply -f -
+s3-credentials: export KUBECONFIG = $(KIND_KUBECONFIG)
+s3-credentials: minio-setup k8up-setup ## Copies Minio's S3 Bucket credentials to $(bucket_namespace)
+	NEXT_WAIT_TIME=0; \
+	RELEASE_EXISTS=$$(kubectl get release --no-headers --ignore-not-found=true | wc -l); \
+	until [ $$NEXT_WAIT_TIME -eq 10 ] || [ $$RELEASE_EXISTS -eq 1 ]; do sleep $$((NEXT_WAIT_TIME++)); done; \
+	export BUCKET=$$(yq '.buckets[0].name' test/minio-values.yaml) && \
+	RELEASE_NAMESPACE=$$(kubectl get release --selector='app.kubernetes.io/instance=my-instance' -o jsonpath='{.items[*].metadata.name}') && \
+	kubectl -n minio-system get secret minio-server -o yaml | \
+		yq e 'del(.metadata) | .data.secretKey=.data.rootPassword | del(.data.rootPassword) | .data.accessKey=.data.rootUser | del(.data.rootUser) | .metadata.name = "s3-credentials" | .stringData.bucket=env(BUCKET) | .stringData.endpoint="http://minio-server.minio-system:9000"' | \
+		kubectl -n $$RELEASE_NAMESPACE apply -f -

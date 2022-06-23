@@ -4,6 +4,8 @@ metadata:
   name: my-instance
   namespace: default
 spec:
+  backup:
+    enabled: true
   forInstance:
     enableSuperUser: true
     majorVersion: v14

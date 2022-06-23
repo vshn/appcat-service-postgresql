@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	k8upv1 "github.com/k8up-io/k8up/v2/api/v1"
 	"time"
 
 	pipeline "github.com/ccremer/go-command-pipeline"
@@ -112,6 +113,9 @@ func (c *operatorCommand) execute(ctx *cli.Context) error {
 		}),
 		pipeline.NewStepFromFunc("register helm release scheme", func(ctx context.Context) error {
 			return helmreleasev1beta1.SchemeBuilder.AddToScheme(c.manager.GetScheme())
+		}),
+		pipeline.NewStepFromFunc("register k8up scheme", func(ctx context.Context) error {
+			return k8upv1.AddToScheme(c.manager.GetScheme())
 		}),
 	))
 	p.AddStepFromFunc("setup controllers", func(ctx context.Context) error {

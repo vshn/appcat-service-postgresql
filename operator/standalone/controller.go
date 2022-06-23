@@ -36,6 +36,7 @@ var (
 // +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;create;update
 // +kubebuilder:rbac:groups=helm.crossplane.io,resources=releases,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=helm.crossplane.io,resources=providerconfigs,verbs=get;list;watch
+// +kubebuilder:rbac:groups=k8up.io,resources=schedules,verbs=get;list;watch;create;update;patch;delete
 
 // PostgresStandaloneReconciler reconciles v1alpha1.PostgresqlStandalone.
 type PostgresStandaloneReconciler struct {
@@ -78,14 +79,14 @@ func (r *PostgresStandaloneReconciler) CreateDeployment(ctx context.Context, ins
 	if meta.IsStatusConditionTrue(instance.Status.Conditions, conditions.TypeCreating) {
 		// The instance has created all the resources, now we'll have to wait until everything is ready.
 		log.Info("Waiting until instance becomes ready")
-		err := p.WaitUntilAllResourceReady(ctx)
+		err := p.RunSecondPass(ctx)
 		if !meta.IsStatusConditionTrue(instance.Status.Conditions, conditions.TypeReady) {
 			return reconcile.Result{RequeueAfter: 2 * time.Second}, err
 		}
 		return reconcile.Result{}, err
 	}
 	log.Info("Creating new instance for first time")
-	err := p.RunPipeline(ctx)
+	err := p.RunFirstPass(ctx)
 	return reconcile.Result{RequeueAfter: 10 * time.Second}, err
 }
 

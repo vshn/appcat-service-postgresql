@@ -1,11 +1,10 @@
 //go:build generate
-// +build generate
 
 // Clean samples dir
 //go:generate rm -rf package/samples/*
 
 // Generate sample files
-//go:generate go run gen_sample.go package/samples
+//go:generate go run generate_sample.go package/samples
 
 package main
 
@@ -25,6 +24,7 @@ import (
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
 	admissionv1 "k8s.io/api/admission/v1"
 	authv1 "k8s.io/api/authentication/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -87,6 +87,26 @@ func generatePostgresStandaloneConfigSample() {
 				},
 			},
 			HelmProviderConfigReference: "provider-helm",
+			BackupConfigSpec: v1alpha1.BackupConfigSpec{
+				S3BucketSecret: v1alpha1.S3BucketConfigSpec{
+					EndpointRef: corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: "s3-credentials"},
+						Key:                  "endpoint",
+					},
+					BucketRef: corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: "s3-credentials"},
+						Key:                  "bucket",
+					},
+					AccessKeyRef: corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: "s3-credentials"},
+						Key:                  "accessKey",
+					},
+					SecretKeyRef: corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: "s3-credentials"},
+						Key:                  "secretKey",
+					},
+				},
+			},
 		},
 	}
 	serialize(spec, true)
@@ -122,6 +142,11 @@ func newPostgresqlStandaloneSample() *v1alpha1.PostgresqlStandalone {
 		},
 		ObjectMeta: metav1.ObjectMeta{Name: "my-instance", Namespace: "default", Generation: 1},
 		Spec: v1alpha1.PostgresqlStandaloneSpec{
+			BackupEnabledInstance: v1alpha1.BackupEnabledInstance{
+				Backup: v1alpha1.BackupSpec{
+					Enabled: true,
+				},
+			},
 			Parameters: v1alpha1.PostgresqlStandaloneParameters{
 				Resources: v1alpha1.Resources{
 					ComputeResources: v1alpha1.ComputeResources{MemoryLimit: parseResource("256Mi")},
