@@ -25,15 +25,3 @@ func setInstanceInContext(ctx context.Context, obj *v1alpha1.PostgresqlStandalon
 func getInstanceFromContext(ctx context.Context) *v1alpha1.PostgresqlStandalone {
 	return pipeline.MustLoadFromContext(ctx, instanceKey{}).(*v1alpha1.PostgresqlStandalone)
 }
-
-type connectionSecretKey struct{}
-
-func getObjectFromContext[V client.Object](ctx context.Context, key any, into V) V {
-	obj := pipeline.MustLoadFromContext(ctx, key)
-	into = obj.(V)
-	return into
-}
-
-func setObjectInContext(ctx context.Context, key any, obj client.Object) {
-	pipeline.StoreInContext(ctx, key, obj)
-}

@@ -37,6 +37,7 @@ func (d *DeleteStandalonePipeline) RunPipeline(ctx context.Context) error {
 			// Check if connection secret exist before calling deleteConnectionSecret
 			pipeline.NewStepFromFunc("delete connection secret", d.deleteConnectionSecret),
 			pipeline.NewStepFromFunc("delete helm release", d.deleteHelmRelease),
+			pipeline.NewStepFromFunc("delete k8up schedule", deleteK8upSchedule),
 			pipeline.If(d.isHelmReleaseDeleted,
 				pipeline.NewPipeline().WithNestedSteps("finalize",
 					pipeline.NewStepFromFunc("delete namespace", d.deleteNamespace),

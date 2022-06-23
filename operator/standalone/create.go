@@ -112,7 +112,7 @@ func (p *CreateStandalonePipeline) RunSecondPass(ctx context.Context) error {
 					pipeline.NewStepFromFunc("ensure k8up schedule", p.ensureK8upSchedule),
 				),
 			),
-			pipeline.If(pipeline.Not(p.isBackupEnabledPredicate()), pipeline.NewStepFromFunc("delete k8up schedule", p.ensureK8upSchedule)),
+			pipeline.If(pipeline.Not(p.isBackupEnabledPredicate()), pipeline.NewStepFromFunc("delete k8up schedule", deleteK8upSchedule)),
 			pipeline.If(p.isHelmReleaseReady,
 				pipeline.NewPipeline().WithNestedSteps("finish creation",
 					pipeline.NewPipeline().WithNestedSteps("create connection secret",
@@ -341,13 +341,14 @@ func (p *CreateStandalonePipeline) ensureK8upSchedule(ctx context.Context) error
 	return err
 }
 
-func (p *CreateStandalonePipeline) deleteK8upSchedule(ctx context.Context) error {
-	if p.instance.Status.HelmChart == nil || p.instance.Status.HelmChart.DeploymentNamespace == "" {
-		// deployment namespace is unknown, skip
+func deleteK8upSchedule(ctx context.Context) error {
+	instance := getInstanceFromContext(ctx)
+	if instance.Status.HelmChart == nil || instance.Status.HelmChart.DeploymentNamespace == "" {
+		// deployment namespace is unknown, we assume it has not been created
 		return nil
 	}
-	schedule := newK8upSchedule(p.instance)
-	err := p.client.Delete(ctx, schedule)
+	schedule := newK8upSchedule(instance)
+	err := getClientFromContext(ctx).Delete(ctx, schedule)
 	return client.IgnoreNotFound(err)
 }
 
@@ -441,7 +442,7 @@ func (p *CreateStandalonePipeline) markInstanceAsReady(ctx context.Context) erro
 
 // ensureConnectionSecret creates the connection secret in the instance's namespace.
 func (p *CreateStandalonePipeline) ensureConnectionSecret(ctx context.Context) error {
-	err := Upsert(ctx, getClientFromContext(ctx), getObjectFromContext(ctx, connectionSecretKey{}, &corev1.Secret{}))
+	err := Upsert(ctx, getClientFromContext(ctx), p.connectionSecret)
 	return err
 }
 
@@ -455,7 +456,6 @@ func (p *CreateStandalonePipeline) fetchCredentialSecret(ctx context.Context) er
 	if err != nil {
 		return err
 	}
-	setObjectInContext(ctx, connectionSecretKey{}, secret)
 	if p.instance.Spec.Parameters.EnableSuperUser {
 		p.addDataToConnectionSecret("POSTGRESQL_POSTGRES_PASSWORD", secret.Data["postgres-password"])
 	}
@@ -482,12 +482,18 @@ func (p *CreateStandalonePipeline) addDataToConnectionSecret(key string, data []
 	if p.connectionSecret == nil {
 		p.connectionSecret = p.newConnectionSecret()
 	}
+	if p.connectionSecret.Data == nil {
+		p.connectionSecret.Data = map[string][]byte{}
+	}
 	p.connectionSecret.Data[key] = data
 }
 
 func (p *CreateStandalonePipeline) addStringDataToConnectionSecret(key, data string) {
 	if p.connectionSecret == nil {
 		p.connectionSecret = p.newConnectionSecret()
+	}
+	if p.connectionSecret.StringData == nil {
+		p.connectionSecret.StringData = map[string]string{}
 	}
 	p.connectionSecret.StringData[key] = data
 }
