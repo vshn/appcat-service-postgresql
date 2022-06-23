@@ -72,9 +72,6 @@ generate-docs: generate-go ## Generate example code snippets for documentation
 	@yq e 'del(.metadata.creationTimestamp) | del(.status)' package/samples/helm.crossplane.io_providerconfig.yaml > $(docs_moduleroot_dir)/examples/installation/providerconfig-helm.yaml
 	@cp test/rbac.yaml test/controller-config.yaml $(docs_moduleroot_dir)/examples/installation/
 
-crds: generate-go ## Combine all CRDs into single-file 'crds.yaml'
-	@cat package/crds/*.yaml | yq > .github/crds.yaml
-
 .PHONY: install-crd
 install-crd: export KUBECONFIG = $(KIND_KUBECONFIG)
 install-crd: generate kind-setup ## Install CRDs into cluster
