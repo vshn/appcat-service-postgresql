@@ -135,6 +135,10 @@ func TestCreateStandalonePipeline_ApplyValuesFromInstance(t *testing.T) {
 					"memory": "2Gi",
 				},
 			},
+			"podAnnotations": helmvalues.V{
+				"k8up.io/backupcommand":  `sh -c 'PGDATABASE="$POSTGRES_DB" PGUSER="$POSTGRES_USER" PGPASSWORD="$POSTGRES_PASSWORD" pg_dump --clean'`,
+				"k8up.io/file-extension": ".sql",
+			},
 		},
 		"fullnameOverride": "postgresql",
 		"networkPolicy": helmvalues.V{
