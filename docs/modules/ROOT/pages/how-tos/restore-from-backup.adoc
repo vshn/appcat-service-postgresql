@@ -1,0 +1,116 @@
+= Restore Data From Backup
+
+This page explains how data can be restored from a K8up backup.
+
+[IMPORTANT]
+This method requires access to the deployment namespace on an instance with `kubectl`.
+
+== Prerequisites
+
+- `kubectl`
+- `base64`
+- `restic`
+- Write access to the deployment namespace of the target instance
+
+[NOTE]
+====
+If you're having trouble getting `restic` to run locally, you might want to run restic inside the cluster with this alias:
+
+[source,bash]
+----
+alias restic='kubectl -n $deployment_namespace run \
+  --rm \
+  --stdin \
+  --tty \
+  --restart=Never \
+  --quiet \
+  --image=instrumentisto/restic \
+  --image-pull-policy=IfNotPresent \
+  --env=RESTIC_REPOSITORY=${RESTIC_REPOSITORY} \
+  --env=RESTIC_PASSWORD=${RESTIC_PASSWORD} \
+  --env=AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
+  --env=AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} restic \
+  --'
+----
+====
+
+== Step-by-Step Guide
+
+. Set basic variables
++
+[source,bash]
+----
+instance_name=my-instance <1>
+instance_namespace=my-app <2>
+----
+<1> The `metadata.name` of the target instance
+<2> The `metadata.namespace` of the target instance
+
+. Configure additional variables
++
+[source,bash]
+----
+deployment_namespace=$( \
+    kubectl -n ${instance_namespace} get postgresqlstandalone ${instance_name} \
+    -o go-template="{{.status.helmChart.deploymentNamespace}}" \
+  )
+  
+export RESTIC_REPOSITORY=$( \
+    kubectl -n ${deployment_namespace} get schedule postgresql \
+    -o go-template="s3:{{.spec.backend.s3.endpoint}}/{{.spec.backend.s3.bucket}}/" \
+  )
+export RESTIC_PASSWORD=$( \
+    kubectl -n ${deployment_namespace} get secrets postgresql-restic \
+    -o go-template={{.data.repository}} \
+    | base64 -d \
+  )
+export AWS_ACCESS_KEY_ID=$( \
+    kubectl -n ${deployment_namespace} get secrets s3-credentials \
+    -o go-template="{{.data.accessKey}}" \
+    | base64 -d \
+  )
+export AWS_SECRET_ACCESS_KEY=$( \
+    kubectl -n ${deployment_namespace} get secrets s3-credentials \
+    -o go-template="{{.data.secretKey}}" \
+    | base64 -d \
+  )
+----
+
+. List snapshots and choose the one to restore
++
+[source,bash]
+----
+restic snapshots
+
+export SNAPSHOT_ID=XXXXXX # Choose a snapshot id from the list
+----
++
+[TIP]
+====
+To choose the last available backup you can simply run
+
+[source,bash]
+----
+export SNAPSHOT_ID=$(restic snapshots --json --latest 1 --path /${deployment_namespace}-postgresql.sql | jq -r '.[0].id')
+----
+====
+
+. (_optional_) Shut down client application.
+  This step is to ensure that the client application is not connected to the database anymore and potentially operating on false data.
+
+. Load the backup and restore data
++
+[WARNING]
+====
+This operation will completely overwrite existing data!
+====
++
+[source,bash]
+----
+restic dump --quiet ${SNAPSHOT_ID} /${deployment_namespace}-postgresql.sql \
+  | kubectl -n ${deployment_namespace} exec -i postgresql-0 \
+  -- sh -c 'PGPASSWORD="${POSTGRES_PASSWORD}" psql --set ON_ERROR_STOP=on -U "${POSTGRES_USER}" ${POSTGRES_DB}'
+----
+
+. (_optional_) Start client application.
+  After a successful data restore, start up the client application again.
