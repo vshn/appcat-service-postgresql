@@ -66,7 +66,7 @@ func (ts *DeleteStandalonePipelineSuite) Test_DeleteHelmRelease() {
 		ts.Run(name, func() {
 			d := &DeleteStandalonePipeline{
 				client: ts.Client,
-				instance: newBuilderInstance("instance", "namespace").
+				instance: newInstanceBuilder("instance", "namespace").
 					setDeploymentNamespace(tc.givenReleaseName).
 					get(),
 				helmReleaseDeleted: false,
@@ -119,7 +119,7 @@ func (ts *DeleteStandalonePipelineSuite) Test_DeleteNamespace() {
 		ts.Run(name, func() {
 			d := &DeleteStandalonePipeline{
 				client: ts.Client,
-				instance: newBuilderInstance("instance", "namespace").
+				instance: newInstanceBuilder("instance", "namespace").
 					setDeploymentNamespace(tc.givenNamespace).
 					get(),
 				helmReleaseDeleted: false,
@@ -181,7 +181,7 @@ func (ts *DeleteStandalonePipelineSuite) Test_DeleteConnectionSecret() {
 		ts.Run(name, func() {
 			d := &DeleteStandalonePipeline{
 				client: ts.Client,
-				instance: newBuilderInstance("instance", tc.givenNamespace).
+				instance: newInstanceBuilder("instance", tc.givenNamespace).
 					setConnectionSecret(tc.givenSecret).
 					get(),
 				helmReleaseDeleted: false,
@@ -224,7 +224,7 @@ func (ts *DeleteStandalonePipelineSuite) Test_RemoveFinalizer() {
 	}
 	for name, tc := range tests {
 		ts.Run(name, func() {
-			instance := newBuilderInstance(tc.givenInstance, tc.givenNamespace).setFinalizers(finalizer).get()
+			instance := newInstanceBuilder(tc.givenInstance, tc.givenNamespace).setFinalizers(finalizer).get()
 			d := &DeleteStandalonePipeline{
 				client:             ts.Client,
 				instance:           instance,
@@ -265,7 +265,7 @@ type PostgresqlStandaloneBuilder struct {
 	*v1alpha1.PostgresqlStandalone
 }
 
-func newBuilderInstance(name, namespace string) *PostgresqlStandaloneBuilder {
+func newInstanceBuilder(name, namespace string) *PostgresqlStandaloneBuilder {
 	return &PostgresqlStandaloneBuilder{newInstance(name, namespace)}
 }
 
