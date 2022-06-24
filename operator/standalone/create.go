@@ -214,7 +214,7 @@ func (p *CreateStandalonePipeline) applyValuesFromInstance(_ context.Context) er
 				"size": p.instance.Spec.Parameters.Resources.StorageCapacity.String(),
 			},
 			"podAnnotations": helmvalues.V{ // these annotations can stay, even if backups are disabled.
-				"k8up.io/backupcommand":  `sh -c 'PGDATABASE="$POSTGRES_DB" PGUSER="$POSTGRES_USER" PGPASSWORD="$POSTGRES_PASSWORD" pg_dump --clean'`,
+				"k8up.io/backupcommand":  `sh -c 'PGUSER="postgres" PGPASSWORD="$POSTGRES_POSTGRES_PASSWORD" pg_dumpall --clean'`,
 				"k8up.io/file-extension": ".sql",
 			},
 		},

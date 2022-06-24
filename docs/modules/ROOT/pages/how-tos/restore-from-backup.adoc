@@ -95,8 +95,8 @@ export SNAPSHOT_ID=$(restic snapshots --json --latest 1 --path /${deployment_nam
 ----
 ====
 
-. (_optional_) Shut down client application.
-  This step is to ensure that the client application is not connected to the database anymore and potentially operating on false data.
+. Shut down client application.
+  This step is required since the restoration may fail to recreate data when there are existing sessions!
 
 . Load the backup and restore data
 +
@@ -109,8 +109,8 @@ This operation will completely overwrite existing data!
 ----
 restic dump --quiet ${SNAPSHOT_ID} /${deployment_namespace}-postgresql.sql \
   | kubectl -n ${deployment_namespace} exec -i postgresql-0 \
-  -- sh -c 'PGPASSWORD="${POSTGRES_PASSWORD}" psql --set ON_ERROR_STOP=on -U "${POSTGRES_USER}" ${POSTGRES_DB}'
+  -- sh -c 'PGPASSWORD="${POSTGRES_POSTGRES_PASSWORD}" psql -U "postgres"'
 ----
 
-. (_optional_) Start client application.
+. Start client application.
   After a successful data restore, start up the client application again.
