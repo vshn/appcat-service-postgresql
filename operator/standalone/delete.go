@@ -51,6 +51,10 @@ func (d *DeleteStandalonePipeline) RunPipeline(ctx context.Context) error {
 // deleteHelmRelease removes the Helm Release from the cluster
 // We may reconcile multiple times until Release is completely deleted hence we use helmReleaseDeleted variable
 func (d *DeleteStandalonePipeline) deleteHelmRelease(ctx context.Context) error {
+	if d.instance.Status.HelmChart == nil || d.instance.Status.HelmChart.DeploymentNamespace == "" {
+		// Release might not ever have existed, skip
+		return nil
+	}
 	helmRelease := &helmv1beta1.Release{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: d.instance.Status.HelmChart.DeploymentNamespace,
@@ -66,6 +70,10 @@ func (d *DeleteStandalonePipeline) deleteHelmRelease(ctx context.Context) error 
 // deleteNamespace removes the namespace of the PostgreSQL instance
 // We delete the namespace only if the Helm Release has been deleted
 func (d *DeleteStandalonePipeline) deleteNamespace(ctx context.Context) error {
+	if d.instance.Status.HelmChart == nil || d.instance.Status.HelmChart.DeploymentNamespace == "" {
+		// Namespace might not ever have existed, skip
+		return nil
+	}
 	deploymentNamespace := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: d.instance.Status.HelmChart.DeploymentNamespace,
@@ -80,16 +88,21 @@ func (d *DeleteStandalonePipeline) deleteNamespace(ctx context.Context) error {
 
 // deleteConnectionSecret removes the connection secret of the PostgreSQL instance
 func (d *DeleteStandalonePipeline) deleteConnectionSecret(ctx context.Context) error {
+	secretName := d.instance.Spec.WriteConnectionSecretToRef.Name
+	if secretName == "" {
+		// webhook might not have defaulted to the instance name yet.
+		secretName = d.instance.Name
+	}
 	connectionSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      d.instance.Spec.WriteConnectionSecretToRef.Name,
+			Name:      secretName,
 			Namespace: d.instance.Namespace,
 		},
 	}
 	return client.IgnoreNotFound(d.client.Delete(ctx, connectionSecret))
 }
 
-// removeFinalizer removes the finalizer from the PostgreSQL CRD
+// removeFinalizer removes the finalizer from the PostgresqlStandalone instance and updates it if there was a finalizer present.
 func (d *DeleteStandalonePipeline) removeFinalizer(ctx context.Context) error {
 	if controllerutil.RemoveFinalizer(d.instance, finalizer) {
 		return d.client.Update(ctx, d.instance)

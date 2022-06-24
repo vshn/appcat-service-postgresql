@@ -37,33 +37,24 @@ func (ts *DeleteStandalonePipelineSuite) Test_DeleteHelmRelease() {
 		prepare                    func(releaseNameString string)
 		givenReleaseName           string
 		expectedHelmReleaseDeleted bool
-		expectedError              string
 	}{
-		"GivenNonExistingHelmRelease_WhenDeleting_ThenExpectNoFurtherAction": {
+		"GivenNonExistingHelmRelease_WhenDeleting_ThenExpectNoError": {
 			prepare:                    func(releaseName string) {},
 			givenReleaseName:           "postgresql-release",
 			expectedHelmReleaseDeleted: true,
-			expectedError:              "",
 		},
-		"GivenAnExistingHelmRelease_WhenHelmReleaseStillExists_ThenExpectReconciliation": {
+		"GivenAnExistingHelmRelease_WhenHelmReleaseStillExists_ThenExpectNoError": {
 			prepare: func(releaseName string) {
 				release := newPostgresqlHelmRelease(releaseName)
 				ts.EnsureResources(release)
 			},
 			givenReleaseName:           "postgresql-release",
 			expectedHelmReleaseDeleted: false,
-			expectedError:              "",
-		},
-		"GivenAnExistingHelmRelease_WhenDeletingGeneratesAnError_ThenReturnError": {
-			prepare: func(releaseName string) {},
-			// we purposefully set namespace to empty so that we generate an error so that we avoid mocking.
-			givenReleaseName:           "",
-			expectedHelmReleaseDeleted: false,
-			expectedError:              "resource name may not be empty",
 		},
 	}
 	for name, tc := range tests {
 		ts.Run(name, func() {
+			// Arrange
 			d := &DeleteStandalonePipeline{
 				client: ts.Client,
 				instance: newInstanceBuilder("instance", "namespace").
@@ -72,15 +63,13 @@ func (ts *DeleteStandalonePipelineSuite) Test_DeleteHelmRelease() {
 				helmReleaseDeleted: false,
 			}
 			tc.prepare(tc.givenReleaseName)
+
+			// Act
 			err := d.deleteHelmRelease(ts.Context)
+			ts.Require().NoError(err)
 
 			// Assert
 			ts.Assert().Equal(tc.expectedHelmReleaseDeleted, d.helmReleaseDeleted)
-			if tc.expectedError != "" {
-				ts.Assert().EqualError(err, tc.expectedError)
-				return
-			}
-			ts.Assert().NoError(err)
 			resultRelease := &helmv1beta1.Release{}
 			err = ts.Client.Get(
 				ts.Context,
@@ -96,27 +85,19 @@ func (ts *DeleteStandalonePipelineSuite) Test_DeleteNamespace() {
 	tests := map[string]struct {
 		prepare        func(namespace string)
 		givenNamespace string
-		expectedError  string
 	}{
 		"GivenNonExistingNamespace_WhenDeleting_ThenExpectNoFurtherAction": {
 			prepare:        func(namespace string) {},
 			givenNamespace: "non-existing-namespace",
-			expectedError:  "",
 		},
 		"GivenExistingNamespace_WhenDeleting_ThenExpectNoFurtherAction": {
 			prepare:        func(namespace string) { ts.EnsureNS(namespace) },
 			givenNamespace: "existing-namespace",
-			expectedError:  "",
-		},
-		"GivenExistingNamespace_WhenDeletingGeneratesAnError_ThenReturnError": {
-			prepare: func(namespace string) { ts.EnsureNS("an-existing-namespace") },
-			// we purposefully set namespace to empty so that we generate an error so that we avoid mocking.
-			givenNamespace: "",
-			expectedError:  "resource name may not be empty",
 		},
 	}
 	for name, tc := range tests {
 		ts.Run(name, func() {
+			// Arrange
 			d := &DeleteStandalonePipeline{
 				client: ts.Client,
 				instance: newInstanceBuilder("instance", "namespace").
@@ -125,14 +106,12 @@ func (ts *DeleteStandalonePipelineSuite) Test_DeleteNamespace() {
 				helmReleaseDeleted: false,
 			}
 			tc.prepare(tc.givenNamespace)
+
+			// Act
 			err := d.deleteNamespace(ts.Context)
+			ts.Require().NoError(err)
 
 			// Assert
-			if tc.expectedError != "" {
-				ts.Assert().EqualError(err, tc.expectedError)
-				return
-			}
-			ts.Assert().NoError(err)
 			resultNs := &corev1.Namespace{}
 			err = ts.Client.Get(
 				ts.Context,
@@ -151,13 +130,13 @@ func (ts *DeleteStandalonePipelineSuite) Test_DeleteConnectionSecret() {
 		givenSecret    string
 		expectedError  string
 	}{
-		"GivenNonExistingSecret_WhenDeleting_ThenExpectNoFurtherAction": {
+		"GivenNonExistingSecret_WhenDeleting_ThenExpectNoError": {
 			prepare:        func(name, namespace string) {},
 			givenNamespace: "test-namespace",
 			givenSecret:    "non-existing-secret",
 			expectedError:  "",
 		},
-		"GivenExistingSecret_WhenDeleting_ThenExpectNoFurtherAction": {
+		"GivenExistingSecret_WhenDeleting_ThenExpectNoError": {
 			prepare: func(name, namespace string) {
 				ts.EnsureNS(namespace)
 				ts.EnsureResources(&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace}})
@@ -165,16 +144,6 @@ func (ts *DeleteStandalonePipelineSuite) Test_DeleteConnectionSecret() {
 			givenNamespace: "test-namespace",
 			givenSecret:    "existing-secret",
 			expectedError:  "",
-		},
-		"GivenExistingSecret_WhenDeletingGeneratesAnError_ThenReturnError": {
-			prepare: func(name, namespace string) {
-				ts.EnsureNS(namespace)
-				ts.EnsureResources(&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "secret", Namespace: namespace}})
-			},
-			givenNamespace: "test-namespace",
-			// we purposefully set namespace to empty so that we generate an error so that we avoid mocking.
-			givenSecret:   "",
-			expectedError: "resource name may not be empty",
 		},
 	}
 	for name, tc := range tests {
@@ -224,6 +193,7 @@ func (ts *DeleteStandalonePipelineSuite) Test_RemoveFinalizer() {
 	}
 	for name, tc := range tests {
 		ts.Run(name, func() {
+			// Arrange
 			instance := newInstanceBuilder(tc.givenInstance, tc.givenNamespace).setFinalizers(finalizer).get()
 			d := &DeleteStandalonePipeline{
 				client:             ts.Client,
@@ -231,15 +201,14 @@ func (ts *DeleteStandalonePipelineSuite) Test_RemoveFinalizer() {
 				helmReleaseDeleted: false,
 			}
 			tc.prepare(instance)
+
+			// Act
 			err := d.removeFinalizer(ts.Context)
-			// Assert
 			ts.Require().NoError(err)
+
+			// Assert
 			releaseResult := &helmv1beta1.Release{}
-			err = ts.Client.Get(
-				ts.Context,
-				types.NamespacedName{Name: tc.givenInstance, Namespace: tc.givenNamespace},
-				releaseResult,
-			)
+			ts.FetchResource(types.NamespacedName{Name: tc.givenInstance, Namespace: tc.givenNamespace}, releaseResult)
 			ts.Assert().Empty(releaseResult.Finalizers)
 		})
 	}
