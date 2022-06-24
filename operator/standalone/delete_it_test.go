@@ -180,36 +180,57 @@ func (ts *DeleteStandalonePipelineSuite) Test_RemoveFinalizer() {
 		prepare        func(instance *v1alpha1.PostgresqlStandalone)
 		givenInstance  string
 		givenNamespace string
+		assert         func(previousInstance, result *v1alpha1.PostgresqlStandalone)
 	}{
-		"GivenAnInstance_WhenDeletingFinalizer_ThenExpectInstanceWithNoFinalizer": {
+		"GivenInstanceWithFinalizer_WhenDeletingFinalizer_ThenExpectInstanceUpdatedWithRemovedFinalizer": {
+			prepare: func(instance *v1alpha1.PostgresqlStandalone) {
+				instance.Finalizers = []string{finalizer}
+				ts.EnsureNS("remove-finalizer")
+				ts.EnsureResources(instance)
+				ts.Assert().NotEmpty(instance.Finalizers)
+			},
+
+			givenInstance:  "has-finalizer",
+			givenNamespace: "remove-finalizer",
+			assert: func(previousInstance, result *v1alpha1.PostgresqlStandalone) {
+				ts.Assert().Empty(result.Finalizers)
+				ts.Assert().NotEqual(previousInstance.ResourceVersion, result.ResourceVersion, "resource version should change")
+			},
+		},
+		"GivenInstanceWithoutFinalizer_WhenDeletingFinalizer_ThenExpectInstanceUnchanged": {
 			prepare: func(instance *v1alpha1.PostgresqlStandalone) {
 				ts.EnsureNS("remove-finalizer")
 				ts.EnsureResources(instance)
 			},
 
-			givenInstance:  "instance",
+			givenInstance:  "no-finalizer",
 			givenNamespace: "remove-finalizer",
+			assert: func(previousInstance, result *v1alpha1.PostgresqlStandalone) {
+				ts.Assert().Empty(result.Finalizers)
+				ts.Assert().Equal(previousInstance.ResourceVersion, result.ResourceVersion, "resource version should be equal")
+			},
 		},
 	}
 	for name, tc := range tests {
 		ts.Run(name, func() {
 			// Arrange
-			instance := newInstanceBuilder(tc.givenInstance, tc.givenNamespace).setFinalizers(finalizer).get()
+			instance := newInstanceBuilder(tc.givenInstance, tc.givenNamespace).get()
 			d := &DeleteStandalonePipeline{
 				client:             ts.Client,
 				instance:           instance,
 				helmReleaseDeleted: false,
 			}
 			tc.prepare(instance)
+			previousVersion := instance.DeepCopy()
 
 			// Act
 			err := d.removeFinalizer(ts.Context)
 			ts.Require().NoError(err)
 
 			// Assert
-			releaseResult := &helmv1beta1.Release{}
-			ts.FetchResource(types.NamespacedName{Name: tc.givenInstance, Namespace: tc.givenNamespace}, releaseResult)
-			ts.Assert().Empty(releaseResult.Finalizers)
+			result := &v1alpha1.PostgresqlStandalone{}
+			ts.FetchResource(client.ObjectKeyFromObject(instance), result)
+			tc.assert(previousVersion, result)
 		})
 	}
 }
@@ -262,11 +283,6 @@ func (b *PostgresqlStandaloneBuilder) setConnectionSecret(secret string) *Postgr
 
 func (b *PostgresqlStandaloneBuilder) setBackup(enabled bool) *PostgresqlStandaloneBuilder {
 	b.Spec.Backup.Enabled = enabled
-	return b
-}
-
-func (b *PostgresqlStandaloneBuilder) setFinalizers(finalizers ...string) *PostgresqlStandaloneBuilder {
-	b.Finalizers = finalizers
 	return b
 }
 
