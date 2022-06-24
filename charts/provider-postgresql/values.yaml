@@ -66,6 +66,10 @@ webhook:
   certificate: ""
   # -- Private key in PEM format for the TLS secret.
   privateKey: ""
+  # -- Name of an existing or external Secret with TLS to mount in the operator.
+  # The secret is expected to have `tls.crt` and `tls.key` keys.
+  # Note: You will still need to set `.caBundle` if the certificate is not verifiable (self-signed) by Kubernetes.
+  externalSecretName: ""
 
 resources: {}
   # limits:
