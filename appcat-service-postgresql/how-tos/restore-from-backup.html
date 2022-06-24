@@ -4,11 +4,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Getting Started :: AppCat Service PostgreSQL</title>
-    <meta property="og:title" itemprop="name" content="Getting Started">
-    <meta name="twitter:title" content="Getting Started">
-    <link rel="canonical" href="https://vshn.github.io/appcat-service-postgresql/appcat-service-postgresql/tutorials/getting-started.html">
-    <meta property="og:url" content="https://vshn.github.io/appcat-service-postgresql/appcat-service-postgresql/tutorials/getting-started.html">
+    <title>Restore Data From Backup :: AppCat Service PostgreSQL</title>
+    <meta property="og:title" itemprop="name" content="Restore Data From Backup">
+    <meta name="twitter:title" content="Restore Data From Backup">
+    <link rel="canonical" href="https://vshn.github.io/appcat-service-postgresql/appcat-service-postgresql/how-tos/restore-from-backup.html">
+    <meta property="og:url" content="https://vshn.github.io/appcat-service-postgresql/appcat-service-postgresql/how-tos/restore-from-backup.html">
     <meta name="generator" content="Antora 3.0.1">
     <link rel="stylesheet" href="../../_/css/site.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css">
@@ -96,10 +96,10 @@
     <span class="nav-text">Tutorials</span>
 <ul class="nav-list">
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="installation.html">Installation</a>
+    <a class="nav-link" href="../tutorials/installation.html">Installation</a>
   </li>
-  <li class="nav-item is-current-page" data-depth="1">
-    <a class="nav-link" href="getting-started.html">Getting Started</a>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../tutorials/getting-started.html">Getting Started</a>
   </li>
 </ul>
   </li>
@@ -108,10 +108,10 @@
     <span class="nav-text">How To</span>
 <ul class="nav-list">
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="../how-tos/create-releases.html">Create Releases</a>
+    <a class="nav-link" href="create-releases.html">Create Releases</a>
   </li>
-  <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="../how-tos/restore-from-backup.html">Restore Data From Backup</a>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="restore-from-backup.html">Restore Data From Backup</a>
   </li>
 </ul>
   </li>
@@ -177,30 +177,42 @@
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
     <li><a href="../index.html">AppCat Service PostgreSQL</a></li>
-    <li>Tutorials</li>
-    <li><a href="getting-started.html">Getting Started</a></li>
+    <li>How To</li>
+    <li><a href="restore-from-backup.html">Restore Data From Backup</a></li>
   </ul>
 </nav>
 <div class="page-versions">
   <button class="version-menu-toggle" title="Show other versions of page">master</button>
   <div class="version-menu">
-    <a class="version" href="../0.1/tutorials/getting-started.html">0.1-rc3</a>
-    <a class="version is-current" href="getting-started.html">master</a>
+    <a class="version is-missing" href="../0.1/index.html">0.1-rc3</a>
+    <a class="version is-current" href="restore-from-backup.html">master</a>
     <a class="version is-missing" href="../0.0/index.html">0.0</a>
   </div>
 </div>
-  <div class="edit-this-page"><a href="https://github.com/vshn/appcat-service-postgresql/edit/master/docs/modules/ROOT/pages/tutorials/getting-started.adoc">Edit this Page</a></div>
+  <div class="edit-this-page"><a href="https://github.com/vshn/appcat-service-postgresql/edit/master/docs/modules/ROOT/pages/how-tos/restore-from-backup.adoc">Edit this Page</a></div>
   </div>
   <div class="content">
 <aside class="toc sidebar" data-title="Contents" data-levels="2">
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">Getting Started</h1>
+<h1 class="page">Restore Data From Backup</h1>
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>This page describes how to create a new instance after you have installed the operator.</p>
+<p>This page explains how data can be restored from a K8up backup.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+This method requires access to the deployment namespace on an instance with <code>kubectl</code>.
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
@@ -213,69 +225,15 @@
 <p><code>kubectl</code></p>
 </li>
 <li>
-<p>Already running Kubernetes cluster</p>
+<p><code>base64</code></p>
 </li>
 <li>
-<p>Installed Operator</p>
+<p><code>restic</code></p>
+</li>
+<li>
+<p>Write access to the deployment namespace of the target instance</p>
 </li>
 </ul>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_steps"><a class="anchor" href="#_steps"></a>Steps</h2>
-<div class="sectionbody">
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Create a file with the instance spec</p>
-<div class="listingblock">
-<div class="title">standalone.yaml</div>
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: postgresql.appcat.vshn.io/v1alpha1
-kind: PostgresqlStandalone
-metadata:
-  name: my-instance
-  namespace: default
-spec:
-  backup:
-    enabled: true
-  forInstance:
-    enableSuperUser: true
-    majorVersion: v14
-    resources:
-      memoryLimit: 256Mi
-      storageCapacity: 1Gi
-  writeConnectionSecretToRef: {}</code></pre>
-</div>
-</div>
-</li>
-<li>
-<p>Apply the spec in the cluster</p>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl apply -f standalone.yaml</code></pre>
-</div>
-</div>
-</li>
-<li>
-<p>Wait until the operator has provisioned the instance</p>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl wait --for condition=Ready postgresqlstandalone/my-instance</code></pre>
-</div>
-</div>
-<div class="admonitionblock tip">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-tip" title="Tip"></i>
-</td>
-<td class="content">
-When the instance is ready, there should be a connection <code>Secret</code> created in the same namespace as <code>my-instance</code>.
-</td>
-</tr>
-</table>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -285,8 +243,111 @@ When the instance is ready, there should be a connection <code>Secret</code> cre
 </td>
 <td class="content">
 <div class="paragraph">
-<p>If you already have a <code>Secret</code> named <code>my-instance</code>, it will get overwritten.
-Set <code>spec.writeConnectionSecretToRef.name</code> to another name.</p>
+<p>If you&#8217;re having trouble getting <code>restic</code> to run locally, you might want to run restic inside the cluster with this alias:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">alias restic='kubectl -n $deployment_namespace run \
+  --rm \
+  --stdin \
+  --tty \
+  --restart=Never \
+  --quiet \
+  --image=instrumentisto/restic \
+  --image-pull-policy=IfNotPresent \
+  --env=RESTIC_REPOSITORY=${RESTIC_REPOSITORY} \
+  --env=RESTIC_PASSWORD=${RESTIC_PASSWORD} \
+  --env=AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
+  --env=AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} restic \
+  --'</code></pre>
+</div>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_step_by_step_guide"><a class="anchor" href="#_step_by_step_guide"></a>Step-by-Step Guide</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Set basic variables</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">instance_name=my-instance <i class="conum" data-value="1"></i><b>(1)</b>
+instance_namespace=my-app <i class="conum" data-value="2"></i><b>(2)</b></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The <code>metadata.name</code> of the target instance</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>The <code>metadata.namespace</code> of the target instance</td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+<p>Configure additional variables</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">deployment_namespace=$( \
+    kubectl -n ${instance_namespace} get postgresqlstandalone ${instance_name} \
+    -o go-template="{{.status.helmChart.deploymentNamespace}}" \
+  )
+
+export RESTIC_REPOSITORY=$( \
+    kubectl -n ${deployment_namespace} get schedule postgresql \
+    -o go-template="s3:{{.spec.backend.s3.endpoint}}/{{.spec.backend.s3.bucket}}/" \
+  )
+export RESTIC_PASSWORD=$( \
+    kubectl -n ${deployment_namespace} get secrets postgresql-restic \
+    -o go-template={{.data.repository}} \
+    | base64 -d \
+  )
+export AWS_ACCESS_KEY_ID=$( \
+    kubectl -n ${deployment_namespace} get secrets s3-credentials \
+    -o go-template="{{.data.accessKey}}" \
+    | base64 -d \
+  )
+export AWS_SECRET_ACCESS_KEY=$( \
+    kubectl -n ${deployment_namespace} get secrets s3-credentials \
+    -o go-template="{{.data.secretKey}}" \
+    | base64 -d \
+  )</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>List snapshots and choose the one to restore</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">restic snapshots
+
+export SNAPSHOT_ID=XXXXXX # Choose a snapshot id from the list</code></pre>
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>To choose the last available backup you can simply run</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">export SNAPSHOT_ID=$(restic snapshots --json --latest 1 --path /${deployment_namespace}-postgresql.sql | jq -r '.[0].id')</code></pre>
+</div>
 </div>
 </td>
 </tr>
@@ -294,53 +355,36 @@ Set <code>spec.writeConnectionSecretToRef.name</code> to another name.</p>
 </div>
 </li>
 <li>
-<p>Inspect the connection <code>Secret</code></p>
+<p>Shut down client application.
+This step is required since the restoration may fail to recreate data when there are existing sessions!</p>
+</li>
+<li>
+<p>Load the backup and restore data</p>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>This operation will completely overwrite existing data!</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl get secret my-instance -o yaml</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">restic dump --quiet ${SNAPSHOT_ID} /${deployment_namespace}-postgresql.sql \
+  | kubectl -n ${deployment_namespace} exec -i postgresql-0 \
+  -- sh -c 'PGPASSWORD="${POSTGRES_POSTGRES_PASSWORD}" psql -U "postgres"'</code></pre>
 </div>
 </div>
 </li>
 <li>
-<p>Connect to the PostgreSQL Database</p>
-<div class="listingblock">
-<div class="title">connect-instance.yaml</div>
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: batch/v1
-kind: Job
-metadata:
-  name: tutorial
-  namespace: default
-spec:
-  template:
-    spec:
-      restartPolicy: OnFailure
-      containers:
-        - name: pgsql
-          image: docker.io/bitnami/postgresql:latest
-          imagePullPolicy: IfNotPresent
-          envFrom:
-            - secretRef:
-                name: my-instance
-          securityContext:
-            runAsUser: 0
-          command:
-            - /bin/sh
-            - -c
-          args:
-            - PGDATABASE="$POSTGRESQL_DATABASE" PGUSER="$POSTGRESQL_USER" PGPASSWORD="$POSTGRESQL_PASSWORD" psql --host="$POSTGRESQL_SERVICE_NAME" -c "select 1";</code></pre>
-</div>
-</div>
-</li>
-<li>
-<p>Deploy the client and verify its output</p>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl apply -f connect-instance.yaml
-kubectl wait --for condition=Complete job/tutorial
-kubectl logs job/tutorial</code></pre>
-</div>
-</div>
+<p>Start client application.
+After a successful data restore, start up the client application again.</p>
 </li>
 </ol>
 </div>
