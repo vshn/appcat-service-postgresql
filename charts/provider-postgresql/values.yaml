@@ -56,6 +56,8 @@ service:
   type: ClusterIP
   # -- Service port number
   port: 80
+  # -- Annotations to add to the service
+  annotations: {}
 
 webhook:
   # -- Enable admission webhooks
@@ -70,6 +72,8 @@ webhook:
   # The secret is expected to have `tls.crt` and `tls.key` keys.
   # Note: You will still need to set `.caBundle` if the certificate is not verifiable (self-signed) by Kubernetes.
   externalSecretName: ""
+  # -- Annotations to add to the webhook configuration resources.
+  annotations: {}
 
 resources: {}
   # limits:

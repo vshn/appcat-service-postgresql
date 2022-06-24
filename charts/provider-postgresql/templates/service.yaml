@@ -4,6 +4,10 @@ metadata:
   name: {{ include "provider-postgresql.fullname" . }}
   labels:
     {{- include "provider-postgresql.labels" . | nindent 4 }}
+  {{- with .Values.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   type: {{ .Values.service.type }}
   ports:

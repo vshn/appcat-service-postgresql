@@ -6,6 +6,8 @@ metadata:
   name: '{{ include "provider-postgresql.fullname" . }}'
   labels:
     {{- include "provider-postgresql.labels" . | nindent 4 }}
+  annotations:
+    {{- toYaml .Values.webhook.annotations | nindent 4 }}
 webhooks:
   - admissionReviewVersions:
       - v1
@@ -37,6 +39,8 @@ metadata:
   name: '{{ include "provider-postgresql.fullname" . }}'
   labels:
     {{- include "provider-postgresql.labels" . | nindent 4 }}
+  annotations:
+    {{- toYaml .Values.webhook.annotations | nindent 4 }}
 webhooks:
   - admissionReviewVersions:
       - v1
