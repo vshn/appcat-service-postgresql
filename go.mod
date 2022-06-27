@@ -8,10 +8,10 @@ require (
 	github.com/crossplane/crossplane-runtime v0.15.1
 	github.com/go-logr/logr v1.2.3
 	github.com/go-logr/zapr v1.2.3
-	github.com/k8up-io/k8up/v2 v2.3.2
+	github.com/k8up-io/k8up/v2 v2.3.3
 	github.com/lucasepe/codename v0.2.0
 	github.com/stretchr/testify v1.7.2
-	github.com/urfave/cli/v2 v2.10.2
+	github.com/urfave/cli/v2 v2.10.3
 	go.uber.org/zap v1.21.0
 	k8s.io/api v0.24.2
 	k8s.io/apimachinery v0.24.2
