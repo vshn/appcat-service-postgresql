@@ -505,7 +505,7 @@ func (p *CreateStandalonePipeline) addStringDataToConnectionSecret(key, data str
 func (p *CreateStandalonePipeline) newConnectionSecret() *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      p.instance.Spec.WriteConnectionSecretToRef.Name,
+			Name:      p.instance.GetConnectionSecretName(),
 			Namespace: p.instance.Namespace,
 			Labels:    getCommonLabels(p.instance.Name),
 		},

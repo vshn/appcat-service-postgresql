@@ -37,33 +37,24 @@ func (ts *DeleteStandalonePipelineSuite) Test_DeleteHelmRelease() {
 		prepare                    func(releaseNameString string)
 		givenReleaseName           string
 		expectedHelmReleaseDeleted bool
-		expectedError              string
 	}{
-		"GivenNonExistingHelmRelease_WhenDeleting_ThenExpectNoFurtherAction": {
+		"GivenNonExistingHelmRelease_WhenDeleting_ThenExpectNoError": {
 			prepare:                    func(releaseName string) {},
 			givenReleaseName:           "postgresql-release",
 			expectedHelmReleaseDeleted: true,
-			expectedError:              "",
 		},
-		"GivenAnExistingHelmRelease_WhenHelmReleaseStillExists_ThenExpectReconciliation": {
+		"GivenAnExistingHelmRelease_WhenHelmReleaseStillExists_ThenExpectNoError": {
 			prepare: func(releaseName string) {
 				release := newPostgresqlHelmRelease(releaseName)
 				ts.EnsureResources(release)
 			},
 			givenReleaseName:           "postgresql-release",
 			expectedHelmReleaseDeleted: false,
-			expectedError:              "",
-		},
-		"GivenAnExistingHelmRelease_WhenDeletingGeneratesAnError_ThenReturnError": {
-			prepare: func(releaseName string) {},
-			// we purposefully set namespace to empty so that we generate an error so that we avoid mocking.
-			givenReleaseName:           "",
-			expectedHelmReleaseDeleted: false,
-			expectedError:              "resource name may not be empty",
 		},
 	}
 	for name, tc := range tests {
 		ts.Run(name, func() {
+			// Arrange
 			d := &DeleteStandalonePipeline{
 				client: ts.Client,
 				instance: newInstanceBuilder("instance", "namespace").
@@ -72,15 +63,13 @@ func (ts *DeleteStandalonePipelineSuite) Test_DeleteHelmRelease() {
 				helmReleaseDeleted: false,
 			}
 			tc.prepare(tc.givenReleaseName)
+
+			// Act
 			err := d.deleteHelmRelease(ts.Context)
+			ts.Require().NoError(err)
 
 			// Assert
 			ts.Assert().Equal(tc.expectedHelmReleaseDeleted, d.helmReleaseDeleted)
-			if tc.expectedError != "" {
-				ts.Assert().EqualError(err, tc.expectedError)
-				return
-			}
-			ts.Assert().NoError(err)
 			resultRelease := &helmv1beta1.Release{}
 			err = ts.Client.Get(
 				ts.Context,
@@ -96,27 +85,19 @@ func (ts *DeleteStandalonePipelineSuite) Test_DeleteNamespace() {
 	tests := map[string]struct {
 		prepare        func(namespace string)
 		givenNamespace string
-		expectedError  string
 	}{
 		"GivenNonExistingNamespace_WhenDeleting_ThenExpectNoFurtherAction": {
 			prepare:        func(namespace string) {},
 			givenNamespace: "non-existing-namespace",
-			expectedError:  "",
 		},
 		"GivenExistingNamespace_WhenDeleting_ThenExpectNoFurtherAction": {
 			prepare:        func(namespace string) { ts.EnsureNS(namespace) },
 			givenNamespace: "existing-namespace",
-			expectedError:  "",
-		},
-		"GivenExistingNamespace_WhenDeletingGeneratesAnError_ThenReturnError": {
-			prepare: func(namespace string) { ts.EnsureNS("an-existing-namespace") },
-			// we purposefully set namespace to empty so that we generate an error so that we avoid mocking.
-			givenNamespace: "",
-			expectedError:  "resource name may not be empty",
 		},
 	}
 	for name, tc := range tests {
 		ts.Run(name, func() {
+			// Arrange
 			d := &DeleteStandalonePipeline{
 				client: ts.Client,
 				instance: newInstanceBuilder("instance", "namespace").
@@ -125,14 +106,12 @@ func (ts *DeleteStandalonePipelineSuite) Test_DeleteNamespace() {
 				helmReleaseDeleted: false,
 			}
 			tc.prepare(tc.givenNamespace)
+
+			// Act
 			err := d.deleteNamespace(ts.Context)
+			ts.Require().NoError(err)
 
 			// Assert
-			if tc.expectedError != "" {
-				ts.Assert().EqualError(err, tc.expectedError)
-				return
-			}
-			ts.Assert().NoError(err)
 			resultNs := &corev1.Namespace{}
 			err = ts.Client.Get(
 				ts.Context,
@@ -151,13 +130,13 @@ func (ts *DeleteStandalonePipelineSuite) Test_DeleteConnectionSecret() {
 		givenSecret    string
 		expectedError  string
 	}{
-		"GivenNonExistingSecret_WhenDeleting_ThenExpectNoFurtherAction": {
+		"GivenNonExistingSecret_WhenDeleting_ThenExpectNoError": {
 			prepare:        func(name, namespace string) {},
 			givenNamespace: "test-namespace",
 			givenSecret:    "non-existing-secret",
 			expectedError:  "",
 		},
-		"GivenExistingSecret_WhenDeleting_ThenExpectNoFurtherAction": {
+		"GivenExistingSecret_WhenDeleting_ThenExpectNoError": {
 			prepare: func(name, namespace string) {
 				ts.EnsureNS(namespace)
 				ts.EnsureResources(&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace}})
@@ -165,16 +144,6 @@ func (ts *DeleteStandalonePipelineSuite) Test_DeleteConnectionSecret() {
 			givenNamespace: "test-namespace",
 			givenSecret:    "existing-secret",
 			expectedError:  "",
-		},
-		"GivenExistingSecret_WhenDeletingGeneratesAnError_ThenReturnError": {
-			prepare: func(name, namespace string) {
-				ts.EnsureNS(namespace)
-				ts.EnsureResources(&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: "secret", Namespace: namespace}})
-			},
-			givenNamespace: "test-namespace",
-			// we purposefully set namespace to empty so that we generate an error so that we avoid mocking.
-			givenSecret:   "",
-			expectedError: "resource name may not be empty",
 		},
 	}
 	for name, tc := range tests {
@@ -211,36 +180,57 @@ func (ts *DeleteStandalonePipelineSuite) Test_RemoveFinalizer() {
 		prepare        func(instance *v1alpha1.PostgresqlStandalone)
 		givenInstance  string
 		givenNamespace string
+		assert         func(previousInstance, result *v1alpha1.PostgresqlStandalone)
 	}{
-		"GivenAnInstance_WhenDeletingFinalizer_ThenExpectInstanceWithNoFinalizer": {
+		"GivenInstanceWithFinalizer_WhenDeletingFinalizer_ThenExpectInstanceUpdatedWithRemovedFinalizer": {
+			prepare: func(instance *v1alpha1.PostgresqlStandalone) {
+				instance.Finalizers = []string{finalizer}
+				ts.EnsureNS("remove-finalizer")
+				ts.EnsureResources(instance)
+				ts.Assert().NotEmpty(instance.Finalizers)
+			},
+
+			givenInstance:  "has-finalizer",
+			givenNamespace: "remove-finalizer",
+			assert: func(previousInstance, result *v1alpha1.PostgresqlStandalone) {
+				ts.Assert().Empty(result.Finalizers)
+				ts.Assert().NotEqual(previousInstance.ResourceVersion, result.ResourceVersion, "resource version should change")
+			},
+		},
+		"GivenInstanceWithoutFinalizer_WhenDeletingFinalizer_ThenExpectInstanceUnchanged": {
 			prepare: func(instance *v1alpha1.PostgresqlStandalone) {
 				ts.EnsureNS("remove-finalizer")
 				ts.EnsureResources(instance)
 			},
 
-			givenInstance:  "instance",
+			givenInstance:  "no-finalizer",
 			givenNamespace: "remove-finalizer",
+			assert: func(previousInstance, result *v1alpha1.PostgresqlStandalone) {
+				ts.Assert().Empty(result.Finalizers)
+				ts.Assert().Equal(previousInstance.ResourceVersion, result.ResourceVersion, "resource version should be equal")
+			},
 		},
 	}
 	for name, tc := range tests {
 		ts.Run(name, func() {
-			instance := newInstanceBuilder(tc.givenInstance, tc.givenNamespace).setFinalizers(finalizer).get()
+			// Arrange
+			instance := newInstanceBuilder(tc.givenInstance, tc.givenNamespace).get()
 			d := &DeleteStandalonePipeline{
 				client:             ts.Client,
 				instance:           instance,
 				helmReleaseDeleted: false,
 			}
 			tc.prepare(instance)
+			previousVersion := instance.DeepCopy()
+
+			// Act
 			err := d.removeFinalizer(ts.Context)
-			// Assert
 			ts.Require().NoError(err)
-			releaseResult := &helmv1beta1.Release{}
-			err = ts.Client.Get(
-				ts.Context,
-				types.NamespacedName{Name: tc.givenInstance, Namespace: tc.givenNamespace},
-				releaseResult,
-			)
-			ts.Assert().Empty(releaseResult.Finalizers)
+
+			// Assert
+			result := &v1alpha1.PostgresqlStandalone{}
+			ts.FetchResource(client.ObjectKeyFromObject(instance), result)
+			tc.assert(previousVersion, result)
 		})
 	}
 }
@@ -293,11 +283,6 @@ func (b *PostgresqlStandaloneBuilder) setConnectionSecret(secret string) *Postgr
 
 func (b *PostgresqlStandaloneBuilder) setBackup(enabled bool) *PostgresqlStandaloneBuilder {
 	b.Spec.Backup.Enabled = enabled
-	return b
-}
-
-func (b *PostgresqlStandaloneBuilder) setFinalizers(finalizers ...string) *PostgresqlStandaloneBuilder {
-	b.Finalizers = finalizers
 	return b
 }
 
