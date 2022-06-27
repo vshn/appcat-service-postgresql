@@ -64,7 +64,11 @@ spec:
       volumes:
         - name: webhook-tls
           secret:
+            {{- if .Values.webhook.externalSecretName }}
+            secretName: {{ .Values.webhook.externalSecretName }}
+            {{- else }}
             secretName: {{ include "provider-postgresql.fullname" . }}-webhook-tls
+            {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

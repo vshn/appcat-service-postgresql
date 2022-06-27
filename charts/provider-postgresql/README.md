@@ -1,6 +1,6 @@
 # provider-postgresql
 
-![Version: 0.1.8](https://img.shields.io/badge/Version-0.1.8-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
+![Version: 0.2.0](https://img.shields.io/badge/Version-0.2.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 
 VSHN-opinionated PostgreSQL operator for AppCat
 
@@ -11,7 +11,7 @@ helm repo add appcat-service-postgresql https://vshn.github.io/appcat-service-po
 helm install provider-postgresql appcat-service-postgresql/provider-postgresql
 ```
 ```bash
-kubectl apply -f https://github.com/vshn/appcat-service-postgresql/releases/download/provider-postgresql-0.1.8/crds.yaml
+kubectl apply -f https://github.com/vshn/appcat-service-postgresql/releases/download/provider-postgresql-0.2.0/crds.yaml
 ```
 
 <!---
@@ -24,6 +24,17 @@ Edit the README.gotmpl.md template instead.
 
 * Always upgrade the CRDs before upgrading the Helm release.
 * Watch out for breaking changes in the Provider-Postgresql release notes.
+
+## Webhook support
+
+This chart is capable of rendering the `MutatingWebhookConfiguration` and `ValidatingWebhookConfiguration` required for the operator.
+While you can disable webhook support with `webhook.enabled=false`, you'll lose important business functionality.
+But it may be easier to set up in testing environments.
+
+In order for webhooks to work, Kubernetes requires a Secret with TLS.
+The webhook configuration spec requires the CA bundle to be set as well so that Kubernetes trusts the certificate that is mounted in the operator.
+
+You can set `webhook.externalSecretName` to a Secret that is managed outside of this chart.
 
 <!---
 The values below are generated with helm-docs!
@@ -58,6 +69,7 @@ Document your changes in values.yaml and let `make chart-docs` generate this sec
 | webhook.caBundle | string | `""` | Certificate in PEM format for the ValidatingWebhookConfiguration. |
 | webhook.certificate | string | `""` | Certificate in PEM format for the TLS secret. |
 | webhook.enabled | bool | `true` | Enable admission webhooks |
+| webhook.externalSecretName | string | `""` | Name of an existing or external Secret with TLS to mount in the operator. The secret is expected to have `tls.crt` and `tls.key` keys. Note: You will still need to set `.caBundle` if the certificate is not verifiable (self-signed) by Kubernetes. |
 | webhook.privateKey | string | `""` | Private key in PEM format for the TLS secret. |
 
 <!---

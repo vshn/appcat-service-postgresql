@@ -14,7 +14,9 @@ webhooks:
         name: '{{ include "provider-postgresql.fullname" . }}'
         namespace: '{{ .Release.Namespace }}'
         path: /mutate-postgresql-appcat-vshn-io-v1alpha1-postgresqlstandalone
-      caBundle: '{{ .Values.webhook.caBundle }}'
+{{- with .Values.webhook.caBundle }}
+      caBundle: '{{ . }}'
+{{- end }}
     failurePolicy: Fail
     name: postgresqlstandalones.postgresql.appcat.vshn.io
     rules:
@@ -43,7 +45,9 @@ webhooks:
         name: '{{ include "provider-postgresql.fullname" . }}'
         namespace: '{{ .Release.Namespace }}'
         path: /validate-postgresql-appcat-vshn-io-v1alpha1-postgresqlstandalone
-      caBundle: '{{ .Values.webhook.caBundle }}'
+{{- with .Values.webhook.caBundle }}
+      caBundle: '{{ . }}'
+{{- end }}
     failurePolicy: Fail
     name: postgresqlstandalones.postgresql.appcat.vshn.io
     rules:
