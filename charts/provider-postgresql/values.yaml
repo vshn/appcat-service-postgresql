@@ -21,6 +21,18 @@ operator:
   # -- Overrides arguments passed to the entrypoint
   args: []
 
+# -- Render `PostgresqlStandaloneOperatorConfig` objects.
+# Each key is used as the name of the object and shall contain the fields `{postgresMajorVersion, spec}`. 
+# The `spec` content is rendered as YAML verbatim.
+# See example in the `values.yaml` file.
+standaloneOperatorConfigs: {}
+# Example:
+# my-config:
+#   postgresMajorVersion: v14
+#   spec:
+#     defaultDeploymentStrategy: ...
+#     ...
+
 # -- List of image pull secrets if custom image is behind authentication.
 imagePullSecrets: []
 nameOverride: ""

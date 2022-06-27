@@ -1,0 +1,13 @@
+{{- $labels := include "provider-postgresql.labels" . }}
+{{- range $key,$value := .Values.standaloneOperatorConfigs }}
+---
+apiVersion: postgresql.appcat.vshn.io/v1alpha1
+kind: PostgresqlStandaloneOperatorConfig
+metadata:
+  labels:
+    {{- $labels | nindent 4 }}
+    postgresql.appcat.vshn.io/major-version: {{ $value.postgresMajorVersion }}
+  name: {{ $key }}
+spec:
+  {{- $value.spec | toYaml | nindent 2 }}
+{{- end }}
