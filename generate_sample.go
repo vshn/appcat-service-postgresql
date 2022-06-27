@@ -106,6 +106,12 @@ func generatePostgresStandaloneConfigSample() {
 						Key:                  "secretKey",
 					},
 				},
+				S3BucketProvider: "minio",
+				MinioProvider: &v1alpha1.MinioProviderSpec{
+					EndpointRef:  corev1.SecretKeySelector{},
+					AccessKeyRef: corev1.SecretKeySelector{},
+					SecretKeyRef: corev1.SecretKeySelector{},
+				},
 			},
 		},
 	}

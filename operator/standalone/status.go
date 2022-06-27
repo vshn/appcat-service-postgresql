@@ -2,6 +2,7 @@ package standalone
 
 import (
 	"context"
+	"github.com/vshn/appcat-service-postgresql/operator/pipe"
 
 	crossplanev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -25,7 +26,7 @@ func FindCrossplaneCondition(conditions []crossplanev1.Condition, conditionType 
 // The condition's LastTransitionTime is set to Now() just before updating.
 func setConditionFn(obj client.Object, conditions *[]metav1.Condition, condition metav1.Condition) func(ctx context.Context) error {
 	return func(ctx context.Context) error {
-		clt := getClientFromContext(ctx)
+		clt := pipe.GetClientFromContext(ctx)
 		condition.LastTransitionTime = metav1.Now()
 		meta.SetStatusCondition(conditions, condition)
 		return clt.Status().Update(ctx, obj)
@@ -35,7 +36,7 @@ func setConditionFn(obj client.Object, conditions *[]metav1.Condition, condition
 // addFinalizerFn returns a func that immediately updates the instance with the given finalizer.
 func addFinalizerFn(obj client.Object, finalizer string) func(ctx context.Context) error {
 	return func(ctx context.Context) error {
-		clt := getClientFromContext(ctx)
+		clt := pipe.GetClientFromContext(ctx)
 		if controllerutil.AddFinalizer(obj, finalizer) {
 			return clt.Update(ctx, obj)
 		}
