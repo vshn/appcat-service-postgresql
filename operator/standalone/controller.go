@@ -2,6 +2,7 @@ package standalone
 
 import (
 	"context"
+	"github.com/vshn/appcat-service-postgresql/operator/pipe"
 	"strings"
 	"time"
 
@@ -46,7 +47,7 @@ type PostgresStandaloneReconciler struct {
 // Reconcile implements reconcile.Reconciler.
 func (r *PostgresStandaloneReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	ctx = pipeline.MutableContext(ctx)
-	setClientInContext(ctx, r.client)
+	pipe.SetClientInContext(ctx, r.client)
 	obj := &v1alpha1.PostgresqlStandalone{}
 	setInstanceInContext(ctx, obj)
 

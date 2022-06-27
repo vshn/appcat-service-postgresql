@@ -5,17 +5,7 @@ import (
 
 	pipeline "github.com/ccremer/go-command-pipeline"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-type clientKey struct{}
-
-func setClientInContext(ctx context.Context, c client.Client) {
-	pipeline.StoreInContext(ctx, clientKey{}, c)
-}
-func getClientFromContext(ctx context.Context) client.Client {
-	return pipeline.MustLoadFromContext(ctx, clientKey{}).(client.Client)
-}
 
 type instanceKey struct{}
 

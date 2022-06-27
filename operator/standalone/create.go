@@ -3,6 +3,8 @@ package standalone
 import (
 	"context"
 	"fmt"
+	"github.com/vshn/appcat-service-postgresql/operator/pipe"
+	"github.com/vshn/appcat-service-postgresql/operator/s3"
 	"k8s.io/apimachinery/pkg/labels"
 	"math/rand"
 	"strings"
@@ -35,7 +37,7 @@ func init() {
 	namegeneratorRNG = rng
 }
 
-// CreateStandalonePipeline is a pipeline that creates a new instance in the target deployment namespace.
+// CreateStandalonePipeline is a pipe that creates a new instance in the target deployment namespace.
 // Currently, it's optimized for first-time creation scenarios and may fail when reconciling existing instances.
 type CreateStandalonePipeline struct {
 	operatorNamespace string
@@ -54,9 +56,10 @@ type CreateStandalonePipeline struct {
 
 	k8upschedule   *k8upv1.Schedule
 	s3BucketSecret *corev1.Secret
+	bucket         *s3.Bucket
 }
 
-// NewCreateStandalonePipeline creates a new pipeline with the required dependencies.
+// NewCreateStandalonePipeline creates a new pipe with the required dependencies.
 func NewCreateStandalonePipeline(client client.Client, instance *v1alpha1.PostgresqlStandalone, operatorNamespace string) *CreateStandalonePipeline {
 	return &CreateStandalonePipeline{
 		instance:          instance,
@@ -65,8 +68,8 @@ func NewCreateStandalonePipeline(client client.Client, instance *v1alpha1.Postgr
 	}
 }
 
-// RunFirstPass executes the pipeline with configured business logic steps.
-// This should only be executed once per pipeline as it stores intermediate results in the struct.
+// RunFirstPass executes the pipe with configured business logic steps.
+// This should only be executed once per pipe as it stores intermediate results in the struct.
 func (p *CreateStandalonePipeline) RunFirstPass(ctx context.Context) error {
 	return pipeline.NewPipeline().
 		WithSteps(
@@ -98,7 +101,7 @@ func (p *CreateStandalonePipeline) RunFirstPass(ctx context.Context) error {
 		RunWithContext(ctx).Err()
 }
 
-// RunSecondPass runs a pipeline that verifies if all dependent resources are ready.
+// RunSecondPass runs a pipe that verifies if all dependent resources are ready.
 // It will add the conditions.TypeReady condition to the status field (and update it) if it's considered ready.
 // No error is returned in case the instance is not considered ready.
 func (p *CreateStandalonePipeline) RunSecondPass(ctx context.Context) error {
@@ -108,6 +111,7 @@ func (p *CreateStandalonePipeline) RunSecondPass(ctx context.Context) error {
 			pipeline.NewStepFromFunc("fetch helm release", p.fetchHelmRelease),
 			pipeline.If(p.isBackupEnabledPredicate(),
 				pipeline.NewPipeline().WithNestedSteps("ensure backup",
+					pipeline.NewStepFromFunc("make bucket", p.makeBucket),
 					pipeline.NewStepFromFunc("fetch bucket secret", p.fetchS3BucketSecret),
 					pipeline.NewStepFromFunc("ensure k8up schedule", p.ensureK8upSchedule),
 				),
@@ -352,7 +356,7 @@ func deleteK8upSchedule(ctx context.Context) error {
 		return nil
 	}
 	schedule := newK8upSchedule(instance)
-	err := getClientFromContext(ctx).Delete(ctx, schedule)
+	err := pipe.GetClientFromContext(ctx).Delete(ctx, schedule)
 	return client.IgnoreNotFound(err)
 }
 
@@ -368,7 +372,7 @@ func (p *CreateStandalonePipeline) ensureResticRepositorySecret(ctx context.Cont
 		},
 	}
 	secretKey := "repository"
-	_, err := controllerutil.CreateOrUpdate(ctx, getClientFromContext(ctx), secret, func() error {
+	_, err := controllerutil.CreateOrUpdate(ctx, pipe.GetClientFromContext(ctx), secret, func() error {
 		secret.Labels = getCommonLabels(getInstanceFromContext(ctx).Name)
 		if val, exists := secret.Data[secretKey]; exists && len(val) > 0 {
 			// password already set, let's reset every other key
@@ -446,7 +450,7 @@ func (p *CreateStandalonePipeline) markInstanceAsReady(ctx context.Context) erro
 
 // ensureConnectionSecret creates the connection secret in the instance's namespace.
 func (p *CreateStandalonePipeline) ensureConnectionSecret(ctx context.Context) error {
-	err := Upsert(ctx, getClientFromContext(ctx), p.connectionSecret)
+	err := Upsert(ctx, pipe.GetClientFromContext(ctx), p.connectionSecret)
 	return err
 }
 
@@ -456,7 +460,7 @@ func (p *CreateStandalonePipeline) fetchCredentialSecret(ctx context.Context) er
 		Name:      getCredentialSecretName(),
 		Namespace: p.instance.Status.HelmChart.DeploymentNamespace,
 	}}
-	err := getClientFromContext(ctx).Get(ctx, types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace}, secret)
+	err := pipe.GetClientFromContext(ctx).Get(ctx, types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace}, secret)
 	if err != nil {
 		return err
 	}
@@ -472,7 +476,7 @@ func (p *CreateStandalonePipeline) fetchCredentialSecret(ctx context.Context) er
 // fetchService gets the service object and puts the DNS records into the connection secret.
 func (p *CreateStandalonePipeline) fetchService(ctx context.Context) error {
 	service := &corev1.Service{}
-	err := getClientFromContext(ctx).Get(ctx, client.ObjectKey{Name: "postgresql", Namespace: p.instance.Status.HelmChart.DeploymentNamespace}, service)
+	err := pipe.GetClientFromContext(ctx).Get(ctx, client.ObjectKey{Name: "postgresql", Namespace: p.instance.Status.HelmChart.DeploymentNamespace}, service)
 	if err != nil {
 		return err
 	}
@@ -515,7 +519,15 @@ func (p *CreateStandalonePipeline) newConnectionSecret() *corev1.Secret {
 }
 
 func (p *CreateStandalonePipeline) setOwnerReferenceInConnectionSecret(ctx context.Context) error {
-	return controllerutil.SetOwnerReference(p.instance, p.connectionSecret, getClientFromContext(ctx).Scheme())
+	return controllerutil.SetOwnerReference(p.instance, p.connectionSecret, pipe.GetClientFromContext(ctx).Scheme())
+}
+
+func (p *CreateStandalonePipeline) makeBucket(ctx context.Context) error {
+	provider := s3.SupportedBucketProviders[p.config.Spec.BackupConfigSpec.S3BucketProvider]
+	user, err := provider.CreateObjectUser(ctx, p.config, p.instance)
+	bucket, err := provider.CreateBucket(ctx, user, p.instance)
+	p.bucket = bucket
+	return err
 }
 
 func getCredentialSecretName() string {

@@ -18,6 +18,19 @@ type BackupSpec struct {
 type BackupConfigSpec struct {
 	// S3BucketSecret configures the bucket settings for backup buckets.
 	S3BucketSecret S3BucketConfigSpec `json:"s3BucketSecret,omitempty"`
+
+	S3BucketProvider string `json:"s3BucketProvider,omitempty"`
+
+	MinioProvider *MinioProviderSpec `json:"minioProvider,omitempty"`
+}
+
+type MinioProviderSpec struct {
+	// EndpointRef selects the secret and key for retrieving the endpoint name.
+	EndpointRef corev1.SecretKeySelector `json:"endpointRef,omitempty"`
+	// AccessKeyRef selects the access key credential for the bucket.
+	AccessKeyRef corev1.SecretKeySelector `json:"accessKeyRef,omitempty"`
+	// SecretKeyRef selects the secret key credential for the bucket.
+	SecretKeyRef corev1.SecretKeySelector `json:"secretKeyRef,omitempty"`
 }
 
 // S3BucketConfigSpec contains references to configure bucket properties.

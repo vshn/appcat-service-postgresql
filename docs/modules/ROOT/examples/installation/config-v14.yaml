@@ -7,6 +7,14 @@ metadata:
   namespace: postgresql-system
 spec:
   backupConfigSpec:
+    minioProvider:
+      accessKeyRef:
+        key: ""
+      endpointRef:
+        key: ""
+      secretKeyRef:
+        key: ""
+    s3BucketProvider: minio
     s3BucketSecret:
       accessKeyRef:
         key: accessKey

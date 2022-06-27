@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/vshn/appcat-service-postgresql/operator/minio"
+	"github.com/vshn/appcat-service-postgresql/operator/s3"
 	"os"
 	"os/signal"
 	"sync/atomic"
@@ -29,6 +31,7 @@ var (
 func init() {
 	// Remove `-v` short option from --version flag
 	cli.VersionFlag.(*cli.BoolFlag).Aliases = nil
+	s3.SupportedBucketProviders["minio"] = minio.NewMinioProvider()
 }
 
 func main() {

@@ -12,14 +12,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-// DeleteStandalonePipeline is a pipeline that deletes an instance from the target deployment namespace.
+// DeleteStandalonePipeline is a pipe that deletes an instance from the target deployment namespace.
 type DeleteStandalonePipeline struct {
 	client             client.Client
 	instance           *v1alpha1.PostgresqlStandalone
 	helmReleaseDeleted bool
 }
 
-// NewDeleteStandalonePipeline creates a new delete pipeline with the required dependencies.
+// NewDeleteStandalonePipeline creates a new delete pipe with the required dependencies.
 func NewDeleteStandalonePipeline(client client.Client, instance *v1alpha1.PostgresqlStandalone) *DeleteStandalonePipeline {
 	return &DeleteStandalonePipeline{
 		instance: instance,
@@ -27,13 +27,13 @@ func NewDeleteStandalonePipeline(client client.Client, instance *v1alpha1.Postgr
 	}
 }
 
-// RunPipeline executes the pipeline with configured business logic steps.
-// The pipeline requires multiple reconciliations due to asynchronous deletion of resources in background
+// RunPipeline executes the pipe with configured business logic steps.
+// The pipe requires multiple reconciliations due to asynchronous deletion of resources in background
 // The Helm Release step requires a complete removal of its resources before moving to the next step
 func (d *DeleteStandalonePipeline) RunPipeline(ctx context.Context) error {
 	return pipeline.NewPipeline().
 		WithSteps(
-			//TODO In case the instance is deleted before connection secret is created the deletion of secret returns an error and blocks the pipeline.
+			//TODO In case the instance is deleted before connection secret is created the deletion of secret returns an error and blocks the pipe.
 			// Check if connection secret exist before calling deleteConnectionSecret
 			pipeline.NewStepFromFunc("delete connection secret", d.deleteConnectionSecret),
 			pipeline.NewStepFromFunc("delete helm release", d.deleteHelmRelease),

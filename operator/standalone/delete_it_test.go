@@ -28,7 +28,7 @@ func TestDeleteStandalonePipeline(t *testing.T) {
 
 func (ts *DeleteStandalonePipelineSuite) BeforeTest(suiteName, testName string) {
 	ts.Context = pipeline.MutableContext(context.Background())
-	setClientInContext(ts.Context, ts.Client)
+	SetClientInContext(ts.Context, ts.Client)
 	ts.RegisterScheme(helmv1beta1.SchemeBuilder.AddToScheme)
 }
 
