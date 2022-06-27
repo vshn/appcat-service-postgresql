@@ -115,7 +115,7 @@ func generatePostgresStandaloneConfigSample() {
 func generatePostgresStandaloneSample() {
 	spec := newPostgresqlStandaloneSample()
 	modified := metav1.Date(2022, time.April, 27, 15, 20, 13, 0, time.UTC)
-	cond := conditions.Ready()
+	cond := conditions.Ready(metav1.ConditionTrue)
 	cond.LastTransitionTime = modified
 	spec.Status = v1alpha1.PostgresqlStandaloneStatus{
 		Conditions: []metav1.Condition{cond},

@@ -29,6 +29,7 @@ spec:
       version: 11.1.23
     values:
       key: value
+  persistence: {}
   resourceMaxima:
     memoryLimit: 6Gi
     storageCapacity: 500Gi

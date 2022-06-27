@@ -30,6 +30,9 @@ type PostgresqlStandaloneOperatorConfigSpec struct {
 	// Used when DeploymentStrategy is StrategyHelmChart.
 	HelmProviderConfigReference string `json:"helmProviderConfigReference,omitempty"`
 
+	// Persistence contains default PVC settings.
+	Persistence Persistence `json:"persistence,omitempty"`
+
 	// BackupConfigSpec defines settings for instance backups.
 	BackupConfigSpec BackupConfigSpec `json:"backupConfigSpec,omitempty"`
 }
@@ -64,6 +67,12 @@ type PostgresqlStandaloneOperatorConfig struct {
 
 	Spec   PostgresqlStandaloneOperatorConfigSpec `json:"spec"`
 	Status PostgresqlStandaloneConfigStatus       `json:"status,omitempty"`
+}
+
+// Persistence contains default PVC settings.
+type Persistence struct {
+	// storageClassName is the name of the StorageClass required by the claim.
+	StorageClassName *string `json:"storageClassName,omitempty" protobuf:"bytes,5,opt,name=storageClassName"`
 }
 
 // +kubebuilder:object:root=true

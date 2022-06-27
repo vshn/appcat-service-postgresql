@@ -30,6 +30,8 @@ var (
 // +kubebuilder:rbac:groups=postgresql.appcat.vshn.io,resources=postgresqlstandaloneoperatorconfigs/status;postgresqlstandaloneoperatorconfigs/finalizers,verbs=get;update;patch
 
 // +kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=persistentvolumeclaims,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch
 // +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;create;update
@@ -68,7 +70,7 @@ func (r *PostgresStandaloneReconciler) Reconcile(ctx context.Context, request re
 		res, err := r.CreateDeployment(ctx, obj)
 		return res, err
 	}
-	return reconcile.Result{}, nil
+	return r.UpdateDeployment(ctx, obj)
 }
 
 // CreateDeployment creates the given instance deployment.
@@ -96,4 +98,37 @@ func (r *PostgresStandaloneReconciler) DeleteDeployment(ctx context.Context, ins
 	log.Info("Deleting instance")
 	err := d.RunPipeline(ctx)
 	return reconcile.Result{RequeueAfter: 1 * time.Second}, err
+}
+
+// UpdateDeployment saves the given spec in Kubernetes.
+func (r *PostgresStandaloneReconciler) UpdateDeployment(ctx context.Context, instance *v1alpha1.PostgresqlStandalone) (reconcile.Result, error) {
+	log := ctrl.LoggerFrom(ctx)
+	p := NewUpdateStandalonePipeline(r.client, instance, OperatorNamespace)
+	if meta.IsStatusConditionTrue(instance.Status.Conditions, conditions.TypeProgressing) {
+		log.Info("Waiting until instance becomes ready")
+		err := p.WaitUntilAllResourceReady(ctx)
+		if !meta.IsStatusConditionTrue(instance.Status.Conditions, conditions.TypeReady) {
+			return reconcile.Result{RequeueAfter: 2 * time.Second}, err
+		}
+		return reconcile.Result{}, err
+	}
+
+	err := p.RunInitialUpdatePipeline(ctx)
+
+	// ensure status conditions are up-to-date.
+	instance.Status.SetObservedGeneration(instance)
+	err = r.client.Status().Update(ctx, instance.DeepCopy())
+	if !meta.IsStatusConditionTrue(instance.Status.Conditions, conditions.TypeReady) {
+		return reconcile.Result{RequeueAfter: 10 * time.Second}, err
+	}
+	return reconcile.Result{}, err
+}
+
+// Upsert creates the given obj if it doesn't exist.
+// If it exists, it's being updated.
+func Upsert(ctx context.Context, client client.Client, obj client.Object) error {
+	_, err := controllerutil.CreateOrUpdate(ctx, client, obj, func() error {
+		return nil
+	})
+	return err
 }

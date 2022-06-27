@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"math/rand"
 	"strings"
 
@@ -83,6 +84,7 @@ func (p *CreateStandalonePipeline) RunFirstPass(ctx context.Context) error {
 
 			pipeline.NewPipeline().WithNestedSteps("deploy resources",
 				pipeline.NewStepFromFunc("ensure deployment namespace", p.ensureDeploymentNamespace),
+				pipeline.NewStepFromFunc("ensure PVC", p.ensurePVC),
 				pipeline.NewStepFromFunc("ensure credentials secret", p.ensureCredentialsSecret),
 				pipeline.NewStepFromFunc("ensure helm release", p.ensureHelmRelease),
 				pipeline.If(pipeline.Bool(p.instance.Spec.Backup.Enabled),
@@ -199,7 +201,7 @@ func (p *CreateStandalonePipeline) overrideTemplateValues(_ context.Context) err
 func (p *CreateStandalonePipeline) applyValuesFromInstance(_ context.Context) error {
 	resources := helmvalues.V{
 		"auth": helmvalues.V{
-			"enablePostgresUser": p.instance.Spec.Parameters.EnableSuperUser,
+			"enablePostgresUser": true, // we temporarily leave the superuser active for back-up operation until https://github.com/vshn/appcat-service-postgresql/issues/83
 			"existingSecret":     getCredentialSecretName(),
 			"database":           p.instance.Name,
 			"username":           p.instance.Name,
@@ -211,7 +213,7 @@ func (p *CreateStandalonePipeline) applyValuesFromInstance(_ context.Context) er
 				},
 			},
 			"persistence": helmvalues.V{
-				"size": p.instance.Spec.Parameters.Resources.StorageCapacity.String(),
+				"existingClaim": getPVCName(),
 			},
 			"podAnnotations": helmvalues.V{ // these annotations can stay, even if backups are disabled.
 				"k8up.io/backupcommand":  `sh -c 'PGUSER="postgres" PGPASSWORD="$POSTGRES_POSTGRES_PASSWORD" pg_dumpall --clean'`,
@@ -447,7 +449,7 @@ func (p *CreateStandalonePipeline) isHelmReleaseReady(_ context.Context) bool {
 
 // markInstanceAsReady marks an instance immediately as ready by updating the status conditions.
 func (p *CreateStandalonePipeline) markInstanceAsReady(ctx context.Context) error {
-	meta.SetStatusCondition(&p.instance.Status.Conditions, conditions.Builder().With(conditions.Ready()).WithGeneration(p.instance).Build())
+	meta.SetStatusCondition(&p.instance.Status.Conditions, conditions.Builder().With(conditions.Ready(metav1.ConditionTrue)).WithGeneration(p.instance).Build())
 	meta.RemoveStatusCondition(&p.instance.Status.Conditions, conditions.TypeCreating)
 	return p.client.Status().Update(ctx, p.instance)
 }
@@ -536,6 +538,29 @@ func (p *CreateStandalonePipeline) setOwnerReferenceInConnectionSecret(ctx conte
 	return controllerutil.SetOwnerReference(p.instance, p.connectionSecret, getClientFromContext(ctx).Scheme())
 }
 
+func (p *CreateStandalonePipeline) ensurePVC(ctx context.Context) error {
+	quantity, err := resource.ParseQuantity(p.instance.Spec.Parameters.Resources.StorageCapacity.String())
+	if err != nil {
+		return err
+	}
+
+	persistentVolumeClaim := &corev1.PersistentVolumeClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      getPVCName(),
+			Namespace: p.deploymentNamespace.Name,
+			Labels:    getCommonLabels(p.instance.Name),
+		},
+		Spec: corev1.PersistentVolumeClaimSpec{
+			StorageClassName: p.config.Spec.Persistence.StorageClassName,
+			AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+			Resources: corev1.ResourceRequirements{
+				Requests: map[corev1.ResourceName]resource.Quantity{corev1.ResourceStorage: quantity},
+			},
+		},
+	}
+	return Upsert(ctx, p.client, persistentVolumeClaim)
+}
+
 func getCredentialSecretName() string {
 	return fmt.Sprintf("%s-credentials", getDeploymentName())
 }
@@ -544,6 +569,10 @@ func getResticRepositorySecretName() string {
 }
 func getDeploymentName() string {
 	return "postgresql"
+}
+
+func getPVCName() string {
+	return "postgresql-pvc"
 }
 
 func getCommonLabels(instanceName string) labels.Set {
