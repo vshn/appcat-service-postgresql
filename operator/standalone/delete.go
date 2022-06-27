@@ -88,14 +88,9 @@ func (d *DeleteStandalonePipeline) deleteNamespace(ctx context.Context) error {
 
 // deleteConnectionSecret removes the connection secret of the PostgreSQL instance
 func (d *DeleteStandalonePipeline) deleteConnectionSecret(ctx context.Context) error {
-	secretName := d.instance.Spec.WriteConnectionSecretToRef.Name
-	if secretName == "" {
-		// webhook might not have defaulted to the instance name yet.
-		secretName = d.instance.Name
-	}
 	connectionSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      secretName,
+			Name:      d.instance.GetConnectionSecretName(),
 			Namespace: d.instance.Namespace,
 		},
 	}
