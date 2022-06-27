@@ -237,16 +237,18 @@ func (p *CreateStandalonePipeline) applyValuesFromInstance(_ context.Context) er
 
 // ensureDeploymentNamespace creates the deployment namespace where the Helm release is ultimately deployed in.
 func (p *CreateStandalonePipeline) ensureDeploymentNamespace(ctx context.Context) error {
-	ns := &corev1.Namespace{
+	p.deploymentNamespace = &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: generateClusterScopedNameForInstance(),
-			// TODO: Add APPUiO cloud organization label that identifies ownership.
-			Labels: getCommonLabels(p.instance.Name),
 		},
 	}
-	ns.Labels["app.kubernetes.io/instance-namespace"] = p.instance.Namespace
-	p.deploymentNamespace = ns
-	return Upsert(ctx, p.client, ns)
+	_, err := controllerutil.CreateOrUpdate(ctx, p.client, p.deploymentNamespace, func() error {
+		// TODO: Add APPUiO cloud organization label that identifies ownership.
+		p.deploymentNamespace.Labels = getCommonLabels(p.instance.Name)
+		p.deploymentNamespace.Labels["app.kubernetes.io/instance-namespace"] = p.instance.Namespace
+		return nil
+	})
+	return err
 }
 
 // ensureCredentialsSecret creates the secret that contains the PostgreSQL secret.
@@ -259,15 +261,18 @@ func (p *CreateStandalonePipeline) ensureCredentialsSecret(ctx context.Context) 
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      getCredentialSecretName(),
 			Namespace: p.deploymentNamespace.Name,
-			Labels:    getCommonLabels(p.instance.Name),
 		},
-		StringData: map[string]string{
+	}
+	_, err := controllerutil.CreateOrUpdate(ctx, p.client, secret, func() error {
+		secret.Labels = getCommonLabels(p.instance.Name)
+		secret.StringData = map[string]string{
 			"postgres-password":    generatePassword(),
 			"password":             generatePassword(),
 			"replication-password": generatePassword(),
-		},
-	}
-	return Upsert(ctx, p.client, secret)
+		}
+		return nil
+	})
+	return err
 }
 
 // ensureHelmRelease creates the Helm release object.
@@ -281,10 +286,12 @@ func (p *CreateStandalonePipeline) ensureHelmRelease(ctx context.Context) error 
 	}
 	p.helmRelease = &helmv1beta1.Release{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   p.deploymentNamespace.Name,
-			Labels: getCommonLabels(p.instance.Name),
+			Name: p.deploymentNamespace.Name,
 		},
-		Spec: helmv1beta1.ReleaseSpec{
+	}
+	_, err = controllerutil.CreateOrUpdate(ctx, p.client, p.helmRelease, func() error {
+		p.helmRelease.Labels = getCommonLabels(p.instance.Name)
+		p.helmRelease.Spec = helmv1beta1.ReleaseSpec{
 			ForProvider: helmv1beta1.ReleaseParameters{
 				Chart:               helmv1beta1.ChartSpec{Repository: p.helmChart.Repository, Name: p.helmChart.Name, Version: p.helmChart.Version},
 				Namespace:           p.deploymentNamespace.Name,
@@ -296,9 +303,10 @@ func (p *CreateStandalonePipeline) ensureHelmRelease(ctx context.Context) error 
 			ResourceSpec: crossplanev1.ResourceSpec{
 				ProviderConfigReference: &crossplanev1.Reference{Name: p.config.Spec.HelmProviderConfigReference},
 			},
-		},
-	}
-	return Upsert(ctx, p.client, p.helmRelease)
+		}
+		return nil
+	})
+	return err
 }
 
 // ensureK8upSchedule creates the K8up schedule object.
@@ -446,8 +454,18 @@ func (p *CreateStandalonePipeline) markInstanceAsReady(ctx context.Context) erro
 
 // ensureConnectionSecret creates the connection secret in the instance's namespace.
 func (p *CreateStandalonePipeline) ensureConnectionSecret(ctx context.Context) error {
-	err := Upsert(ctx, getClientFromContext(ctx), p.connectionSecret)
-	return err
+	secret := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: p.connectionSecret.Name, Namespace: p.connectionSecret.Namespace}}
+	_, err := controllerutil.CreateOrUpdate(ctx, getClientFromContext(ctx), secret, func() error {
+		secret.Labels = p.connectionSecret.Labels
+		secret.Data = p.connectionSecret.Data
+		secret.StringData = p.connectionSecret.StringData
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	p.connectionSecret = secret
+	return nil
 }
 
 // fetchCredentialSecret gets the credential secret and puts the credentials for postgresql into the connection secret.

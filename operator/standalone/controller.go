@@ -12,7 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -69,7 +68,7 @@ func (r *PostgresStandaloneReconciler) Reconcile(ctx context.Context, request re
 		res, err := r.CreateDeployment(ctx, obj)
 		return res, err
 	}
-	return r.Update(ctx, obj)
+	return reconcile.Result{}, nil
 }
 
 // CreateDeployment creates the given instance deployment.
@@ -97,27 +96,4 @@ func (r *PostgresStandaloneReconciler) DeleteDeployment(ctx context.Context, ins
 	log.Info("Deleting instance")
 	err := d.RunPipeline(ctx)
 	return reconcile.Result{RequeueAfter: 1 * time.Second}, err
-}
-
-// Update saves the given spec in Kubernetes.
-func (r *PostgresStandaloneReconciler) Update(ctx context.Context, instance *v1alpha1.PostgresqlStandalone) (reconcile.Result, error) {
-	log := ctrl.LoggerFrom(ctx)
-	log.Info("Updating")
-	err := Upsert(ctx, r.client, instance)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	// ensure status conditions are up-to-date.
-	instance.Status.SetObservedGeneration(instance)
-	err = r.client.Status().Update(ctx, instance.DeepCopy())
-	return reconcile.Result{}, err
-}
-
-// Upsert creates the given obj if it doesn't exist.
-// If it exists, it's being updated.
-func Upsert(ctx context.Context, client client.Client, obj client.Object) error {
-	_, err := controllerutil.CreateOrUpdate(ctx, client, obj, func() error {
-		return nil
-	})
-	return err
 }
