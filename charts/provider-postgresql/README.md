@@ -36,6 +36,24 @@ The webhook configuration spec requires the CA bundle to be set as well so that 
 
 You can set `webhook.externalSecretName` to a Secret that is managed outside of this chart.
 
+### Automatic Certificate Provisioning on OpenShift 4
+
+On Openshift 4, you can make use of the automatic service serving certificate provisioning as documented here:
+https://docs.openshift.com/container-platform/4.10/security/certificates/service-serving-certificate.html
+
+In short, setting the annotations as outlined below causes OpenShift to create the Secret and patch the Webhook configuration objects.
+
+To make use of it, configure the following values:
+```yaml
+service:
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: <secret_name>
+webhook:
+  externalSecretName: <secret_name>
+  annotations:
+    service.beta.openshift.io/inject-cabundle: "true"
+```
+
 <!---
 The values below are generated with helm-docs!
 
@@ -60,12 +78,14 @@ Document your changes in values.yaml and let `make chart-docs` generate this sec
 | replicaCount | int | `1` | How many operator pods should run. Follower pods reduce interruption time as they're on hot standby when leader is unresponsive. |
 | resources | object | `{}` |  |
 | securityContext | object | `{}` | Container security context |
+| service.annotations | object | `{}` | Annotations to add to the service |
 | service.port | int | `80` | Service port number |
 | service.type | string | `"ClusterIP"` | Service type |
 | serviceAccount.annotations | object | `{}` | Annotations to add to the service account |
 | serviceAccount.create | bool | `true` | Specifies whether a service account should be created |
 | serviceAccount.name | string | `""` | The name of the service account to use. If not set and `.create` is `true`, a name is generated using the fullname template |
 | tolerations | list | `[]` |  |
+| webhook.annotations | object | `{}` | Annotations to add to the webhook configuration resources. |
 | webhook.caBundle | string | `""` | Certificate in PEM format for the ValidatingWebhookConfiguration. |
 | webhook.certificate | string | `""` | Certificate in PEM format for the TLS secret. |
 | webhook.enabled | bool | `true` | Enable admission webhooks |
