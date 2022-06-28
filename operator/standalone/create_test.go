@@ -128,7 +128,7 @@ func TestCreateStandalonePipeline_ApplyValuesFromInstance(t *testing.T) {
 		},
 		"primary": helmvalues.V{
 			"persistence": helmvalues.V{
-				"size": "1Gi",
+				"existingClaim": "postgresql-pvc",
 			},
 			"resources": helmvalues.V{
 				"limits": helmvalues.V{
