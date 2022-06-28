@@ -1,6 +1,6 @@
 # provider-postgresql
 
-![Version: 0.2.0](https://img.shields.io/badge/Version-0.2.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
+![Version: 0.3.0](https://img.shields.io/badge/Version-0.3.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
 
 VSHN-opinionated PostgreSQL operator for AppCat
 
@@ -11,7 +11,7 @@ helm repo add appcat-service-postgresql https://vshn.github.io/appcat-service-po
 helm install provider-postgresql appcat-service-postgresql/provider-postgresql
 ```
 ```bash
-kubectl apply -f https://github.com/vshn/appcat-service-postgresql/releases/download/provider-postgresql-0.2.0/crds.yaml
+kubectl apply -f https://github.com/vshn/appcat-service-postgresql/releases/download/provider-postgresql-0.3.0/crds.yaml
 ```
 
 <!---
@@ -84,6 +84,7 @@ Document your changes in values.yaml and let `make chart-docs` generate this sec
 | serviceAccount.annotations | object | `{}` | Annotations to add to the service account |
 | serviceAccount.create | bool | `true` | Specifies whether a service account should be created |
 | serviceAccount.name | string | `""` | The name of the service account to use. If not set and `.create` is `true`, a name is generated using the fullname template |
+| standaloneOperatorConfigs | object | `{}` | Render `PostgresqlStandaloneOperatorConfig` objects. Each key is used as the name of the object and shall contain the fields `{postgresMajorVersion, spec}`.  The `spec` content is rendered as YAML verbatim. See example in the `values.yaml` file. |
 | tolerations | list | `[]` |  |
 | webhook.annotations | object | `{}` | Annotations to add to the webhook configuration resources. |
 | webhook.caBundle | string | `""` | Certificate in PEM format for the ValidatingWebhookConfiguration. |
