@@ -244,7 +244,7 @@ func (p *CreateStandalonePipeline) ensureDeploymentNamespace(ctx context.Context
 	}
 	_, err := controllerutil.CreateOrUpdate(ctx, p.client, p.deploymentNamespace, func() error {
 		// TODO: Add APPUiO cloud organization label that identifies ownership.
-		p.deploymentNamespace.Labels = getCommonLabels(p.instance.Name)
+		p.deploymentNamespace.Labels = labels.Merge(p.deploymentNamespace.Labels, getCommonLabels(p.instance.Name))
 		p.deploymentNamespace.Labels["app.kubernetes.io/instance-namespace"] = p.instance.Namespace
 		return nil
 	})
@@ -290,7 +290,7 @@ func (p *CreateStandalonePipeline) ensureHelmRelease(ctx context.Context) error 
 		},
 	}
 	_, err = controllerutil.CreateOrUpdate(ctx, p.client, p.helmRelease, func() error {
-		p.helmRelease.Labels = getCommonLabels(p.instance.Name)
+		p.helmRelease.Labels = labels.Merge(p.helmRelease.Labels, getCommonLabels(p.instance.Name))
 		p.helmRelease.Spec = helmv1beta1.ReleaseSpec{
 			ForProvider: helmv1beta1.ReleaseParameters{
 				Chart:               helmv1beta1.ChartSpec{Repository: p.helmChart.Repository, Name: p.helmChart.Name, Version: p.helmChart.Version},
@@ -377,7 +377,7 @@ func (p *CreateStandalonePipeline) ensureResticRepositorySecret(ctx context.Cont
 	}
 	secretKey := "repository"
 	_, err := controllerutil.CreateOrUpdate(ctx, getClientFromContext(ctx), secret, func() error {
-		secret.Labels = getCommonLabels(getInstanceFromContext(ctx).Name)
+		secret.Labels = labels.Merge(secret.Labels, getCommonLabels(getInstanceFromContext(ctx).Name))
 		if val, exists := secret.Data[secretKey]; exists && len(val) > 0 {
 			// password already set, let's reset every other key
 			secret.Data = map[string][]byte{
@@ -456,7 +456,7 @@ func (p *CreateStandalonePipeline) markInstanceAsReady(ctx context.Context) erro
 func (p *CreateStandalonePipeline) ensureConnectionSecret(ctx context.Context) error {
 	secret := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: p.connectionSecret.Name, Namespace: p.connectionSecret.Namespace}}
 	_, err := controllerutil.CreateOrUpdate(ctx, getClientFromContext(ctx), secret, func() error {
-		secret.Labels = p.connectionSecret.Labels
+		secret.Labels = labels.Merge(secret.Labels, p.connectionSecret.Labels)
 		secret.Data = p.connectionSecret.Data
 		secret.StringData = p.connectionSecret.StringData
 		return nil
