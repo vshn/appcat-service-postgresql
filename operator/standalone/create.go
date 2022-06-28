@@ -264,7 +264,7 @@ func (p *CreateStandalonePipeline) ensureCredentialsSecret(ctx context.Context) 
 		},
 	}
 	_, err := controllerutil.CreateOrUpdate(ctx, p.client, secret, func() error {
-		secret.Labels = getCommonLabels(p.instance.Name)
+		secret.Labels = labels.Merge(secret.Labels, getCommonLabels(p.instance.Name))
 		secret.StringData = map[string]string{
 			"postgres-password":    generatePassword(),
 			"password":             generatePassword(),
