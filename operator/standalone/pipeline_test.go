@@ -180,7 +180,7 @@ func newInstanceBuilder(name, namespace string) *PostgresqlStandaloneBuilder {
 
 func newInstance(name string, namespace string) *v1alpha1.PostgresqlStandalone {
 	return &v1alpha1.PostgresqlStandalone{
-		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, Generation: 1},
 		Spec: v1alpha1.PostgresqlStandaloneSpec{
 			Parameters: v1alpha1.PostgresqlStandaloneParameters{
 				MajorVersion:    v1alpha1.PostgresqlVersion14,
@@ -191,28 +191,45 @@ func newInstance(name string, namespace string) *v1alpha1.PostgresqlStandalone {
 				},
 			},
 		},
+		Status: v1alpha1.PostgresqlStandaloneStatus{},
 	}
 }
 
 func (b *PostgresqlStandaloneBuilder) setDeploymentNamespace(namespace string) *PostgresqlStandaloneBuilder {
-	b.Status = v1alpha1.PostgresqlStandaloneStatus{
-		PostgresqlStandaloneObservation: v1alpha1.PostgresqlStandaloneObservation{
-			HelmChart: &v1alpha1.ChartMetaStatus{
-				DeploymentNamespace: namespace,
-			},
+	b.Status.PostgresqlStandaloneObservation = v1alpha1.PostgresqlStandaloneObservation{
+		HelmChart: &v1alpha1.ChartMetaStatus{
+			DeploymentNamespace: namespace,
 		},
 	}
 	return b
 }
 
 func (b *PostgresqlStandaloneBuilder) setConnectionSecret(secret string) *PostgresqlStandaloneBuilder {
-	b.Spec = v1alpha1.PostgresqlStandaloneSpec{
-		ConnectableInstance: v1alpha1.ConnectableInstance{
-			WriteConnectionSecretToRef: v1alpha1.ConnectionSecretRef{
-				Name: secret,
-			},
+	b.Spec.ConnectableInstance = v1alpha1.ConnectableInstance{
+		WriteConnectionSecretToRef: v1alpha1.ConnectionSecretRef{
+			Name: secret,
 		},
 	}
+	return b
+}
+
+func (b *PostgresqlStandaloneBuilder) setGenerationStatus(status v1alpha1.GenerationStatus) *PostgresqlStandaloneBuilder {
+	b.Status.GenerationStatus = status
+	return b
+}
+
+func (b *PostgresqlStandaloneBuilder) setConditions(conditions ...metav1.Condition) *PostgresqlStandaloneBuilder {
+	b.Status.Conditions = conditions
+	return b
+}
+
+func (b *PostgresqlStandaloneBuilder) enableSuperUser() *PostgresqlStandaloneBuilder {
+	b.Spec.Parameters.EnableSuperUser = true
+	return b
+}
+
+func (b *PostgresqlStandaloneBuilder) disableSuperUser() *PostgresqlStandaloneBuilder {
+	b.Spec.Parameters.EnableSuperUser = false
 	return b
 }
 

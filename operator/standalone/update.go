@@ -83,9 +83,6 @@ func (u *UpdateStandalonePipeline) patchConnectionSecret(ctx context.Context) er
 }
 
 // isHelmReleaseReady returns true if the ModifiedTime is non-zero.
-//
-// Note: This only works for first-time deployments. In the future another mechanism might be better.
-// This step requires that fetchHelmRelease has run before.
 func (u *UpdateStandalonePipeline) isHelmReleaseReady(ctx context.Context) bool {
 	instance := getInstanceFromContext(ctx)
 	helmRelease := getHelmReleaseFromContext(ctx)
