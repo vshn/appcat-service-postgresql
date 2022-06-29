@@ -32,7 +32,8 @@ func (u *UpdateStandalonePipeline) RunInitialUpdatePipeline(ctx context.Context)
 	return pipeline.NewPipeline().
 		WithSteps(
 			pipeline.NewStepFromFunc("fetch operator config", fetchOperatorConfig),
-			pipeline.NewStepFromFunc("ensure connection secret", u.patchConnectionSecret),
+			pipeline.NewStepFromFunc("mark instance as progressing", u.markInstanceAsProgressing),
+			pipeline.NewStepFromFunc("patch connection secret", u.patchConnectionSecret),
 			pipeline.NewStepFromFunc("ensure persistent volume claim", ensurePVC),
 
 			pipeline.NewPipeline().WithNestedSteps("compile helm values",
@@ -41,8 +42,6 @@ func (u *UpdateStandalonePipeline) RunInitialUpdatePipeline(ctx context.Context)
 				pipeline.NewStepFromFunc("apply values from instance", applyValuesFromInstance),
 			),
 			pipeline.NewStepFromFunc("ensure helm release", ensureHelmRelease),
-
-			pipeline.NewStepFromFunc("update status condition", u.markInstanceAsProgressing),
 		).
 		RunWithContext(ctx).Err()
 }
@@ -54,11 +53,7 @@ func (u *UpdateStandalonePipeline) WaitUntilAllResourceReady(ctx context.Context
 	return pipeline.NewPipeline().
 		WithSteps(
 			pipeline.NewStepFromFunc("fetch helm release", fetchHelmRelease),
-			pipeline.If(u.isHelmReleaseReady,
-				pipeline.NewPipeline().WithNestedSteps("finish updating",
-					pipeline.NewStepFromFunc("mark instance ready", u.markInstanceAsReady),
-				),
-			),
+			pipeline.If(u.isHelmReleaseReady, pipeline.NewStepFromFunc("mark instance ready", u.markInstanceAsReady)),
 		).
 		RunWithContext(ctx).Err()
 }
@@ -121,7 +116,7 @@ func (u *UpdateStandalonePipeline) markInstanceAsProgressing(ctx context.Context
 			Build(),
 	)
 	instance.Status.SetObservedGeneration(instance)
-	return getClientFromContext(ctx).Status().Update(ctx, instance.DeepCopy())
+	return getClientFromContext(ctx).Status().Update(ctx, instance)
 }
 
 // markInstanceAsReady marks an instance immediately as ready by updating the status conditions.
