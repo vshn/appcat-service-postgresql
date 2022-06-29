@@ -37,7 +37,9 @@ spec:
     values:
       key: overridden
       newKey: newValue
-  persistence: {}
+  persistence:
+    accessModes:
+    - ReadWriteOnce
   resourceMaxima:
     memoryLimit: 6Gi
     storageCapacity: 500Gi

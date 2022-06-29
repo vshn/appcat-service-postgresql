@@ -10,6 +10,7 @@ const (
 	ReasonMaintenanceSuccess     = "MaintenanceFinishedSuccessfully"
 	ReasonMaintenanceFailure     = "MaintenanceFinishedWithError"
 	ReasonReady                  = "Available"
+	ReasonNotReady               = "NotAvailable"
 	ReasonProgressing            = "ProgressingResource"
 	ReasonCreating               = "CreatingResources"
 	ReasonProvisioning           = "Progressing"
@@ -29,12 +30,22 @@ const (
 )
 
 // Ready creates a condition with TypeReady, ReasonReady and empty message.
-func Ready(status metav1.ConditionStatus) metav1.Condition {
+func Ready() metav1.Condition {
 	return metav1.Condition{
 		Type:               TypeReady,
-		Status:             status,
+		Status:             metav1.ConditionTrue,
 		LastTransitionTime: metav1.Now(),
 		Reason:             ReasonReady,
+	}
+}
+
+// NotReady creates a condition with TypeReady, ReasonReady and empty message.
+func NotReady() metav1.Condition {
+	return metav1.Condition{
+		Type:               TypeReady,
+		Status:             metav1.ConditionFalse,
+		LastTransitionTime: metav1.Now(),
+		Reason:             ReasonNotReady,
 	}
 }
 

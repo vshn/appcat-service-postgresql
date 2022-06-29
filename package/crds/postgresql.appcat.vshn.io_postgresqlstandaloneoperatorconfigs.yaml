@@ -208,6 +208,10 @@ spec:
               persistence:
                 description: Persistence contains default PVC settings.
                 properties:
+                  accessModes:
+                    items:
+                      type: string
+                    type: array
                   storageClassName:
                     description: storageClassName is the name of the StorageClass
                       required by the claim.

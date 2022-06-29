@@ -2,7 +2,6 @@ package standalone
 
 import (
 	"context"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"strings"
 	"time"
 
@@ -51,7 +50,7 @@ func (r *PostgresStandaloneReconciler) Reconcile(ctx context.Context, request re
 	setClientInContext(ctx, r.client)
 	obj := &v1alpha1.PostgresqlStandalone{}
 	setInstanceInContext(ctx, obj)
-
+	setOperatorNamespaceInContext(ctx, OperatorNamespace)
 	log := ctrl.LoggerFrom(ctx)
 	log.V(1).Info("Reconciling")
 	err := r.client.Get(ctx, request.NamespacedName, obj)
@@ -77,7 +76,7 @@ func (r *PostgresStandaloneReconciler) Reconcile(ctx context.Context, request re
 // CreateDeployment creates the given instance deployment.
 func (r *PostgresStandaloneReconciler) CreateDeployment(ctx context.Context, instance *v1alpha1.PostgresqlStandalone) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	p := NewCreateStandalonePipeline(r.client, instance, OperatorNamespace)
+	p := NewCreateStandalonePipeline()
 	if meta.IsStatusConditionTrue(instance.Status.Conditions, conditions.TypeCreating) {
 		// The instance has created all the resources, now we'll have to wait until everything is ready.
 		log.Info("Waiting until instance becomes ready")
@@ -104,7 +103,7 @@ func (r *PostgresStandaloneReconciler) DeleteDeployment(ctx context.Context, ins
 // UpdateDeployment saves the given spec in Kubernetes.
 func (r *PostgresStandaloneReconciler) UpdateDeployment(ctx context.Context, instance *v1alpha1.PostgresqlStandalone) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	p := NewUpdateStandalonePipeline(r.client, instance, OperatorNamespace)
+	p := NewUpdateStandalonePipeline()
 	if meta.IsStatusConditionTrue(instance.Status.Conditions, conditions.TypeProgressing) {
 		log.Info("Waiting until instance becomes ready")
 		err := p.WaitUntilAllResourceReady(ctx)
@@ -123,13 +122,4 @@ func (r *PostgresStandaloneReconciler) UpdateDeployment(ctx context.Context, ins
 		return reconcile.Result{RequeueAfter: 10 * time.Second}, err
 	}
 	return reconcile.Result{}, err
-}
-
-// Upsert creates the given obj if it doesn't exist.
-// If it exists, it's being updated.
-func Upsert(ctx context.Context, client client.Client, obj client.Object) error {
-	_, err := controllerutil.CreateOrUpdate(ctx, client, obj, func() error {
-		return nil
-	})
-	return err
 }

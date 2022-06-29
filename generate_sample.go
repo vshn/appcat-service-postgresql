@@ -86,6 +86,9 @@ func generatePostgresStandaloneConfigSample() {
 					MergeValuesFromTemplate: true,
 				},
 			},
+			Persistence: v1alpha1.PersistenceSpec{
+				AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+			},
 			HelmProviderConfigReference: "provider-helm",
 			BackupConfigSpec: v1alpha1.BackupConfigSpec{
 				S3BucketSecret: v1alpha1.S3BucketConfigSpec{
@@ -115,7 +118,7 @@ func generatePostgresStandaloneConfigSample() {
 func generatePostgresStandaloneSample() {
 	spec := newPostgresqlStandaloneSample()
 	modified := metav1.Date(2022, time.April, 27, 15, 20, 13, 0, time.UTC)
-	cond := conditions.Ready(metav1.ConditionTrue)
+	cond := conditions.Ready()
 	cond.LastTransitionTime = modified
 	spec.Status = v1alpha1.PostgresqlStandaloneStatus{
 		Conditions: []metav1.Condition{cond},
