@@ -180,7 +180,7 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureK8upSchedule() {
 			givenInstance: newInstanceBuilder("instance", "postgresql-instance").
 				setDeploymentNamespace("new-schedule").
 				setBackupEnabled(true).
-				get(),
+				getInstance(),
 		},
 		"GiveExistingSchedule_WhenUpdatingSchedule_ThenRevertSpecOfOldSchedule": {
 			prepare: func(tc testCase) {
@@ -196,7 +196,7 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureK8upSchedule() {
 			givenInstance: newInstanceBuilder("instance", "postgresql-instance").
 				setDeploymentNamespace("existing-schedule").
 				setBackupEnabled(true).
-				get(),
+				getInstance(),
 		},
 	}
 	for name, tc := range tests {
@@ -259,7 +259,7 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureResticRepositorySecret() {
 	ts.Run("GivenNonExistingSecret_WhenCreatingSecret_ThenExpectNewGeneratedPassword", func() {
 		// Arrange
 		setClientInContext(ts.Context, ts.Client)
-		setInstanceInContext(ts.Context, newInstanceBuilder("instance", "new-restic-repo-secret").get())
+		setInstanceInContext(ts.Context, newInstanceBuilder("instance", "new-restic-repo-secret").getInstance())
 		deploymentNamespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "new-restic-repo-secret"}}
 		setDeploymentNamespaceInContext(ts.Context, deploymentNamespace)
 		p := &CreateStandalonePipeline{}
@@ -281,7 +281,7 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureResticRepositorySecret() {
 	ts.Run("GivenExistingSecret_WhenUpdatingSecret_ThenLeaveExistingPasswordUntouched", func() {
 		// Arrange
 		setClientInContext(ts.Context, ts.Client)
-		setInstanceInContext(ts.Context, newInstanceBuilder("instance", "existing-restic-repo-secret").get())
+		setInstanceInContext(ts.Context, newInstanceBuilder("instance", "existing-restic-repo-secret").getInstance())
 		deploymentNamespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "existing-restic-repo-secret"}}
 		setDeploymentNamespaceInContext(ts.Context, deploymentNamespace)
 		p := &CreateStandalonePipeline{}
@@ -326,7 +326,7 @@ func (ts *CreateStandalonePipelineSuite) Test_FetchS3BucketSecret() {
 	setConfigInContext(ts.Context, operatorConfig)
 	setInstanceInContext(ts.Context, newInstanceBuilder("instance", "postgresql-instance").
 		setDeploymentNamespace("secret-namespace").
-		get())
+		getInstance())
 
 	ts.Run("GivenPostgresqlStandaloneCRD_WhenFetchS3BucketMissingSecret_ThenExpectError", func() {
 		// Arrange

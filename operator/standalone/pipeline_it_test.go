@@ -88,7 +88,7 @@ func (ts *PipelineSuite) Test_FetchOperatorConfig() {
 func (ts *PipelineSuite) Test_EnsureHelmRelease() {
 	// Arrange
 	deploymentNamespace := "ensure-helm-release"
-	instance := newInstanceBuilder("instance", "my-app").setDeploymentNamespace(deploymentNamespace).get()
+	instance := newInstanceBuilder("instance", "my-app").setDeploymentNamespace(deploymentNamespace).getInstance()
 	setInstanceInContext(ts.Context, instance)
 	setClientInContext(ts.Context, ts.Client)
 	setHelmValuesInContext(ts.Context, helmvalues.V{"key": "value"})

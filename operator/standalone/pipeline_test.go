@@ -3,6 +3,8 @@ package standalone
 import (
 	"context"
 	pipeline "github.com/ccremer/go-command-pipeline"
+	helmv1beta1 "github.com/crossplane-contrib/provider-helm/apis/release/v1beta1"
+	crossplanev1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
@@ -170,6 +172,35 @@ func parseResource(value string) *resource.Quantity {
 	return &parsed
 }
 
+type HelmReleaseBuilder struct {
+	*helmv1beta1.Release
+}
+
+func newHelmReleaseBuilder(name string) *HelmReleaseBuilder {
+	return &HelmReleaseBuilder{newHelmRelease(name)}
+}
+
+func newHelmRelease(name string) *helmv1beta1.Release {
+	return &helmv1beta1.Release{
+		ObjectMeta: metav1.ObjectMeta{Name: name},
+		Status:     helmv1beta1.ReleaseStatus{},
+	}
+}
+
+func (h *HelmReleaseBuilder) setConditions(conditions ...crossplanev1.Condition) *HelmReleaseBuilder {
+	h.Status.Conditions = conditions
+	return h
+}
+
+func (h *HelmReleaseBuilder) setSynced(value bool) *HelmReleaseBuilder {
+	h.Status.Synced = value
+	return h
+}
+
+func (h *HelmReleaseBuilder) getRelease() *helmv1beta1.Release {
+	return h.Release
+}
+
 type PostgresqlStandaloneBuilder struct {
 	*v1alpha1.PostgresqlStandalone
 }
@@ -191,7 +222,11 @@ func newInstance(name string, namespace string) *v1alpha1.PostgresqlStandalone {
 				},
 			},
 		},
-		Status: v1alpha1.PostgresqlStandaloneStatus{},
+		Status: v1alpha1.PostgresqlStandaloneStatus{
+			PostgresqlStandaloneObservation: v1alpha1.PostgresqlStandaloneObservation{
+				HelmChart: &v1alpha1.ChartMetaStatus{},
+			},
+		},
 	}
 }
 
@@ -218,6 +253,11 @@ func (b *PostgresqlStandaloneBuilder) setGenerationStatus(status v1alpha1.Genera
 	return b
 }
 
+func (b *PostgresqlStandaloneBuilder) setHelmChartModifiedTime(time metav1.Time) *PostgresqlStandaloneBuilder {
+	b.Status.HelmChart.ModifiedTime = time
+	return b
+}
+
 func (b *PostgresqlStandaloneBuilder) setConditions(conditions ...metav1.Condition) *PostgresqlStandaloneBuilder {
 	b.Status.Conditions = conditions
 	return b
@@ -233,6 +273,6 @@ func (b *PostgresqlStandaloneBuilder) setBackupEnabled(enabled bool) *Postgresql
 	return b
 }
 
-func (b *PostgresqlStandaloneBuilder) get() *v1alpha1.PostgresqlStandalone {
+func (b *PostgresqlStandaloneBuilder) getInstance() *v1alpha1.PostgresqlStandalone {
 	return b.PostgresqlStandalone
 }

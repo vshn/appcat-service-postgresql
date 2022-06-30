@@ -68,7 +68,7 @@ func (ts *UpdateStandalonePipelineSuite) Test_PatchConnectionSecret() {
 				setConnectionSecret("connection-secret").
 				setSuperUserEnabled(true).
 				setDeploymentNamespace("deployment-namespace-one").
-				get(),
+				getInstance(),
 			givenNamespace: "connection-secret-namespace-one",
 			expectedConnectionSecret: &v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
@@ -112,7 +112,7 @@ func (ts *UpdateStandalonePipelineSuite) Test_PatchConnectionSecret() {
 				setConnectionSecret("connection-secret").
 				setSuperUserEnabled(false).
 				setDeploymentNamespace("deployment-namespace-two").
-				get(),
+				getInstance(),
 			givenNamespace: "connection-secret-namespace-two",
 			expectedConnectionSecret: &v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
@@ -178,7 +178,7 @@ func (ts *UpdateStandalonePipelineSuite) Test_MarkInstanceAsProgressing() {
 						Reason:             "NotAvailable",
 						ObservedGeneration: 1,
 					},
-				).get(),
+				).getInstance(),
 		},
 	}
 	for name, tc := range tests {
@@ -235,7 +235,7 @@ func (ts *UpdateStandalonePipelineSuite) Test_MarkInstanceAsReady() {
 						ObservedGeneration: 1,
 					},
 				).
-				get(),
+				getInstance(),
 			expectedInstance: newInstanceBuilder("my-second-instance", "instance-second-namespace").
 				setConditions(
 					metav1.Condition{
@@ -244,7 +244,7 @@ func (ts *UpdateStandalonePipelineSuite) Test_MarkInstanceAsReady() {
 						Reason:             "Available",
 						ObservedGeneration: 1,
 					},
-				).get(),
+				).getInstance(),
 		},
 	}
 	for name, tc := range tests {

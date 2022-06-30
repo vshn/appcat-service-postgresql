@@ -45,7 +45,7 @@ func (ts *DeleteStandalonePipelineSuite) Test_DeleteHelmRelease() {
 		},
 		"GivenAnExistingHelmRelease_WhenHelmReleaseStillExists_ThenExpectNoError": {
 			prepare: func(releaseName string) {
-				release := newPostgresqlHelmRelease(releaseName)
+				release := newHelmRelease(releaseName)
 				ts.EnsureResources(release)
 			},
 			givenReleaseName:           "postgresql-release",
@@ -59,7 +59,7 @@ func (ts *DeleteStandalonePipelineSuite) Test_DeleteHelmRelease() {
 				client: ts.Client,
 				instance: newInstanceBuilder("instance", "namespace").
 					setDeploymentNamespace(tc.givenReleaseName).
-					get(),
+					getInstance(),
 				helmReleaseDeleted: false,
 			}
 			tc.prepare(tc.givenReleaseName)
@@ -102,7 +102,7 @@ func (ts *DeleteStandalonePipelineSuite) Test_DeleteNamespace() {
 				client: ts.Client,
 				instance: newInstanceBuilder("instance", "namespace").
 					setDeploymentNamespace(tc.givenNamespace).
-					get(),
+					getInstance(),
 				helmReleaseDeleted: false,
 			}
 			tc.prepare(tc.givenNamespace)
@@ -152,7 +152,7 @@ func (ts *DeleteStandalonePipelineSuite) Test_DeleteConnectionSecret() {
 				client: ts.Client,
 				instance: newInstanceBuilder("instance", tc.givenNamespace).
 					setConnectionSecret(tc.givenSecret).
-					get(),
+					getInstance(),
 				helmReleaseDeleted: false,
 			}
 			tc.prepare(tc.givenSecret, tc.givenNamespace)
@@ -214,7 +214,7 @@ func (ts *DeleteStandalonePipelineSuite) Test_RemoveFinalizer() {
 	for name, tc := range tests {
 		ts.Run(name, func() {
 			// Arrange
-			instance := newInstanceBuilder(tc.givenInstance, tc.givenNamespace).get()
+			instance := newInstanceBuilder(tc.givenInstance, tc.givenNamespace).getInstance()
 			d := &DeleteStandalonePipeline{
 				client:             ts.Client,
 				instance:           instance,
@@ -232,12 +232,6 @@ func (ts *DeleteStandalonePipelineSuite) Test_RemoveFinalizer() {
 			ts.FetchResource(client.ObjectKeyFromObject(instance), result)
 			tc.assert(previousVersion, result)
 		})
-	}
-}
-
-func newPostgresqlHelmRelease(name string) *helmv1beta1.Release {
-	return &helmv1beta1.Release{
-		ObjectMeta: metav1.ObjectMeta{Name: name},
 	}
 }
 
