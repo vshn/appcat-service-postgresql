@@ -1,11 +1,11 @@
 package standalone
 
 import (
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"strings"
 
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 // SetupController adds a controller that reconciles v1alpha1.PostgresqlStandalone managed resources.
@@ -15,7 +15,7 @@ func SetupController(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		For(&v1alpha1.PostgresqlStandalone{}).
-		WithEventFilter(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{}, predicate.LabelChangedPredicate{})).
+		WithEventFilter(predicate.Or(predicate.GenerationChangedPredicate{})).
 		Complete(&PostgresStandaloneReconciler{
 			client: mgr.GetClient(),
 		})

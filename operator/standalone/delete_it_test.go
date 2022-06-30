@@ -45,7 +45,7 @@ func (ts *DeleteStandalonePipelineSuite) Test_DeleteHelmRelease() {
 		},
 		"GivenAnExistingHelmRelease_WhenHelmReleaseStillExists_ThenExpectNoError": {
 			prepare: func(releaseName string) {
-				release := newPostgresqlHelmRelease(releaseName)
+				release := newHelmRelease(releaseName)
 				ts.EnsureResources(release)
 			},
 			givenReleaseName:           "postgresql-release",
@@ -59,7 +59,7 @@ func (ts *DeleteStandalonePipelineSuite) Test_DeleteHelmRelease() {
 				client: ts.Client,
 				instance: newInstanceBuilder("instance", "namespace").
 					setDeploymentNamespace(tc.givenReleaseName).
-					get(),
+					getInstance(),
 				helmReleaseDeleted: false,
 			}
 			tc.prepare(tc.givenReleaseName)
@@ -102,7 +102,7 @@ func (ts *DeleteStandalonePipelineSuite) Test_DeleteNamespace() {
 				client: ts.Client,
 				instance: newInstanceBuilder("instance", "namespace").
 					setDeploymentNamespace(tc.givenNamespace).
-					get(),
+					getInstance(),
 				helmReleaseDeleted: false,
 			}
 			tc.prepare(tc.givenNamespace)
@@ -152,7 +152,7 @@ func (ts *DeleteStandalonePipelineSuite) Test_DeleteConnectionSecret() {
 				client: ts.Client,
 				instance: newInstanceBuilder("instance", tc.givenNamespace).
 					setConnectionSecret(tc.givenSecret).
-					get(),
+					getInstance(),
 				helmReleaseDeleted: false,
 			}
 			tc.prepare(tc.givenSecret, tc.givenNamespace)
@@ -214,7 +214,7 @@ func (ts *DeleteStandalonePipelineSuite) Test_RemoveFinalizer() {
 	for name, tc := range tests {
 		ts.Run(name, func() {
 			// Arrange
-			instance := newInstanceBuilder(tc.givenInstance, tc.givenNamespace).get()
+			instance := newInstanceBuilder(tc.givenInstance, tc.givenNamespace).getInstance()
 			d := &DeleteStandalonePipeline{
 				client:             ts.Client,
 				instance:           instance,
@@ -235,12 +235,6 @@ func (ts *DeleteStandalonePipelineSuite) Test_RemoveFinalizer() {
 	}
 }
 
-func newPostgresqlHelmRelease(name string) *helmv1beta1.Release {
-	return &helmv1beta1.Release{
-		ObjectMeta: metav1.ObjectMeta{Name: name},
-	}
-}
-
 // AssertResourceNotExists checks if the given resource is not existing or is existing with a deletion timestamp.
 // Test fails if the resource exists or there's another error.
 func (ts *DeleteStandalonePipelineSuite) AssertResourceNotExists(deletionTime *metav1.Time, err error) {
@@ -249,43 +243,4 @@ func (ts *DeleteStandalonePipelineSuite) AssertResourceNotExists(deletionTime *m
 	} else {
 		ts.Require().False(deletionTime.IsZero())
 	}
-}
-
-type PostgresqlStandaloneBuilder struct {
-	*v1alpha1.PostgresqlStandalone
-}
-
-func newInstanceBuilder(name, namespace string) *PostgresqlStandaloneBuilder {
-	return &PostgresqlStandaloneBuilder{newInstance(name, namespace)}
-}
-
-func (b *PostgresqlStandaloneBuilder) setDeploymentNamespace(namespace string) *PostgresqlStandaloneBuilder {
-	b.Status = v1alpha1.PostgresqlStandaloneStatus{
-		PostgresqlStandaloneObservation: v1alpha1.PostgresqlStandaloneObservation{
-			HelmChart: &v1alpha1.ChartMetaStatus{
-				DeploymentNamespace: namespace,
-			},
-		},
-	}
-	return b
-}
-
-func (b *PostgresqlStandaloneBuilder) setConnectionSecret(secret string) *PostgresqlStandaloneBuilder {
-	b.Spec = v1alpha1.PostgresqlStandaloneSpec{
-		ConnectableInstance: v1alpha1.ConnectableInstance{
-			WriteConnectionSecretToRef: v1alpha1.ConnectionSecretRef{
-				Name: secret,
-			},
-		},
-	}
-	return b
-}
-
-func (b *PostgresqlStandaloneBuilder) setBackup(enabled bool) *PostgresqlStandaloneBuilder {
-	b.Spec.Backup.Enabled = enabled
-	return b
-}
-
-func (b *PostgresqlStandaloneBuilder) get() *v1alpha1.PostgresqlStandalone {
-	return b.PostgresqlStandalone
 }

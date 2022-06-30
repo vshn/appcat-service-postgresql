@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	"reflect"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,6 +30,9 @@ type PostgresqlStandaloneOperatorConfigSpec struct {
 	// HelmProviderConfigReference is the name of the ProviderConfig CR from crossplane-contrib/provider-helm.
 	// Used when DeploymentStrategy is StrategyHelmChart.
 	HelmProviderConfigReference string `json:"helmProviderConfigReference,omitempty"`
+
+	// Persistence contains default PVC settings.
+	Persistence PersistenceSpec `json:"persistence,omitempty"`
 
 	// BackupConfigSpec defines settings for instance backups.
 	BackupConfigSpec BackupConfigSpec `json:"backupConfigSpec,omitempty"`
@@ -64,6 +68,13 @@ type PostgresqlStandaloneOperatorConfig struct {
 
 	Spec   PostgresqlStandaloneOperatorConfigSpec `json:"spec"`
 	Status PostgresqlStandaloneConfigStatus       `json:"status,omitempty"`
+}
+
+// PersistenceSpec contains default PVC settings.
+type PersistenceSpec struct {
+	// storageClassName is the name of the StorageClass required by the claim.
+	StorageClassName *string                             `json:"storageClassName,omitempty"`
+	AccessModes      []corev1.PersistentVolumeAccessMode `json:"accessModes,omitempty"`
 }
 
 // +kubebuilder:object:root=true

@@ -86,6 +86,9 @@ func generatePostgresStandaloneConfigSample() {
 					MergeValuesFromTemplate: true,
 				},
 			},
+			Persistence: v1alpha1.PersistenceSpec{
+				AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+			},
 			HelmProviderConfigReference: "provider-helm",
 			BackupConfigSpec: v1alpha1.BackupConfigSpec{
 				S3BucketSecret: v1alpha1.S3BucketConfigSpec{

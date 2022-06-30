@@ -4,16 +4,15 @@ package standalone
 
 import (
 	"context"
+	pipeline "github.com/ccremer/go-command-pipeline"
 	k8upv1 "github.com/k8up-io/k8up/v2/api/v1"
 	"math/rand"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 
-	pipeline "github.com/ccremer/go-command-pipeline"
 	helmv1beta1 "github.com/crossplane-contrib/provider-helm/apis/release/v1beta1"
 	"github.com/stretchr/testify/suite"
 	"github.com/vshn/appcat-service-postgresql/apis/postgresql/v1alpha1"
-	"github.com/vshn/appcat-service-postgresql/operator/helmvalues"
 	"github.com/vshn/appcat-service-postgresql/operator/operatortest"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,70 +34,11 @@ func (ts *CreateStandalonePipelineSuite) BeforeTest(suiteName, testName string) 
 	ts.RegisterScheme(k8upv1.SchemeBuilder.AddToScheme)
 }
 
-func (ts *CreateStandalonePipelineSuite) Test_FetchOperatorConfig() {
-	tests := map[string]struct {
-		prepare            func()
-		givenNamespace     string
-		expectedConfigName string
-		expectedError      string
-	}{
-		"GivenNoExistingConfig_WhenFetching_ThenExpectError": {
-			prepare:        func() {},
-			givenNamespace: "nonexisting",
-			expectedError:  "no PostgresqlStandaloneOperatorConfig found with label 'map[postgresql.appcat.vshn.io/major-version:v14]' in namespace 'nonexisting'",
-		},
-		"GivenExistingConfig_WhenLabelsMatch_ThenExpectSingleEntry": {
-			prepare: func() {
-				ts.EnsureNS("single-entry")
-				cfg := newPostgresqlStandaloneOperatorConfig("config", "single-entry")
-				cfg.Labels = map[string]string{
-					v1alpha1.PostgresqlMajorVersionLabelKey: v1alpha1.PostgresqlVersion14.String(),
-				}
-				ts.EnsureResources(cfg)
-			},
-			givenNamespace:     "single-entry",
-			expectedConfigName: "config",
-		},
-		"GivenMultipleExistingConfigs_WhenLabelsMatch_ThenExpectError": {
-			prepare: func() {
-				ts.EnsureNS("multiple-entries")
-				cfg1 := newPostgresqlStandaloneOperatorConfig("first", "multiple-entries")
-				cfg1.Labels = map[string]string{
-					v1alpha1.PostgresqlMajorVersionLabelKey: v1alpha1.PostgresqlVersion14.String(),
-				}
-				cfg2 := newPostgresqlStandaloneOperatorConfig("second", "multiple-entries")
-				cfg2.Labels = cfg1.Labels
-				ts.EnsureResources(cfg1, cfg2)
-			},
-			givenNamespace: "multiple-entries",
-			expectedError:  "multiple versions of PostgresqlStandaloneOperatorConfig found with label 'map[postgresql.appcat.vshn.io/major-version:v14]' in namespace 'multiple-entries'",
-		},
-	}
-	for name, tc := range tests {
-		ts.Run(name, func() {
-			p := &CreateStandalonePipeline{
-				operatorNamespace: tc.givenNamespace,
-				client:            ts.Client,
-				instance:          newInstance("instance", "my-app"),
-			}
-			tc.prepare()
-			err := p.fetchOperatorConfig(ts.Context)
-			if tc.expectedError != "" {
-				ts.Require().EqualError(err, tc.expectedError)
-				ts.Assert().Nil(p.config)
-				return
-			}
-			ts.Assert().NoError(err)
-		})
-	}
-}
-
 func (ts *CreateStandalonePipelineSuite) Test_EnsureDeploymentNamespace() {
 	// Arrange
-	p := &CreateStandalonePipeline{
-		instance: newInstance("test-ensure-namespace", "my-app"),
-		client:   ts.Client,
-	}
+	p := &CreateStandalonePipeline{}
+	instance := newInstance("test-ensure-namespace", "my-app")
+	setInstanceInContext(ts.Context, instance)
 	currentRand := namegeneratorRNG
 	defer func() {
 		namegeneratorRNG = currentRand
@@ -111,19 +51,18 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureDeploymentNamespace() {
 	// Assert
 	ns := &corev1.Namespace{}
 	ts.FetchResource(types.NamespacedName{Name: "sv-postgresql-s-merry-vigilante-7b16"}, ns)
-	ts.Assert().Equal(ns.Labels["app.kubernetes.io/instance"], p.instance.Name)
-	ts.Assert().Equal(ns.Labels["app.kubernetes.io/instance-namespace"], p.instance.Namespace)
+	ts.Assert().Equal(ns.Labels["app.kubernetes.io/instance"], instance.Name)
+	ts.Assert().Equal(ns.Labels["app.kubernetes.io/instance-namespace"], instance.Namespace)
 }
 
 func (ts *CreateStandalonePipelineSuite) Test_EnsureCredentialSecret() {
 	// Arrange
+	instance := newInstance("instance", "my-app")
+	setInstanceInContext(ts.Context, instance)
 	ns := ServiceNamespacePrefix + "my-app-instance"
+	setDeploymentNamespaceInContext(ts.Context, &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: ns}})
 	ts.EnsureNS(ns)
-	p := &CreateStandalonePipeline{
-		instance:            newInstance("instance", "my-app"),
-		client:              ts.Client,
-		deploymentNamespace: &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: ns}},
-	}
+	p := &CreateStandalonePipeline{}
 
 	// Act
 	err := p.ensureCredentialsSecret(ts.Context)
@@ -137,39 +76,18 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureCredentialSecret() {
 	ts.Assert().Len(result.Data["password"], 40, "password length")
 }
 
-func (ts *CreateStandalonePipelineSuite) Test_EnsureHelmRelease() {
-	// Arrange
-	p := &CreateStandalonePipeline{
-		instance:   newInstance("instance", "my-app"),
-		client:     ts.Client,
-		helmChart:  &v1alpha1.ChartMeta{Repository: "https://host/path", Version: "version", Name: "postgres"},
-		helmValues: helmvalues.V{"key": "value"},
-		config:     newPostgresqlStandaloneOperatorConfig("config", "postgresql-system"),
-	}
-	targetNs := ServiceNamespacePrefix + "my-app-" + p.instance.Name
-	p.deploymentNamespace = &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: targetNs}}
-
-	// Act
-	err := p.ensureHelmRelease(ts.Context)
-	ts.Require().NoError(err)
-
-	// Assert
-	result := &helmv1beta1.Release{}
-	ts.FetchResource(types.NamespacedName{Name: targetNs}, result)
-	ts.Assert().Equal(result.Spec.ForProvider.Namespace, targetNs, "target namespace")
-	ts.Assert().JSONEq(`{"key":"value"}`, string(result.Spec.ForProvider.Values.Raw))
-}
-
 func (ts *CreateStandalonePipelineSuite) Test_EnrichStatus() {
 	// Arrange
-	p := &CreateStandalonePipeline{
-		instance:            newInstance("enrich-status", "my-app"),
-		client:              ts.Client,
-		helmChart:           &v1alpha1.ChartMeta{Repository: "https://host/path", Version: "version", Name: "postgres"},
-		deploymentNamespace: &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: generateClusterScopedNameForInstance()}},
-	}
-	ts.EnsureNS(p.instance.Namespace)
-	ts.EnsureResources(p.instance)
+	instance := newInstance("enrich-status", "my-app")
+	deploymentNamespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: generateClusterScopedNameForInstance()}}
+	helmChart := &v1alpha1.ChartMeta{Repository: "https://host/path", Version: "version", Name: "postgres"}
+
+	setInstanceInContext(ts.Context, instance)
+	setHelmChartInContext(ts.Context, helmChart)
+	setDeploymentNamespaceInContext(ts.Context, deploymentNamespace)
+	p := &CreateStandalonePipeline{}
+	ts.EnsureNS(instance.Namespace)
+	ts.EnsureResources(instance)
 
 	// Act
 	err := p.enrichStatus(ts.Context)
@@ -177,42 +95,20 @@ func (ts *CreateStandalonePipelineSuite) Test_EnrichStatus() {
 
 	// Assert
 	result := &v1alpha1.PostgresqlStandalone{}
-	ts.FetchResource(types.NamespacedName{Name: p.instance.Name, Namespace: p.instance.Namespace}, result)
+	ts.FetchResource(types.NamespacedName{Name: instance.Name, Namespace: instance.Namespace}, result)
 	ts.Assert().Equal(v1alpha1.StrategyHelmChart, result.Status.DeploymentStrategy, "deployment strategy")
-	ts.Assert().Equal(p.helmChart.Name, result.Status.HelmChart.Name, "helm chart name")
-	ts.Assert().Equal(p.helmChart.Repository, result.Status.HelmChart.Repository, "helm chart repo")
-	ts.Assert().Equal(p.helmChart.Version, result.Status.HelmChart.Version, "helm chart version")
-	ts.Assert().Equal(p.deploymentNamespace.Name, result.Status.HelmChart.DeploymentNamespace, "deployment namespace")
+	ts.Assert().Equal(helmChart.Name, result.Status.HelmChart.Name, "helm chart name")
+	ts.Assert().Equal(helmChart.Repository, result.Status.HelmChart.Repository, "helm chart repo")
+	ts.Assert().Equal(helmChart.Version, result.Status.HelmChart.Version, "helm chart version")
+	ts.Assert().Equal(deploymentNamespace.Name, result.Status.HelmChart.DeploymentNamespace, "deployment namespace")
 	ts.Assert().True(result.Status.HelmChart.ModifiedTime.IsZero(), "modification date comes later")
-}
-
-func (ts *CreateStandalonePipelineSuite) Test_FetchHelmRelease() {
-	// Arrange
-	p := &CreateStandalonePipeline{
-		instance: newInstance("fetch-release", "my-app"),
-		client:   ts.Client,
-	}
-	p.instance.Status.HelmChart = &v1alpha1.ChartMetaStatus{
-		DeploymentNamespace: generateClusterScopedNameForInstance(),
-	}
-	helmRelease := &helmv1beta1.Release{
-		ObjectMeta: metav1.ObjectMeta{Name: p.instance.Status.HelmChart.DeploymentNamespace},
-	}
-	ts.EnsureResources(helmRelease)
-
-	// Act
-	err := p.fetchHelmRelease(ts.Context)
-	ts.Require().NoError(err)
-
-	// Assert
-	ts.Assert().Equal(helmRelease, p.helmRelease)
 }
 
 func (ts *CreateStandalonePipelineSuite) Test_FetchCredentialSecret() {
 	// Arrange
-	p := CreateStandalonePipeline{
-		instance: newInstance("fetch-credentials", "my-app"),
-	}
+	instance := newInstance("fetch-credentials", "my-app")
+	setInstanceInContext(ts.Context, instance)
+	p := CreateStandalonePipeline{}
 	credentialSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "postgresql-credentials",
@@ -226,7 +122,7 @@ func (ts *CreateStandalonePipelineSuite) Test_FetchCredentialSecret() {
 	ts.EnsureNS("my-app")
 	ts.EnsureNS(credentialSecret.Namespace)
 	ts.EnsureResources(credentialSecret)
-	p.instance.Status.HelmChart = &v1alpha1.ChartMetaStatus{DeploymentNamespace: credentialSecret.Namespace}
+	instance.Status.HelmChart = &v1alpha1.ChartMetaStatus{DeploymentNamespace: credentialSecret.Namespace}
 
 	// Act
 	err := p.fetchCredentialSecret(ts.Context)
@@ -243,9 +139,9 @@ func (ts *CreateStandalonePipelineSuite) Test_FetchCredentialSecret() {
 
 func (ts *CreateStandalonePipelineSuite) Test_FetchService() {
 	// Arrange
-	p := CreateStandalonePipeline{
-		instance: newInstance("fetch-service", "my-app"),
-	}
+	instance := newInstance("fetch-service", "my-app")
+	setInstanceInContext(ts.Context, instance)
+	p := CreateStandalonePipeline{}
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "postgresql",
@@ -258,7 +154,7 @@ func (ts *CreateStandalonePipelineSuite) Test_FetchService() {
 	ts.EnsureNS("my-app")
 	ts.EnsureNS(service.Namespace)
 	ts.EnsureResources(service)
-	p.instance.Status.HelmChart = &v1alpha1.ChartMetaStatus{DeploymentNamespace: service.Namespace}
+	instance.Status.HelmChart = &v1alpha1.ChartMetaStatus{DeploymentNamespace: service.Namespace}
 
 	// Act
 	err := p.fetchService(ts.Context)
@@ -283,8 +179,8 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureK8upSchedule() {
 			},
 			givenInstance: newInstanceBuilder("instance", "postgresql-instance").
 				setDeploymentNamespace("new-schedule").
-				setBackup(true).
-				get(),
+				setBackupEnabled(true).
+				getInstance(),
 		},
 		"GiveExistingSchedule_WhenUpdatingSchedule_ThenRevertSpecOfOldSchedule": {
 			prepare: func(tc testCase) {
@@ -299,34 +195,34 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureK8upSchedule() {
 			},
 			givenInstance: newInstanceBuilder("instance", "postgresql-instance").
 				setDeploymentNamespace("existing-schedule").
-				setBackup(true).
-				get(),
+				setBackupEnabled(true).
+				getInstance(),
 		},
 	}
 	for name, tc := range tests {
 		ts.Run(name, func() {
 			// Arrange
+			setClientInContext(ts.Context, ts.Client)
+			setInstanceInContext(ts.Context, tc.givenInstance)
+			setConfigInContext(ts.Context, &v1alpha1.PostgresqlStandaloneOperatorConfig{
+				Spec: v1alpha1.PostgresqlStandaloneOperatorConfigSpec{
+					BackupConfigSpec: v1alpha1.BackupConfigSpec{
+						S3BucketSecret: v1alpha1.S3BucketConfigSpec{
+							AccessKeyRef: corev1.SecretKeySelector{Key: "accessKey", LocalObjectReference: corev1.LocalObjectReference{Name: "s3-credentials"}},
+							SecretKeyRef: corev1.SecretKeySelector{Key: "secretKey", LocalObjectReference: corev1.LocalObjectReference{Name: "s3-credentials"}},
+							BucketRef:    corev1.SecretKeySelector{Key: "bucket", LocalObjectReference: corev1.LocalObjectReference{Name: "s3-credentials"}},
+							EndpointRef:  corev1.SecretKeySelector{Key: "endpoint", LocalObjectReference: corev1.LocalObjectReference{Name: "s3-credentials"}},
+						},
+					},
+				},
+			})
 			p := &CreateStandalonePipeline{
-				client:   ts.Client,
-				instance: tc.givenInstance,
 				s3BucketSecret: &corev1.Secret{
 					Data: map[string][]byte{
 						"accessKey": []byte("access"),
 						"secretKey": []byte("secret"),
 						"bucket":    []byte("k8up-bucket"),
 						"endpoint":  []byte("http://minio:9000"),
-					},
-				},
-				config: &v1alpha1.PostgresqlStandaloneOperatorConfig{
-					Spec: v1alpha1.PostgresqlStandaloneOperatorConfigSpec{
-						BackupConfigSpec: v1alpha1.BackupConfigSpec{
-							S3BucketSecret: v1alpha1.S3BucketConfigSpec{
-								AccessKeyRef: corev1.SecretKeySelector{Key: "accessKey", LocalObjectReference: corev1.LocalObjectReference{Name: "s3-credentials"}},
-								SecretKeyRef: corev1.SecretKeySelector{Key: "secretKey", LocalObjectReference: corev1.LocalObjectReference{Name: "s3-credentials"}},
-								BucketRef:    corev1.SecretKeySelector{Key: "bucket", LocalObjectReference: corev1.LocalObjectReference{Name: "s3-credentials"}},
-								EndpointRef:  corev1.SecretKeySelector{Key: "endpoint", LocalObjectReference: corev1.LocalObjectReference{Name: "s3-credentials"}},
-							},
-						},
 					},
 				},
 			}
@@ -362,13 +258,12 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureK8upSchedule() {
 func (ts *CreateStandalonePipelineSuite) Test_EnsureResticRepositorySecret() {
 	ts.Run("GivenNonExistingSecret_WhenCreatingSecret_ThenExpectNewGeneratedPassword", func() {
 		// Arrange
-		p := &CreateStandalonePipeline{
-			client:              ts.Client,
-			instance:            newInstanceBuilder("instance", "new-restic-repo-secret").get(),
-			deploymentNamespace: &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "new-restic-repo-secret"}},
-		}
-		setInstanceInContext(ts.Context, p.instance)
-		ts.EnsureNS(p.deploymentNamespace.Name)
+		setClientInContext(ts.Context, ts.Client)
+		setInstanceInContext(ts.Context, newInstanceBuilder("instance", "new-restic-repo-secret").getInstance())
+		deploymentNamespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "new-restic-repo-secret"}}
+		setDeploymentNamespaceInContext(ts.Context, deploymentNamespace)
+		p := &CreateStandalonePipeline{}
+		ts.EnsureNS(deploymentNamespace.Name)
 
 		// Act
 		err := p.ensureResticRepositorySecret(ts.Context)
@@ -376,7 +271,7 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureResticRepositorySecret() {
 
 		// Assert
 		result := &corev1.Secret{}
-		err = ts.Client.Get(ts.Context, types.NamespacedName{Name: getResticRepositorySecretName(), Namespace: p.deploymentNamespace.Name}, result)
+		err = ts.Client.Get(ts.Context, types.NamespacedName{Name: getResticRepositorySecretName(), Namespace: deploymentNamespace.Name}, result)
 		ts.Require().NoError(err)
 
 		ts.Require().NotEmpty(result.Data, "secret data")
@@ -385,15 +280,14 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureResticRepositorySecret() {
 
 	ts.Run("GivenExistingSecret_WhenUpdatingSecret_ThenLeaveExistingPasswordUntouched", func() {
 		// Arrange
-		p := &CreateStandalonePipeline{
-			client:              ts.Client,
-			instance:            newInstanceBuilder("instance", "existing-restic-repo-secret").get(),
-			deploymentNamespace: &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "existing-restic-repo-secret"}},
-		}
-		setInstanceInContext(ts.Context, p.instance)
-		ts.EnsureNS(p.deploymentNamespace.Name)
+		setClientInContext(ts.Context, ts.Client)
+		setInstanceInContext(ts.Context, newInstanceBuilder("instance", "existing-restic-repo-secret").getInstance())
+		deploymentNamespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "existing-restic-repo-secret"}}
+		setDeploymentNamespaceInContext(ts.Context, deploymentNamespace)
+		p := &CreateStandalonePipeline{}
+		ts.EnsureNS(deploymentNamespace.Name)
 		existingSecret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{Name: getResticRepositorySecretName(), Namespace: p.deploymentNamespace.Name},
+			ObjectMeta: metav1.ObjectMeta{Name: getResticRepositorySecretName(), Namespace: deploymentNamespace.Name},
 			StringData: map[string]string{
 				"repository":  "some-generated-password",
 				"foreign-key": "should-be-removed",
@@ -407,7 +301,7 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureResticRepositorySecret() {
 
 		// Assert
 		result := &corev1.Secret{}
-		err = ts.Client.Get(ts.Context, types.NamespacedName{Name: getResticRepositorySecretName(), Namespace: p.deploymentNamespace.Name}, result)
+		err = ts.Client.Get(ts.Context, types.NamespacedName{Name: getResticRepositorySecretName(), Namespace: deploymentNamespace.Name}, result)
 		ts.Require().NoError(err)
 
 		ts.Require().Len(result.Data, 1, "secret data")
@@ -429,28 +323,25 @@ func (ts *CreateStandalonePipelineSuite) Test_FetchS3BucketSecret() {
 			},
 		},
 	}
+	setConfigInContext(ts.Context, operatorConfig)
+	setInstanceInContext(ts.Context, newInstanceBuilder("instance", "postgresql-instance").
+		setDeploymentNamespace("secret-namespace").
+		getInstance())
 
 	ts.Run("GivenPostgresqlStandaloneCRD_WhenFetchS3BucketMissingSecret_ThenExpectError", func() {
-		p := &CreateStandalonePipeline{
-			client: ts.Client,
-			instance: newInstanceBuilder("instance", "postgresql-instance").
-				setDeploymentNamespace("secret-namespace").
-				get(),
-			config: operatorConfig,
-		}
+		// Arrange
+		p := &CreateStandalonePipeline{}
+
+		// Act
 		err := p.fetchS3BucketSecret(ts.Context)
+
+		// Assert
 		ts.Assert().EqualError(err, "secrets \"s3-credentials\" not found")
 	})
 
 	ts.Run("GivenExistingSecret_WhenFetchingSecret_ThenReturnSecret", func() {
 		// Arrange
-		p := &CreateStandalonePipeline{
-			client: ts.Client,
-			instance: newInstanceBuilder("instance", "postgresql-instance").
-				setDeploymentNamespace("secret-namespace").
-				get(),
-			config: operatorConfig,
-		}
+		p := &CreateStandalonePipeline{}
 		ts.EnsureNS("secret-namespace")
 		ts.EnsureResources(&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{Name: "s3-credentials", Namespace: "secret-namespace"},

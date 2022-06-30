@@ -205,6 +205,18 @@ spec:
                       x-kubernetes-preserve-unknown-fields: true
                   type: object
                 type: array
+              persistence:
+                description: Persistence contains default PVC settings.
+                properties:
+                  accessModes:
+                    items:
+                      type: string
+                    type: array
+                  storageClassName:
+                    description: storageClassName is the name of the StorageClass
+                      required by the claim.
+                    type: string
+                type: object
               resourceMaxima:
                 description: ResourceMaxima defines the maximum supported resources
                   an instance can have.
