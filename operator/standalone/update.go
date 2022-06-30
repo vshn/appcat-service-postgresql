@@ -29,7 +29,7 @@ func NewUpdateStandalonePipeline(operatorNamespace string) *UpdateStandalonePipe
 func (u *UpdateStandalonePipeline) RunInitialUpdatePipeline(ctx context.Context) error {
 	return pipeline.NewPipeline().
 		WithSteps(
-			pipeline.NewStepFromFunc("fetch operator config", fetchOperatorConfigF(u.operatorNamespace)),
+			pipeline.NewStepFromFunc("fetch operator config", fetchOperatorConfigFn(u.operatorNamespace)),
 			pipeline.NewStepFromFunc("mark instance as progressing", u.markInstanceAsProgressing),
 			pipeline.NewStepFromFunc("patch connection secret", u.patchConnectionSecret),
 			pipeline.NewStepFromFunc("ensure persistent volume claim", ensurePVC),

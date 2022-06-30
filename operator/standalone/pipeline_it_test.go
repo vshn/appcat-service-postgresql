@@ -75,7 +75,7 @@ func (ts *PipelineSuite) Test_FetchOperatorConfig() {
 			setClientInContext(ts.Context, ts.Client)
 			setInstanceInContext(ts.Context, newInstance("instance", "my-app"))
 			tc.prepare()
-			err := fetchOperatorConfigF(tc.givenNamespace)(ts.Context)
+			err := fetchOperatorConfigFn(tc.givenNamespace)(ts.Context)
 			if tc.expectedError != "" {
 				ts.Require().EqualError(err, tc.expectedError)
 				return

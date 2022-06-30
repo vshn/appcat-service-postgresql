@@ -23,10 +23,10 @@ func fetchHelmRelease(ctx context.Context) error {
 	return err
 }
 
-// fetchOperatorConfigF fetches a matching v1alpha1.PostgresqlStandaloneOperatorConfig from the OperatorNamespace.
+// fetchOperatorConfigFn fetches a matching v1alpha1.PostgresqlStandaloneOperatorConfig from the OperatorNamespace.
 // The Major version specified in v1alpha1.PostgresqlStandalone is used to filter the correct config by the v1alpha1.PostgresqlMajorVersionLabelKey label.
 // If there is none or multiple found, it returns an error.
-func fetchOperatorConfigF(operatorNamespace string) func(ctx2 context.Context) error {
+func fetchOperatorConfigFn(operatorNamespace string) func(ctx context.Context) error {
 	return func(ctx context.Context) error {
 		list := &v1alpha1.PostgresqlStandaloneOperatorConfigList{}
 		labelMatch := client.MatchingLabels{
@@ -130,7 +130,7 @@ func ensureHelmRelease(ctx context.Context) error {
 // overrideTemplateValues searches for a specific HelmRelease spec that matches the Chart version from the template spec.
 // If it does, the template values are replaced or merged.
 //
-// This step assumes that the config has been fetched first via fetchOperatorConfigF.
+// This step assumes that the config has been fetched first via fetchOperatorConfigFn.
 func overrideTemplateValues(ctx context.Context) error {
 	config := getConfigFromContext(ctx)
 	helmValues := getHelmValuesFromContext(ctx)
@@ -162,7 +162,7 @@ func overrideTemplateValues(ctx context.Context) error {
 
 // useTemplateValues copies the Helm values and Chart metadata from the v1alpha1.PostgresqlStandaloneOperatorConfig spec as the starting parameters.
 //
-// This step assumes that the config has been fetched first via fetchOperatorConfigF.
+// This step assumes that the config has been fetched first via fetchOperatorConfigFn.
 func useTemplateValues(ctx context.Context) error {
 	values := helmvalues.V{}
 	config := getConfigFromContext(ctx)

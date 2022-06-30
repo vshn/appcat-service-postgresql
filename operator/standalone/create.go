@@ -56,7 +56,7 @@ func NewCreateStandalonePipeline(operatorNamespace string) *CreateStandalonePipe
 func (p *CreateStandalonePipeline) RunFirstPass(ctx context.Context) error {
 	return pipeline.NewPipeline().
 		WithSteps(
-			pipeline.NewStepFromFunc("fetch operator config", fetchOperatorConfigF(p.operatorNamespace)),
+			pipeline.NewStepFromFunc("fetch operator config", fetchOperatorConfigFn(p.operatorNamespace)),
 
 			pipeline.NewPipeline().WithNestedSteps("compile helm values",
 				pipeline.NewStepFromFunc("read template values", useTemplateValues),
@@ -90,7 +90,7 @@ func (p *CreateStandalonePipeline) RunFirstPass(ctx context.Context) error {
 func (p *CreateStandalonePipeline) RunSecondPass(ctx context.Context) error {
 	return pipeline.NewPipeline().
 		WithSteps(
-			pipeline.NewStepFromFunc("fetch operator config", fetchOperatorConfigF(p.operatorNamespace)),
+			pipeline.NewStepFromFunc("fetch operator config", fetchOperatorConfigFn(p.operatorNamespace)),
 			pipeline.NewStepFromFunc("fetch helm release", fetchHelmRelease),
 			pipeline.If(p.isBackupEnabledPredicate(ctx),
 				pipeline.NewPipeline().WithNestedSteps("ensure backup",
