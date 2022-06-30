@@ -102,25 +102,15 @@ func (r *PostgresStandaloneReconciler) DeleteDeployment(ctx context.Context, ins
 func (r *PostgresStandaloneReconciler) UpdateDeployment(ctx context.Context, instance *v1alpha1.PostgresqlStandalone) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
 	p := NewUpdateStandalonePipeline(OperatorNamespace)
-	if meta.IsStatusConditionTrue(instance.Status.Conditions, conditions.TypeProgressing) {
-		log.Info("Waiting until instance becomes ready")
-		err := p.WaitUntilAllResourceReady(ctx)
-		if !meta.IsStatusConditionTrue(instance.Status.Conditions, conditions.TypeReady) {
-			return reconcile.Result{RequeueAfter: 2 * time.Second}, err
-		}
-		return reconcile.Result{}, err
-	}
 
-	err := p.RunInitialUpdatePipeline(ctx)
+	log.Info("Updating instance")
+	err := p.RunUpdatePipeline(ctx)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-
-	// ensure status conditions are up-to-date.
-	instance.Status.SetObservedGeneration(instance)
-	err = r.client.Status().Update(ctx, instance.DeepCopy())
 	if !meta.IsStatusConditionTrue(instance.Status.Conditions, conditions.TypeReady) {
-		return reconcile.Result{RequeueAfter: 10 * time.Second}, err
+		// schedule retry
+		return reconcile.Result{RequeueAfter: 2 * time.Second}, nil
 	}
-	return reconcile.Result{}, err
+	return reconcile.Result{}, nil
 }

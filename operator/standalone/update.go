@@ -24,9 +24,8 @@ func NewUpdateStandalonePipeline(operatorNamespace string) *UpdateStandalonePipe
 	}
 }
 
-// RunInitialUpdatePipeline executes the pipeline with configured business logic steps.
-// This should only be executed once per pipeline as it stores intermediate results in the struct.
-func (u *UpdateStandalonePipeline) RunInitialUpdatePipeline(ctx context.Context) error {
+// RunUpdatePipeline executes the pipeline with configured business logic steps.
+func (u *UpdateStandalonePipeline) RunUpdatePipeline(ctx context.Context) error {
 	return pipeline.NewPipeline().
 		WithSteps(
 			pipeline.NewStepFromFunc("fetch operator config", fetchOperatorConfigFn(u.operatorNamespace)),
@@ -40,17 +39,6 @@ func (u *UpdateStandalonePipeline) RunInitialUpdatePipeline(ctx context.Context)
 				pipeline.NewStepFromFunc("apply values from instance", applyValuesFromInstance),
 			),
 			pipeline.NewStepFromFunc("ensure helm release", ensureHelmRelease),
-		).
-		RunWithContext(ctx).Err()
-}
-
-// WaitUntilAllResourceReady runs a pipeline that verifies if all dependent resources are ready.
-// It will add the conditions.TypeReady condition to the status field (and update it) if it's considered ready.
-// No error is returned in case the instance is not considered ready.
-func (u *UpdateStandalonePipeline) WaitUntilAllResourceReady(ctx context.Context) error {
-	return pipeline.NewPipeline().
-		WithSteps(
-			pipeline.NewStepFromFunc("fetch helm release", fetchHelmRelease),
 			pipeline.If(u.isHelmReleaseReady, pipeline.NewStepFromFunc("mark instance ready", u.markInstanceAsReady)),
 		).
 		RunWithContext(ctx).Err()
