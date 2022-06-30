@@ -38,7 +38,11 @@ See all targets with `make help`
 
 ### QuickStart Demonstration
 
-TL;DR: `make local-install install-samples`
+TL;DR: `make local-install install-samples s3-credentials`
+
+### Running Operator without Webhook server
+
+`make local-install -e "local_install_args=--set webhook.enabled=false"`
 
 ### Kubernetes Webhook Troubleshooting
 
