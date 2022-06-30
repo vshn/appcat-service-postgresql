@@ -112,6 +112,9 @@ func (r *PostgresStandaloneReconciler) UpdateDeployment(ctx context.Context, ins
 	}
 
 	err := p.RunInitialUpdatePipeline(ctx)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 
 	// ensure status conditions are up-to-date.
 	instance.Status.SetObservedGeneration(instance)
