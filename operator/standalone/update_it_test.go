@@ -32,14 +32,14 @@ func (ts *UpdateStandalonePipelineSuite) BeforeTest(suiteName, testName string) 
 	ts.RegisterScheme(k8upv1.SchemeBuilder.AddToScheme)
 }
 
-func (ts *PipelineSuite) Test_PatchConnectionSecret() {
+func (ts *UpdateStandalonePipelineSuite) Test_PatchConnectionSecret() {
 	tests := map[string]struct {
 		prepare                  func()
 		givenInstance            *v1alpha1.PostgresqlStandalone
 		givenNamespace           string
 		expectedConnectionSecret *v1.Secret
 	}{
-		"GivenConnectionSecret_WhenEnableUserIsTrue_ThenExpectPostgresqlPasswordInSecret": {
+		"GivenConnectionSecretWithoutSuperUserPassword_WhenEnableUserIsTrue_ThenExpectPostgresqlPasswordInSecret": {
 			prepare: func() {
 				ts.EnsureNS("connection-secret-namespace-one")
 				ts.EnsureNS("deployment-namespace-one")
@@ -66,7 +66,7 @@ func (ts *PipelineSuite) Test_PatchConnectionSecret() {
 			},
 			givenInstance: newInstanceBuilder("instance", "connection-secret-namespace-one").
 				setConnectionSecret("connection-secret").
-				enableSuperUser().
+				setSuperUserEnabled(true).
 				setDeploymentNamespace("deployment-namespace-one").
 				get(),
 			givenNamespace: "connection-secret-namespace-one",
@@ -82,7 +82,7 @@ func (ts *PipelineSuite) Test_PatchConnectionSecret() {
 				},
 			},
 		},
-		"GivenConnectionSecret_WhenEnableUserIsFalse_ThenDoNotExpectPostgresqlPasswordInSecret": {
+		"GivenConnectionSecretWithSuperUserPassword_WhenEnableUserIsFalse_ThenRemovePostgresqlPasswordFromSecret": {
 			prepare: func() {
 				ts.EnsureNS("connection-secret-namespace-two")
 				ts.EnsureNS("deployment-namespace-two")
@@ -110,7 +110,7 @@ func (ts *PipelineSuite) Test_PatchConnectionSecret() {
 			},
 			givenInstance: newInstanceBuilder("instance", "connection-secret-namespace-two").
 				setConnectionSecret("connection-secret").
-				disableSuperUser().
+				setSuperUserEnabled(false).
 				setDeploymentNamespace("deployment-namespace-two").
 				get(),
 			givenNamespace: "connection-secret-namespace-two",
@@ -128,30 +128,30 @@ func (ts *PipelineSuite) Test_PatchConnectionSecret() {
 	}
 	for name, tc := range tests {
 		ts.Run(name, func() {
-			// Given
+			// Arrange
 			p := UpdateStandalonePipeline{}
 			setClientInContext(ts.Context, ts.Client)
 			setInstanceInContext(ts.Context, tc.givenInstance)
 			tc.prepare()
 
-			//When
+			// Act
 			err := p.patchConnectionSecret(ts.Context)
+			ts.Require().NoError(err)
 
-			//Then
+			// Assert
 			actualSecret := &v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "connection-secret",
 					Namespace: tc.givenNamespace,
 				},
 			}
-			err = ts.Client.Get(ts.Context, client.ObjectKeyFromObject(actualSecret), actualSecret)
-			ts.Assert().NoError(err)
+			ts.FetchResource(client.ObjectKeyFromObject(actualSecret), actualSecret)
 			ts.Assert().Equal(tc.expectedConnectionSecret.Data, actualSecret.Data)
 		})
 	}
 }
 
-func (ts *PipelineSuite) Test_MarkInstanceAsProgressing() {
+func (ts *UpdateStandalonePipelineSuite) Test_MarkInstanceAsProgressing() {
 	tests := map[string]struct {
 		prepare          func(*v1alpha1.PostgresqlStandalone)
 		givenInstance    *v1alpha1.PostgresqlStandalone
@@ -183,25 +183,25 @@ func (ts *PipelineSuite) Test_MarkInstanceAsProgressing() {
 	}
 	for name, tc := range tests {
 		ts.Run(name, func() {
-			// Given
+			// Arrange
 			p := UpdateStandalonePipeline{}
 			setClientInContext(ts.Context, ts.Client)
 			setInstanceInContext(ts.Context, tc.givenInstance)
 			tc.prepare(tc.givenInstance)
 
-			//When
+			// Act
 			err := p.markInstanceAsProgressing(ts.Context)
+			ts.Require().NoError(err)
 
-			//Then
+			// Assert
 			actualInstance := &v1alpha1.PostgresqlStandalone{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-first-instance",
 					Namespace: "instance-first-namespace",
 				},
 			}
-			err = ts.Client.Get(ts.Context, client.ObjectKeyFromObject(actualInstance), actualInstance)
+			ts.FetchResource(client.ObjectKeyFromObject(actualInstance), actualInstance)
 			expectedStatus := tc.expectedInstance.Status
-			ts.Assert().NoError(err)
 			ts.Assert().Equal(expectedStatus.ObservedGeneration, actualInstance.Status.ObservedGeneration)
 			ts.Assert().Equal(expectedStatus.Conditions[0].Status, actualInstance.Status.Conditions[0].Status)
 			ts.Assert().Equal(expectedStatus.Conditions[0].Type, actualInstance.Status.Conditions[0].Type)
@@ -215,7 +215,7 @@ func (ts *PipelineSuite) Test_MarkInstanceAsProgressing() {
 	}
 }
 
-func (ts *PipelineSuite) Test_MarkInstanceAsReady() {
+func (ts *UpdateStandalonePipelineSuite) Test_MarkInstanceAsReady() {
 	tests := map[string]struct {
 		prepare          func(*v1alpha1.PostgresqlStandalone)
 		givenInstance    *v1alpha1.PostgresqlStandalone
@@ -249,24 +249,24 @@ func (ts *PipelineSuite) Test_MarkInstanceAsReady() {
 	}
 	for name, tc := range tests {
 		ts.Run(name, func() {
-			// Given
+			// Arrange
 			p := UpdateStandalonePipeline{}
 			setInstanceInContext(ts.Context, tc.givenInstance)
 			tc.prepare(tc.givenInstance)
 
-			//When
+			// Act
 			err := p.markInstanceAsReady(ts.Context)
+			ts.Require().NoError(err)
 
-			//Then
+			// Assert
 			actualInstance := &v1alpha1.PostgresqlStandalone{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "my-second-instance",
 					Namespace: "instance-second-namespace",
 				},
 			}
-			err = ts.Client.Get(ts.Context, client.ObjectKeyFromObject(actualInstance), actualInstance)
+			ts.FetchResource(client.ObjectKeyFromObject(actualInstance), actualInstance)
 			expectedStatus := tc.expectedInstance.Status
-			ts.Assert().NoError(err)
 			ts.Assert().Equal(1, len(actualInstance.Status.Conditions))
 			ts.Assert().Equal(expectedStatus.Conditions[0].Status, actualInstance.Status.Conditions[0].Status)
 			ts.Assert().Equal(expectedStatus.Conditions[0].Type, actualInstance.Status.Conditions[0].Type)

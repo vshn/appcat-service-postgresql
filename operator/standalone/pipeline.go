@@ -23,27 +23,29 @@ func fetchHelmRelease(ctx context.Context) error {
 	return err
 }
 
-// fetchOperatorConfig fetches a matching v1alpha1.PostgresqlStandaloneOperatorConfig from the OperatorNamespace.
+// fetchOperatorConfigF fetches a matching v1alpha1.PostgresqlStandaloneOperatorConfig from the OperatorNamespace.
 // The Major version specified in v1alpha1.PostgresqlStandalone is used to filter the correct config by the v1alpha1.PostgresqlMajorVersionLabelKey label.
 // If there is none or multiple found, it returns an error.
-func fetchOperatorConfig(ctx context.Context) error {
-	list := &v1alpha1.PostgresqlStandaloneOperatorConfigList{}
-	labelMatch := client.MatchingLabels{
-		v1alpha1.PostgresqlMajorVersionLabelKey: getInstanceFromContext(ctx).Spec.Parameters.MajorVersion.String(),
+func fetchOperatorConfigF(operatorNamespace string) func(ctx2 context.Context) error {
+	return func(ctx context.Context) error {
+		list := &v1alpha1.PostgresqlStandaloneOperatorConfigList{}
+		labelMatch := client.MatchingLabels{
+			v1alpha1.PostgresqlMajorVersionLabelKey: getInstanceFromContext(ctx).Spec.Parameters.MajorVersion.String(),
+		}
+		ns := client.InNamespace(operatorNamespace)
+		err := getClientFromContext(ctx).List(ctx, list, labelMatch, ns)
+		if err != nil {
+			return err
+		}
+		if len(list.Items) == 0 {
+			return fmt.Errorf("no %s found with label '%s' in namespace '%s'", v1alpha1.PostgresqlStandaloneOperatorConfigKind, labelMatch, ns)
+		}
+		if len(list.Items) > 1 {
+			return fmt.Errorf("multiple versions of %s found with label '%s' in namespace '%s'", v1alpha1.PostgresqlStandaloneOperatorConfigKind, labelMatch, ns)
+		}
+		setConfigInContext(ctx, &list.Items[0])
+		return nil
 	}
-	ns := client.InNamespace(getOperatorNamespaceFromContext(ctx))
-	err := getClientFromContext(ctx).List(ctx, list, labelMatch, ns)
-	if err != nil {
-		return err
-	}
-	if len(list.Items) == 0 {
-		return fmt.Errorf("no %s found with label '%s' in namespace '%s'", v1alpha1.PostgresqlStandaloneOperatorConfigKind, labelMatch, ns)
-	}
-	if len(list.Items) > 1 {
-		return fmt.Errorf("multiple versions of %s found with label '%s' in namespace '%s'", v1alpha1.PostgresqlStandaloneOperatorConfigKind, labelMatch, ns)
-	}
-	setConfigInContext(ctx, &list.Items[0])
-	return nil
 }
 
 // applyValuesFromInstance merges the user-defined and -exposed Helm values into the current Helm values map.
@@ -128,7 +130,7 @@ func ensureHelmRelease(ctx context.Context) error {
 // overrideTemplateValues searches for a specific HelmRelease spec that matches the Chart version from the template spec.
 // If it does, the template values are replaced or merged.
 //
-// This step assumes that the config has been fetched first via fetchOperatorConfig.
+// This step assumes that the config has been fetched first via fetchOperatorConfigF.
 func overrideTemplateValues(ctx context.Context) error {
 	config := getConfigFromContext(ctx)
 	helmValues := getHelmValuesFromContext(ctx)
@@ -160,7 +162,7 @@ func overrideTemplateValues(ctx context.Context) error {
 
 // useTemplateValues copies the Helm values and Chart metadata from the v1alpha1.PostgresqlStandaloneOperatorConfig spec as the starting parameters.
 //
-// This step assumes that the config has been fetched first via fetchOperatorConfig.
+// This step assumes that the config has been fetched first via fetchOperatorConfigF.
 func useTemplateValues(ctx context.Context) error {
 	values := helmvalues.V{}
 	config := getConfigFromContext(ctx)

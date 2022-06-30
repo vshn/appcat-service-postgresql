@@ -22,7 +22,6 @@ This service provider installs PostgreSQL instances of various architecture type
 * `helm`
 * `kubectl`
 * `yq`
-* `sed` (or `gsed` for Mac)
 
 Some other requirements (e.g. `kind`) will be compiled on-the-fly and put in the local cache dir `.kind` as needed.
 

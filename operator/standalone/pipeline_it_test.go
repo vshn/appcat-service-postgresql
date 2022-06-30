@@ -72,11 +72,10 @@ func (ts *PipelineSuite) Test_FetchOperatorConfig() {
 	}
 	for name, tc := range tests {
 		ts.Run(name, func() {
-			setOperatorNamespaceInContext(ts.Context, tc.givenNamespace)
 			setClientInContext(ts.Context, ts.Client)
 			setInstanceInContext(ts.Context, newInstance("instance", "my-app"))
 			tc.prepare()
-			err := fetchOperatorConfig(ts.Context)
+			err := fetchOperatorConfigF(tc.givenNamespace)(ts.Context)
 			if tc.expectedError != "" {
 				ts.Require().EqualError(err, tc.expectedError)
 				return

@@ -12,18 +12,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-const (
-	// PostgresqlPodName is the name of the PostgreSQL instance pod running in the deployment namespace
-	PostgresqlPodName string = "postgresql-0"
-)
-
 // UpdateStandalonePipeline is a pipeline that updates an existing instance in the target deployment namespace.
 type UpdateStandalonePipeline struct {
+	operatorNamespace string
 }
 
 // NewUpdateStandalonePipeline creates a new pipeline with the required dependencies.
-func NewUpdateStandalonePipeline() *UpdateStandalonePipeline {
-	return &UpdateStandalonePipeline{}
+func NewUpdateStandalonePipeline(operatorNamespace string) *UpdateStandalonePipeline {
+	return &UpdateStandalonePipeline{
+		operatorNamespace: operatorNamespace,
+	}
 }
 
 // RunInitialUpdatePipeline executes the pipeline with configured business logic steps.
@@ -31,7 +29,7 @@ func NewUpdateStandalonePipeline() *UpdateStandalonePipeline {
 func (u *UpdateStandalonePipeline) RunInitialUpdatePipeline(ctx context.Context) error {
 	return pipeline.NewPipeline().
 		WithSteps(
-			pipeline.NewStepFromFunc("fetch operator config", fetchOperatorConfig),
+			pipeline.NewStepFromFunc("fetch operator config", fetchOperatorConfigF(u.operatorNamespace)),
 			pipeline.NewStepFromFunc("mark instance as progressing", u.markInstanceAsProgressing),
 			pipeline.NewStepFromFunc("patch connection secret", u.patchConnectionSecret),
 			pipeline.NewStepFromFunc("ensure persistent volume claim", ensurePVC),

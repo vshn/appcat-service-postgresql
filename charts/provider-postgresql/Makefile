@@ -5,7 +5,7 @@ rbac_gen_src = ../../package/rbac/role.yaml
 rbac_gen_tgt = templates/clusterrole.yaml
 
 ifeq ($(shell uname -s),Darwin)
-	sed := gsed -i
+	sed := sed -i ""
 else
 	sed := sed -i
 endif

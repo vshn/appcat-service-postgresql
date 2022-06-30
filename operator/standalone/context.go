@@ -15,18 +15,16 @@ import (
 
 type clientKey struct{}
 type instanceKey struct{}
-type operatorNamespaceKey struct{}
 type configKey struct{}
 type helmReleaseKey struct{}
 type helmValuesKey struct{}
 type deploymentNamespaceKey struct{}
-type helmChartKey struct{}
 
 func setClientInContext(ctx context.Context, c client.Client) {
 	pipeline.StoreInContext(ctx, clientKey{}, c)
 }
 func getClientFromContext(ctx context.Context) client.Client {
-	return pipeline.MustLoadFromContext(ctx, clientKey{}).(client.Client)
+	return getFromContextOrPanic(ctx, clientKey{}).(client.Client)
 }
 
 func setInstanceInContext(ctx context.Context, obj *v1alpha1.PostgresqlStandalone) {
@@ -34,15 +32,7 @@ func setInstanceInContext(ctx context.Context, obj *v1alpha1.PostgresqlStandalon
 }
 
 func getInstanceFromContext(ctx context.Context) *v1alpha1.PostgresqlStandalone {
-	return pipeline.MustLoadFromContext(ctx, instanceKey{}).(*v1alpha1.PostgresqlStandalone)
-}
-
-func setOperatorNamespaceInContext(ctx context.Context, operatorNamespace string) {
-	pipeline.StoreInContext(ctx, operatorNamespaceKey{}, operatorNamespace)
-}
-
-func getOperatorNamespaceFromContext(ctx context.Context) string {
-	return pipeline.MustLoadFromContext(ctx, operatorNamespaceKey{}).(string)
+	return getFromContextOrPanic(ctx, instanceKey{}).(*v1alpha1.PostgresqlStandalone)
 }
 
 func setConfigInContext(ctx context.Context, config *v1alpha1.PostgresqlStandaloneOperatorConfig) {
@@ -50,7 +40,7 @@ func setConfigInContext(ctx context.Context, config *v1alpha1.PostgresqlStandalo
 }
 
 func getConfigFromContext(ctx context.Context) *v1alpha1.PostgresqlStandaloneOperatorConfig {
-	return pipeline.MustLoadFromContext(ctx, configKey{}).(*v1alpha1.PostgresqlStandaloneOperatorConfig)
+	return getFromContextOrPanic(ctx, configKey{}).(*v1alpha1.PostgresqlStandaloneOperatorConfig)
 }
 
 func setHelmReleaseInContext(ctx context.Context, helmRelease *helmv1beta1.Release) {
@@ -58,7 +48,7 @@ func setHelmReleaseInContext(ctx context.Context, helmRelease *helmv1beta1.Relea
 }
 
 func getHelmReleaseFromContext(ctx context.Context) *helmv1beta1.Release {
-	return pipeline.MustLoadFromContext(ctx, helmReleaseKey{}).(*helmv1beta1.Release)
+	return getFromContextOrPanic(ctx, helmReleaseKey{}).(*helmv1beta1.Release)
 }
 
 func setHelmValuesInContext(ctx context.Context, helmValues helmvalues.V) {
@@ -66,8 +56,7 @@ func setHelmValuesInContext(ctx context.Context, helmValues helmvalues.V) {
 }
 
 func getHelmValuesFromContext(ctx context.Context) helmvalues.V {
-	checkKeyExists(ctx, helmValuesKey{})
-	return pipeline.MustLoadFromContext(ctx, helmValuesKey{}).(helmvalues.V)
+	return getFromContextOrPanic(ctx, helmValuesKey{}).(helmvalues.V)
 }
 
 func setDeploymentNamespaceInContext(ctx context.Context, namespace *corev1.Namespace) {
@@ -75,21 +64,22 @@ func setDeploymentNamespaceInContext(ctx context.Context, namespace *corev1.Name
 }
 
 func getDeploymentNamespaceFromContext(ctx context.Context) *corev1.Namespace {
-	return pipeline.MustLoadFromContext(ctx, deploymentNamespaceKey{}).(*corev1.Namespace)
+	return getFromContextOrPanic(ctx, deploymentNamespaceKey{}).(*corev1.Namespace)
 }
 
 func setHelmChartInContext(ctx context.Context, namespace *v1alpha1.ChartMeta) {
-	pipeline.StoreInContext(ctx, helmChartKey{}, namespace)
+	pipeline.StoreInContext(ctx, v1alpha1.ChartMeta{}, namespace)
 }
 
 func getHelmChartFromContext(ctx context.Context) *v1alpha1.ChartMeta {
-	return pipeline.MustLoadFromContext(ctx, helmChartKey{}).(*v1alpha1.ChartMeta)
+	return getFromContextOrPanic(ctx, v1alpha1.ChartMeta{}).(*v1alpha1.ChartMeta)
 }
 
-func checkKeyExists(ctx context.Context, key any) {
-	_, exists := pipeline.LoadFromContext(ctx, key)
+func getFromContextOrPanic(ctx context.Context, key any) any {
+	val, exists := pipeline.LoadFromContext(ctx, key)
 	if !exists {
 		keyName := reflect.TypeOf(key).Name()
 		panic(fmt.Errorf("key %q does not exist in the given context", keyName))
 	}
+	return val
 }

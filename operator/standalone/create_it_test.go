@@ -179,7 +179,7 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureK8upSchedule() {
 			},
 			givenInstance: newInstanceBuilder("instance", "postgresql-instance").
 				setDeploymentNamespace("new-schedule").
-				setBackup(true).
+				setBackupEnabled(true).
 				get(),
 		},
 		"GiveExistingSchedule_WhenUpdatingSchedule_ThenRevertSpecOfOldSchedule": {
@@ -195,7 +195,7 @@ func (ts *CreateStandalonePipelineSuite) Test_EnsureK8upSchedule() {
 			},
 			givenInstance: newInstanceBuilder("instance", "postgresql-instance").
 				setDeploymentNamespace("existing-schedule").
-				setBackup(true).
+				setBackupEnabled(true).
 				get(),
 		},
 	}

@@ -49,7 +49,6 @@ func (r *PostgresStandaloneReconciler) Reconcile(ctx context.Context, request re
 	setClientInContext(ctx, r.client)
 	obj := &v1alpha1.PostgresqlStandalone{}
 	setInstanceInContext(ctx, obj)
-	setOperatorNamespaceInContext(ctx, OperatorNamespace)
 	log := ctrl.LoggerFrom(ctx)
 	log.V(1).Info("Reconciling")
 	err := r.client.Get(ctx, request.NamespacedName, obj)
@@ -75,7 +74,7 @@ func (r *PostgresStandaloneReconciler) Reconcile(ctx context.Context, request re
 // CreateDeployment creates the given instance deployment.
 func (r *PostgresStandaloneReconciler) CreateDeployment(ctx context.Context, instance *v1alpha1.PostgresqlStandalone) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	p := NewCreateStandalonePipeline()
+	p := NewCreateStandalonePipeline(OperatorNamespace)
 	if meta.IsStatusConditionTrue(instance.Status.Conditions, conditions.TypeCreating) {
 		// The instance has created all the resources, now we'll have to wait until everything is ready.
 		log.Info("Waiting until instance becomes ready")
@@ -102,7 +101,7 @@ func (r *PostgresStandaloneReconciler) DeleteDeployment(ctx context.Context, ins
 // UpdateDeployment saves the given spec in Kubernetes.
 func (r *PostgresStandaloneReconciler) UpdateDeployment(ctx context.Context, instance *v1alpha1.PostgresqlStandalone) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	p := NewUpdateStandalonePipeline()
+	p := NewUpdateStandalonePipeline(OperatorNamespace)
 	if meta.IsStatusConditionTrue(instance.Status.Conditions, conditions.TypeProgressing) {
 		log.Info("Waiting until instance becomes ready")
 		err := p.WaitUntilAllResourceReady(ctx)

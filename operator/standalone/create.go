@@ -36,6 +36,8 @@ func init() {
 // CreateStandalonePipeline is a pipeline that creates a new instance in the target deployment namespace.
 // Currently, it's optimized for first-time creation scenarios and may fail when reconciling existing instances.
 type CreateStandalonePipeline struct {
+	operatorNamespace string
+
 	connectionSecret *corev1.Secret
 
 	k8upSchedule   *k8upv1.Schedule
@@ -43,8 +45,10 @@ type CreateStandalonePipeline struct {
 }
 
 // NewCreateStandalonePipeline creates a new pipeline with the required dependencies.
-func NewCreateStandalonePipeline() *CreateStandalonePipeline {
-	return &CreateStandalonePipeline{}
+func NewCreateStandalonePipeline(operatorNamespace string) *CreateStandalonePipeline {
+	return &CreateStandalonePipeline{
+		operatorNamespace: operatorNamespace,
+	}
 }
 
 // RunFirstPass executes the pipeline with configured business logic steps.
@@ -52,7 +56,7 @@ func NewCreateStandalonePipeline() *CreateStandalonePipeline {
 func (p *CreateStandalonePipeline) RunFirstPass(ctx context.Context) error {
 	return pipeline.NewPipeline().
 		WithSteps(
-			pipeline.NewStepFromFunc("fetch operator config", fetchOperatorConfig),
+			pipeline.NewStepFromFunc("fetch operator config", fetchOperatorConfigF(p.operatorNamespace)),
 
 			pipeline.NewPipeline().WithNestedSteps("compile helm values",
 				pipeline.NewStepFromFunc("read template values", useTemplateValues),
@@ -86,7 +90,7 @@ func (p *CreateStandalonePipeline) RunFirstPass(ctx context.Context) error {
 func (p *CreateStandalonePipeline) RunSecondPass(ctx context.Context) error {
 	return pipeline.NewPipeline().
 		WithSteps(
-			pipeline.NewStepFromFunc("fetch operator config", fetchOperatorConfig),
+			pipeline.NewStepFromFunc("fetch operator config", fetchOperatorConfigF(p.operatorNamespace)),
 			pipeline.NewStepFromFunc("fetch helm release", fetchHelmRelease),
 			pipeline.If(p.isBackupEnabledPredicate(ctx),
 				pipeline.NewPipeline().WithNestedSteps("ensure backup",

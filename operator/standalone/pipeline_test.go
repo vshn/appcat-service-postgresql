@@ -223,17 +223,12 @@ func (b *PostgresqlStandaloneBuilder) setConditions(conditions ...metav1.Conditi
 	return b
 }
 
-func (b *PostgresqlStandaloneBuilder) enableSuperUser() *PostgresqlStandaloneBuilder {
-	b.Spec.Parameters.EnableSuperUser = true
+func (b *PostgresqlStandaloneBuilder) setSuperUserEnabled(enabled bool) *PostgresqlStandaloneBuilder {
+	b.Spec.Parameters.EnableSuperUser = enabled
 	return b
 }
 
-func (b *PostgresqlStandaloneBuilder) disableSuperUser() *PostgresqlStandaloneBuilder {
-	b.Spec.Parameters.EnableSuperUser = false
-	return b
-}
-
-func (b *PostgresqlStandaloneBuilder) setBackup(enabled bool) *PostgresqlStandaloneBuilder {
+func (b *PostgresqlStandaloneBuilder) setBackupEnabled(enabled bool) *PostgresqlStandaloneBuilder {
 	b.Spec.Backup.Enabled = enabled
 	return b
 }
