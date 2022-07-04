@@ -38,7 +38,7 @@
         <div class="vshn_logo"></div>
         <a href="https://vshn.github.io/appcat-service-postgresql">AppCat Service PostgreSQL
            –
-          v0.1-rc3</a>
+          v0.1-rc4</a>
       </div>
       <button class="navbar-burger" data-target="topbar-nav">
         <span></span>
@@ -111,6 +111,9 @@
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="../how-tos/create-releases.html">Create Releases</a>
   </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../how-tos/restore-from-backup.html">Restore Data From Backup</a>
+  </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="0">
@@ -146,14 +149,14 @@
 <div class="nav-panel-explore" data-panel="explore">
   <div class="context">
     <span class="title">AppCat Service PostgreSQL</span>
-    <span class="version">0.1-rc3</span>
+    <span class="version">0.1-rc4</span>
   </div>
   <ul class="components">
     <li class="component is-current">
       <a class="title" href="../../index.html">AppCat Service PostgreSQL</a>
       <ul class="versions">
         <li class="version is-current">
-          <a href="../index.html">0.1-rc3</a>
+          <a href="../index.html">0.1-rc4</a>
         </li>
         <li class="version is-latest">
           <a href="../../index.html">master</a>
@@ -180,9 +183,9 @@
   </ul>
 </nav>
 <div class="page-versions">
-  <button class="version-menu-toggle" title="Show other versions of page">0.1-rc3</button>
+  <button class="version-menu-toggle" title="Show other versions of page">0.1-rc4</button>
   <div class="version-menu">
-    <a class="version is-current" href="getting-started.html">0.1-rc3</a>
+    <a class="version is-current" href="getting-started.html">0.1-rc4</a>
     <a class="version" href="../../tutorials/getting-started.html">master</a>
     <a class="version is-missing" href="../../0.0/index.html">0.0</a>
   </div>
@@ -236,6 +239,8 @@ metadata:
   name: my-instance
   namespace: default
 spec:
+  backup:
+    enabled: true
   forInstance:
     enableSuperUser: true
     majorVersion: v14

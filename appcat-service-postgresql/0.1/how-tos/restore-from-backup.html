@@ -4,11 +4,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Create Releases :: AppCat Service PostgreSQL</title>
-    <meta property="og:title" itemprop="name" content="Create Releases">
-    <meta name="twitter:title" content="Create Releases">
-    <link rel="canonical" href="https://vshn.github.io/appcat-service-postgresql/appcat-service-postgresql/how-tos/create-releases.html">
-    <meta property="og:url" content="https://vshn.github.io/appcat-service-postgresql/appcat-service-postgresql/how-tos/create-releases.html">
+    <title>Restore Data From Backup :: AppCat Service PostgreSQL</title>
+    <meta property="og:title" itemprop="name" content="Restore Data From Backup">
+    <meta name="twitter:title" content="Restore Data From Backup">
+    <link rel="canonical" href="https://vshn.github.io/appcat-service-postgresql/appcat-service-postgresql/how-tos/restore-from-backup.html">
+    <meta property="og:url" content="https://vshn.github.io/appcat-service-postgresql/appcat-service-postgresql/how-tos/restore-from-backup.html">
     <meta name="generator" content="Antora 3.0.1">
     <link rel="stylesheet" href="../../../_/css/site.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css">
@@ -38,7 +38,7 @@
         <div class="vshn_logo"></div>
         <a href="https://vshn.github.io/appcat-service-postgresql">AppCat Service PostgreSQL
            –
-          v0.0</a>
+          v0.1-rc4</a>
       </div>
       <button class="navbar-burger" data-target="topbar-nav">
         <span></span>
@@ -75,7 +75,7 @@
   </nav>
 </header>
 <div class="body">
-<div class="nav-container" data-component="appcat-service-postgresql" data-version="0.0">
+<div class="nav-container" data-component="appcat-service-postgresql" data-version="0.1">
   <aside class="nav">
     <div class="panels">
 <div class="nav-panel-menu is-active" data-panel="menu">
@@ -94,10 +94,34 @@
   </li>
   <li class="nav-item" data-depth="0">
     <button class="nav-item-toggle"></button>
+    <span class="nav-text">Tutorials</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../tutorials/installation.html">Installation</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../tutorials/getting-started.html">Getting Started</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
     <span class="nav-text">How To</span>
 <ul class="nav-list">
-  <li class="nav-item is-current-page" data-depth="1">
+  <li class="nav-item" data-depth="1">
     <a class="nav-link" href="create-releases.html">Create Releases</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="restore-from-backup.html">Restore Data From Backup</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Technical reference</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../references/standalone-api.html">API: PostgresqlStandalone</a>
   </li>
 </ul>
   </li>
@@ -125,20 +149,20 @@
 <div class="nav-panel-explore" data-panel="explore">
   <div class="context">
     <span class="title">AppCat Service PostgreSQL</span>
-    <span class="version">0.0</span>
+    <span class="version">0.1-rc4</span>
   </div>
   <ul class="components">
     <li class="component is-current">
       <a class="title" href="../../index.html">AppCat Service PostgreSQL</a>
       <ul class="versions">
-        <li class="version">
-          <a href="../../0.1/index.html">0.1-rc4</a>
+        <li class="version is-current">
+          <a href="../index.html">0.1-rc4</a>
         </li>
         <li class="version is-latest">
           <a href="../../index.html">master</a>
         </li>
-        <li class="version is-current">
-          <a href="../index.html">0.0</a>
+        <li class="version">
+          <a href="../../0.0/index.html">0.0</a>
         </li>
       </ul>
     </li>
@@ -155,30 +179,29 @@
   <ul>
     <li><a href="../index.html">AppCat Service PostgreSQL</a></li>
     <li>How To</li>
-    <li><a href="create-releases.html">Create Releases</a></li>
+    <li><a href="restore-from-backup.html">Restore Data From Backup</a></li>
   </ul>
 </nav>
 <div class="page-versions">
-  <button class="version-menu-toggle" title="Show other versions of page">0.0</button>
+  <button class="version-menu-toggle" title="Show other versions of page">0.1-rc4</button>
   <div class="version-menu">
-    <a class="version" href="../../0.1/how-tos/create-releases.html">0.1-rc4</a>
-    <a class="version" href="../../how-tos/create-releases.html">master</a>
-    <a class="version is-current" href="create-releases.html">0.0</a>
+    <a class="version is-current" href="restore-from-backup.html">0.1-rc4</a>
+    <a class="version" href="../../how-tos/restore-from-backup.html">master</a>
+    <a class="version is-missing" href="../../0.0/index.html">0.0</a>
   </div>
 </div>
-  <div class="edit-this-page"><a href="https://github.com/vshn/appcat-service-postgresql/edit/docs/v0.0/docs/modules/ROOT/pages/how-tos/create-releases.adoc">Edit this Page</a></div>
+  <div class="edit-this-page"><a href="https://github.com/vshn/appcat-service-postgresql/edit/docs/v0.1-rc/docs/modules/ROOT/pages/how-tos/restore-from-backup.adoc">Edit this Page</a></div>
   </div>
   <div class="content">
 <aside class="toc sidebar" data-title="Contents" data-levels="2">
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">Create Releases</h1>
+<h1 class="page">Restore Data From Backup</h1>
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>This repository contains GitHub releases as well as Helm chart releases.
-They are using separate versioning scheme, each using SemVer.</p>
+<p>This page explains how data can be restored from a K8up backup.</p>
 </div>
 <div class="admonitionblock important">
 <table>
@@ -187,13 +210,31 @@ They are using separate versioning scheme, each using SemVer.</p>
 <i class="fa icon-important" title="Important"></i>
 </td>
 <td class="content">
-<div class="paragraph">
-<p>Any Pull Request <em>must</em> clearly isolate code changes from Helm chart changes.
-Otherwise, there could be issues with the release automation and the generated changelog.</p>
-</div>
+This method requires access to the deployment namespace on an instance with <code>kubectl</code>.
 </td>
 </tr>
 </table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prerequisites"><a class="anchor" href="#_prerequisites"></a>Prerequisites</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><code>kubectl</code></p>
+</li>
+<li>
+<p><code>base64</code></p>
+</li>
+<li>
+<p><code>restic</code></p>
+</li>
+<li>
+<p>Write access to the deployment namespace of the target instance</p>
+</li>
+</ul>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -203,11 +244,96 @@ Otherwise, there could be issues with the release automation and the generated c
 </td>
 <td class="content">
 <div class="paragraph">
-<p>Changes to the repository boilerplate, CI/CD or similar shall be considered as normal code change.</p>
+<p>If you&#8217;re having trouble getting <code>restic</code> to run locally, you might want to run restic inside the cluster with this alias:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">alias restic='kubectl -n $deployment_namespace run \
+  --rm \
+  --stdin \
+  --tty \
+  --restart=Never \
+  --quiet \
+  --image=instrumentisto/restic \
+  --image-pull-policy=IfNotPresent \
+  --env=RESTIC_REPOSITORY=${RESTIC_REPOSITORY} \
+  --env=RESTIC_PASSWORD=${RESTIC_PASSWORD} \
+  --env=AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
+  --env=AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} restic \
+  --'</code></pre>
+</div>
 </div>
 </td>
 </tr>
 </table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_step_by_step_guide"><a class="anchor" href="#_step_by_step_guide"></a>Step-by-Step Guide</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Set basic variables</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">instance_name=my-instance <i class="conum" data-value="1"></i><b>(1)</b>
+instance_namespace=my-app <i class="conum" data-value="2"></i><b>(2)</b></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The <code>metadata.name</code> of the target instance</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>The <code>metadata.namespace</code> of the target instance</td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+<p>Configure additional variables</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">deployment_namespace=$( \
+    kubectl -n ${instance_namespace} get postgresqlstandalone ${instance_name} \
+    -o go-template="{{.status.helmChart.deploymentNamespace}}" \
+  )
+
+export RESTIC_REPOSITORY=$( \
+    kubectl -n ${deployment_namespace} get schedule postgresql \
+    -o go-template="s3:{{.spec.backend.s3.endpoint}}/{{.spec.backend.s3.bucket}}/" \
+  )
+export RESTIC_PASSWORD=$( \
+    kubectl -n ${deployment_namespace} get secrets postgresql-restic \
+    -o go-template={{.data.repository}} \
+    | base64 -d \
+  )
+export AWS_ACCESS_KEY_ID=$( \
+    kubectl -n ${deployment_namespace} get secrets s3-credentials \
+    -o go-template="{{.data.accessKey}}" \
+    | base64 -d \
+  )
+export AWS_SECRET_ACCESS_KEY=$( \
+    kubectl -n ${deployment_namespace} get secrets s3-credentials \
+    -o go-template="{{.data.secretKey}}" \
+    | base64 -d \
+  )</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>List snapshots and choose the one to restore</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">restic snapshots
+
+export SNAPSHOT_ID=XXXXXX # Choose a snapshot id from the list</code></pre>
+</div>
 </div>
 <div class="admonitionblock tip">
 <table>
@@ -217,92 +343,51 @@ Otherwise, there could be issues with the release automation and the generated c
 </td>
 <td class="content">
 <div class="paragraph">
-<p>The PR template reminds you how to separate and label PRs.</p>
+<p>To choose the last available backup you can simply run</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">export SNAPSHOT_ID=$(restic snapshots --json --latest 1 --path /${deployment_namespace}-postgresql.sql | jq -r '.[0].id')</code></pre>
+</div>
 </div>
 </td>
 </tr>
 </table>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_operator_release"><a class="anchor" href="#_operator_release"></a>Operator Release</h2>
-<div class="sectionbody">
+</li>
+<li>
+<p>Shut down client application.
+This step is required since the restoration may fail to recreate data when there are existing sessions!</p>
+</li>
+<li>
+<p>Load the backup and restore data</p>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
 <div class="paragraph">
-<p>Releasing a new version of the operator requires pushing a new Git tag, following the SemVer schema with a <code>v</code> prefix.
-Optionally, for prereleases they may contain a ascending release candidate suffix with <code>-rc#</code>.</p>
+<p>This operation will completely overwrite existing data!</p>
 </div>
-<div class="paragraph">
-<p>Examples:</p>
+</td>
+</tr>
+</table>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p><code>v0.1.2</code></p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">restic dump --quiet ${SNAPSHOT_ID} /${deployment_namespace}-postgresql.sql \
+  | kubectl -n ${deployment_namespace} exec -i postgresql-0 \
+  -- sh -c 'PGPASSWORD="${POSTGRES_POSTGRES_PASSWORD}" psql -U "postgres"'</code></pre>
+</div>
+</div>
 </li>
 <li>
-<p><code>v1.4.0</code></p>
+<p>Start client application.
+After a successful data restore, start up the client application again.</p>
 </li>
-<li>
-<p><code>v2.0.0-rc1</code></p>
-</li>
-<li>
-<p><code>v2.0.0-rc2</code></p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>The changelog will be automatically created and is based on merged PRs.
-PRs that affect Helm charts are excluded.
-The following labels must exist on a PR to be included in the changelog:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><code>area:operator</code></p>
-</li>
-<li>
-<p>one of [<code>bug</code>, <code>enhancement</code>, <code>documentation</code>, <code>change</code>, <code>breaking</code>, <code>dependency</code>]</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>Once the operator is released, consider creating another PR that updates the Helm chart with the newly-created release tag.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_helm_chart_release"><a class="anchor" href="#_helm_chart_release"></a>Helm Chart Release</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Releasing a new version of a Helm chart requires merging the chart changes to <code>master</code> branch.
-It&#8217;s recommended to create a PR for each Helm chart separately.</p>
-</div>
-<div class="paragraph">
-<p>The PR should only contain changes in the <code>charts/</code> directory.
-Each affected chart <em>must</em> increase the version in <code>Chart.yaml</code> to an appropriate next version following SemVer.
-The chart README <em>must</em> be generated using <code>make chart-docs</code> to ensure that the README is generated using special comments in <code>values.yaml</code>.</p>
-</div>
-<div class="paragraph">
-<p>The changelog will be automatically created and is based on merged PRs.
-PRs that affect code changes are excluded.
-The following labels must exist on a PR to be included in the changelog:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><code>area:chart</code></p>
-</li>
-<li>
-<p><code>chart:provider-postgresql</code></p>
-</li>
-<li>
-<p>one of [<code>bug</code>, <code>enhancement</code>, <code>documentation</code>, <code>change</code>, <code>breaking</code>, <code>dependency</code>]</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>If the Helm chart updates the image tag for the operator, it&#8217;s recommended to set a title like <code>Update image tag to vx.y.z</code> or similar and set the <code>dependency</code> label.</p>
+</ol>
 </div>
 </div>
 </div>
