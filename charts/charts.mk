@@ -9,8 +9,7 @@ $(helm_docs_bin):
 	cd charts && go build -o $@ github.com/norwoodj/helm-docs/cmd/helm-docs
 
 .PHONY: chart-prepare
-chart-prepare: generate-go ## Prepare the Helm charts
-	@cat package/crds/*.yaml | yq > .github/crds.yaml
+chart-prepare: release-prepare ## Prepare the Helm charts	
 	@find charts -type f -name Makefile | sed 's|/[^/]*$$||' | xargs -I '%' make -C '%' clean prepare
 
 .PHONY: chart-docs
