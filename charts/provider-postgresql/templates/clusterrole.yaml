@@ -2,116 +2,36 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: '{{ include "provider-postgresql.fullname" . }}'
+  name: '{{ include "provider-postgresql.fullname" . }}-view'
   labels:
     {{- include "provider-postgresql.labels" . | nindent 4 }}
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
 rules:
   - apiGroups:
-      - coordination.k8s.io
+      - postgresql.appcat.vshn.io
     resources:
-      - leases
-    verbs:
-      - create
-      - get
-      - list
-      - update
-  - apiGroups:
-      - ""
-    resources:
-      - namespaces
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - persistentvolumeclaims
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - secrets
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - services
+      - postgresqlstandalones
     verbs:
       - get
       - list
-      - watch
-  - apiGroups:
-      - helm.crossplane.io
-    resources:
-      - providerconfigs
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - helm.crossplane.io
-    resources:
-      - releases
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - k8up.io
-    resources:
-      - schedules
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
       - watch
   - apiGroups:
       - postgresql.appcat.vshn.io
     resources:
-      - postgresqlstandaloneoperatorconfigs
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - postgresql.appcat.vshn.io
-    resources:
-      - postgresqlstandaloneoperatorconfigs/finalizers
-      - postgresqlstandaloneoperatorconfigs/status
+      - postgresqlstandalones/finalizers
+      - postgresqlstandalones/status
     verbs:
       - get
-      - patch
-      - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: '{{ include "provider-postgresql.fullname" . }}-edit'
+  labels:
+    {{- include "provider-postgresql.labels" . | nindent 4 }}
+    rbac.authorization.k8s.io/aggregate-to-admin: "true"
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+rules:
   - apiGroups:
       - postgresql.appcat.vshn.io
     resources:
@@ -124,12 +44,3 @@ rules:
       - patch
       - update
       - watch
-  - apiGroups:
-      - postgresql.appcat.vshn.io
-    resources:
-      - postgresqlstandalones/finalizers
-      - postgresqlstandalones/status
-    verbs:
-      - get
-      - patch
-      - update

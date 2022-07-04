@@ -2,7 +2,7 @@ webhook_gen_src = ../../package/webhook/manifests.yaml
 webhook_gen_tgt = templates/webhook.yaml
 
 rbac_gen_src = ../../package/rbac/role.yaml
-rbac_gen_tgt = templates/clusterrole.yaml
+rbac_gen_tgt = templates/operator-clusterrole.yaml
 
 ifeq ($(shell uname -s),Darwin)
 	sed := gsed -i
@@ -27,7 +27,7 @@ $(webhook_gen_tgt):
 
 $(rbac_gen_tgt):
 	@cp $(rbac_gen_src) $@
-	@yq -i e '.metadata.name="{{ include \"provider-postgresql.fullname\" . }}", del(.metadata.creationTimestamp)' $@
+	@yq -i e '.metadata.name="{{ include \"provider-postgresql.fullname\" . }}-manager", del(.metadata.creationTimestamp)' $@
 	@yq -i e '.metadata.labels.replace="LABELS"' $@
 	@$(sed) -e 's/replace: LABELS/{{- include "provider-postgresql.labels" . | nindent 4 }}/g' $@
 

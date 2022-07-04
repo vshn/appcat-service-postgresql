@@ -8,7 +8,7 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ include "provider-postgresql.fullname" . }}
+  name: {{ include "provider-postgresql.fullname" . }}-manager
 subjects:
 - kind: ServiceAccount
   name: {{ include "provider-postgresql.serviceAccountName" . }}
