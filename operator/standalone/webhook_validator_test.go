@@ -1,6 +1,7 @@
 package standalone
 
 import (
+	"k8s.io/apimachinery/pkg/api/resource"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -92,4 +93,9 @@ func TestPostgresqlStandaloneValidator_ValidateUpdate(t *testing.T) {
 			require.NoError(t, err, "validation error")
 		})
 	}
+}
+
+func parseResource(value string) *resource.Quantity {
+	parsed := resource.MustParse(value)
+	return &parsed
 }

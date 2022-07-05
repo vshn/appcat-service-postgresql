@@ -222,3 +222,8 @@ func TestMustUnmarshal(t *testing.T) {
 		MustUnmarshal(runtime.RawExtension{Raw: []byte("{}")}, &map[string]interface{}{})
 	}, "should not panic")
 }
+
+func TestMustHashSum(t *testing.T) {
+	result := MustHashSum(runtime.RawExtension{Raw: []byte((`{"key":"value"}`))})
+	assert.Equal(t, uint32(0x5b495ab5), result)
+}

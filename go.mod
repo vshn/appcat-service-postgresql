@@ -3,16 +3,17 @@ module github.com/vshn/appcat-service-postgresql
 go 1.18
 
 require (
-	github.com/ccremer/go-command-pipeline v0.17.0
+	github.com/ccremer/go-command-pipeline v0.18.0
 	github.com/crossplane-contrib/provider-helm v0.10.0
 	github.com/crossplane/crossplane-runtime v0.15.1
 	github.com/go-logr/logr v1.2.3
 	github.com/go-logr/zapr v1.2.3
 	github.com/k8up-io/k8up/v2 v2.3.3
 	github.com/lucasepe/codename v0.2.0
-	github.com/stretchr/testify v1.7.2
+	github.com/stretchr/testify v1.7.3
 	github.com/urfave/cli/v2 v2.10.3
 	go.uber.org/zap v1.21.0
+	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
 	k8s.io/api v0.24.2
 	k8s.io/apimachinery v0.24.2
 	k8s.io/client-go v0.24.2
@@ -70,7 +71,6 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3 // indirect
-	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
 	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b // indirect
 	golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
