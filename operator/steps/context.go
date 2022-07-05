@@ -37,6 +37,9 @@ type ConnectionSecretKey struct{}
 // CredentialSecretKey identifies the credential secret for PostgreSQL in the context.
 type CredentialSecretKey struct{}
 
+// InstanceNamespaceKey identifies the namespace resource of the instance in the context.
+type InstanceNamespaceKey struct{}
+
 // SetClientInContext sets the given client in the context.
 func SetClientInContext(ctx context.Context, c client.Client) {
 	pipeline.StoreInContext(ctx, ClientKey{}, c)

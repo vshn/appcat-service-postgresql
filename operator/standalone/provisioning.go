@@ -49,6 +49,7 @@ func (p *CreateStandalonePipeline) Run(ctx context.Context) error {
 	return pipeline.NewPipeline().
 		WithSteps(
 			pipeline.NewStepFromFunc("fetch operator config", steps.FetchOperatorConfigFn(p.operatorNamespace)),
+			pipeline.NewStepFromFunc("fetch instance namespace", steps.FetchNamespaceFn(instance.Namespace, steps.InstanceNamespaceKey{})),
 
 			pipeline.NewStepFromFunc("add finalizer", steps.AddFinalizerFn(instance, finalizer)),
 			pipeline.NewStepFromFunc("mark instance as progressing", steps.MarkInstanceAsProgressingFn()),
