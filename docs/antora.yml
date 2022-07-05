@@ -7,4 +7,4 @@ nav:
 asciidoc:
   attributes:
     appcat: AppCat
-    releaseVersion: v0.1.0
+    releaseVersion: v0.1.1
