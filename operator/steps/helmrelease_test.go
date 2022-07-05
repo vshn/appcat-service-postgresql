@@ -166,7 +166,7 @@ func TestApplyValuesFromInstance(t *testing.T) {
 	assert.Equal(t, testValues, result)
 }
 
-func TestCreateStandalonePipeline_IsHelmReleaseReady(t *testing.T) {
+func TestIsHelmReleaseReady(t *testing.T) {
 	// Arrange
 	ctx := pipeline.MutableContext(context.Background())
 	instance := newInstance("release-ready", "my-app")
