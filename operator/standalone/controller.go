@@ -2,6 +2,7 @@ package standalone
 
 import (
 	"context"
+	"github.com/vshn/appcat-service-postgresql/operator/steps"
 	"strings"
 	"time"
 
@@ -46,9 +47,9 @@ type PostgresStandaloneReconciler struct {
 // Reconcile implements reconcile.Reconciler.
 func (r *PostgresStandaloneReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	ctx = pipeline.MutableContext(ctx)
-	setClientInContext(ctx, r.client)
+	steps.SetClientInContext(ctx, r.client)
 	obj := &v1alpha1.PostgresqlStandalone{}
-	setInstanceInContext(ctx, obj)
+	steps.SetInstanceInContext(ctx, obj)
 	log := ctrl.LoggerFrom(ctx)
 	log.V(1).Info("Reconciling")
 	err := r.client.Get(ctx, request.NamespacedName, obj)
@@ -61,56 +62,33 @@ func (r *PostgresStandaloneReconciler) Reconcile(ctx context.Context, request re
 		return reconcile.Result{}, err
 	}
 	if !obj.DeletionTimestamp.IsZero() {
-		return r.DeleteDeployment(ctx, obj)
+		return r.DeleteDeployment(ctx)
 	}
-	if readyCondition := meta.FindStatusCondition(obj.Status.Conditions, conditions.TypeReady); readyCondition == nil {
-		// Ready condition is not present, it's a fresh object
-		res, err := r.CreateDeployment(ctx, obj)
-		return res, err
-	}
-	return r.UpdateDeployment(ctx, obj)
+	return r.ProvisionDeployment(ctx, obj)
 }
 
-// CreateDeployment creates the given instance deployment.
-func (r *PostgresStandaloneReconciler) CreateDeployment(ctx context.Context, instance *v1alpha1.PostgresqlStandalone) (reconcile.Result, error) {
+// ProvisionDeployment reconciles the given instance
+func (r *PostgresStandaloneReconciler) ProvisionDeployment(ctx context.Context, instance *v1alpha1.PostgresqlStandalone) (reconcile.Result, error) {
 	log := ctrl.LoggerFrom(ctx)
-	p := NewCreateStandalonePipeline(OperatorNamespace)
-	if meta.IsStatusConditionTrue(instance.Status.Conditions, conditions.TypeCreating) {
-		// The instance has created all the resources, now we'll have to wait until everything is ready.
-		log.Info("Waiting until instance becomes ready")
-		err := p.RunSecondPass(ctx)
-		if !meta.IsStatusConditionTrue(instance.Status.Conditions, conditions.TypeReady) {
-			return reconcile.Result{RequeueAfter: 2 * time.Second}, err
-		}
-		return reconcile.Result{}, err
-	}
-	log.Info("Creating new instance for first time")
-	err := p.RunFirstPass(ctx)
-	return reconcile.Result{RequeueAfter: 10 * time.Second}, err
-}
-
-// DeleteDeployment prepares the given instance for deletion.
-func (r *PostgresStandaloneReconciler) DeleteDeployment(ctx context.Context, instance *v1alpha1.PostgresqlStandalone) (reconcile.Result, error) {
-	log := ctrl.LoggerFrom(ctx)
-	d := NewDeleteStandalonePipeline(r.client, instance)
-	log.Info("Deleting instance")
-	err := d.RunPipeline(ctx)
-	return reconcile.Result{RequeueAfter: 1 * time.Second}, err
-}
-
-// UpdateDeployment saves the given spec in Kubernetes.
-func (r *PostgresStandaloneReconciler) UpdateDeployment(ctx context.Context, instance *v1alpha1.PostgresqlStandalone) (reconcile.Result, error) {
-	log := ctrl.LoggerFrom(ctx)
-	p := NewUpdateStandalonePipeline(OperatorNamespace)
-
-	log.Info("Updating instance")
-	err := p.RunUpdatePipeline(ctx)
+	p := NewStandalonePipeline(OperatorNamespace)
+	log.Info("Provisioning instance")
+	err := p.Run(ctx)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 	if !meta.IsStatusConditionTrue(instance.Status.Conditions, conditions.TypeReady) {
-		// schedule retry
+		// The instance has provisioned all the resources, now we'll have to wait until everything is ready.
+		log.Info("Waiting until instance becomes ready")
 		return reconcile.Result{RequeueAfter: 2 * time.Second}, nil
 	}
 	return reconcile.Result{}, nil
+}
+
+// DeleteDeployment prepares the given instance for deletion.
+func (r *PostgresStandaloneReconciler) DeleteDeployment(ctx context.Context) (reconcile.Result, error) {
+	log := ctrl.LoggerFrom(ctx)
+	d := NewDeleteStandalonePipeline()
+	log.Info("Deleting instance")
+	err := d.RunPipeline(ctx)
+	return reconcile.Result{RequeueAfter: 1 * time.Second}, err
 }
