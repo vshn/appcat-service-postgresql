@@ -3,7 +3,7 @@ package helmvalues
 import (
 	"encoding/json"
 	"fmt"
-
+	"hash/fnv"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -54,6 +54,17 @@ func Merge(values V, into *V) {
 	}
 	customMerge(values, dest)
 	*into = dest
+}
+
+// MustHashSum returns the hash sum of the JSON in the values.
+// It panics on errors.
+func MustHashSum(from runtime.RawExtension) uint32 {
+	h := fnv.New32a()
+	_, err := h.Write(from.Raw)
+	if err != nil {
+		panic(err)
+	}
+	return h.Sum32()
 }
 
 // Copied from github.com/knadh/koanf/maps/maps.go (v1.4.1)

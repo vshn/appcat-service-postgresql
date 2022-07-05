@@ -7,14 +7,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-// PostgresqlStandaloneObservation are the observable fields of a PostgresqlStandalone.
-type PostgresqlStandaloneObservation struct {
-	// DeploymentStrategy is the observed deployed strategy.
-	DeploymentStrategy DeploymentStrategy `json:"deploymentStrategy,omitempty"`
-	// HelmChart is the observed deployed Helm chart version.
-	HelmChart *ChartMetaStatus `json:"helmChart,omitempty"`
-}
-
 // PostgresqlStandaloneParameters defines the PostgreSQL specific settings.
 type PostgresqlStandaloneParameters struct {
 
