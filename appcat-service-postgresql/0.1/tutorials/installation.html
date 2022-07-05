@@ -351,7 +351,7 @@ yq -n '.webhook.caBundle="'$(base64 $b64args tls.crt)'" | .webhook.certificate="
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">helm repo add appcat-service-postgresql https://vshn.github.io/appcat-service-postgresql
-kubectl apply -f https://github.com/vshn/appcat-service-postgresql/releases/download/v0.1.0/crds.yaml
+kubectl apply -f https://github.com/vshn/appcat-service-postgresql/releases/download/v0.1.1/crds.yaml
 helm upgrade --install provider-postgresql appcat-service-postgresql/provider-postgresql \
   --create-namespace --namespace postgresql-system \
   --values webhook-values.yaml \
