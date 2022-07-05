@@ -19,18 +19,12 @@ func EnsurePvcFn(labelSet labels.Set) func(ctx context.Context) error {
 		deploymentNamespace := getFromContextOrPanic(ctx, DeploymentNamespaceKey{}).(*corev1.Namespace)
 
 		persistentVolumeClaim := newPVC(deploymentNamespace.Name)
+		persistentVolumeClaim.Spec.AccessModes = config.Spec.Persistence.AccessModes
+		persistentVolumeClaim.Spec.StorageClassName = config.Spec.Persistence.StorageClassName
 
 		_, err := controllerutil.CreateOrUpdate(ctx, kube, persistentVolumeClaim, func() error {
 			persistentVolumeClaim.Labels = labels.Merge(persistentVolumeClaim.Labels, labelSet)
-			if len(persistentVolumeClaim.Spec.AccessModes) == 0 {
-				persistentVolumeClaim.Spec.AccessModes = config.Spec.Persistence.AccessModes
-			}
-			if persistentVolumeClaim.Spec.StorageClassName == nil {
-				persistentVolumeClaim.Spec.StorageClassName = config.Spec.Persistence.StorageClassName
-			}
-			persistentVolumeClaim.Spec.Resources = corev1.ResourceRequirements{
-				Requests: map[corev1.ResourceName]resource.Quantity{corev1.ResourceStorage: *instance.Spec.Parameters.Resources.StorageCapacity},
-			}
+			persistentVolumeClaim.Spec.Resources.Requests[corev1.ResourceStorage] = *instance.Spec.Parameters.Resources.StorageCapacity
 			return nil
 		})
 		return err
@@ -56,10 +50,12 @@ func DeletePvcFn() func(ctx context.Context) error {
 }
 
 func newPVC(ns string) *corev1.PersistentVolumeClaim {
-	return &corev1.PersistentVolumeClaim{
+	pvc := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      getPVCName(),
 			Namespace: ns,
 		},
 	}
+	pvc.Spec.Resources.Requests = map[corev1.ResourceName]resource.Quantity{}
+	return pvc
 }
