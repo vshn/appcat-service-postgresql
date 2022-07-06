@@ -13,6 +13,7 @@
 * xref:references/standalone-api.adoc[API: PostgresqlStandalone]
 
 .Explanation
+* xref:explanations/architecture.adoc[Architecture]
 * Decisions
 ** xref:explanations/decision-deployment-strategy.adoc[Deployment Strategy]
 ** xref:explanations/decision-usermanagement.adoc[User And Database Management]
