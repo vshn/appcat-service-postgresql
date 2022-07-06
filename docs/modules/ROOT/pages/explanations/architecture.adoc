@@ -1,0 +1,9 @@
+= Architecture
+
+This page explains on a high level how the Operator deploys instances.
+This is meant for potential contributors to get an idea of the internals.
+
+
+
+.High-level architecture
+image::architecture.drawio.svg[]
