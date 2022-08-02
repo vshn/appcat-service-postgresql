@@ -1,6 +1,6 @@
 module github.com/vshn/appcat-service-postgresql
 
-go 1.18
+go 1.19
 
 require (
 	github.com/ccremer/go-command-pipeline v0.18.0
