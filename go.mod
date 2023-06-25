@@ -6,7 +6,7 @@ require (
 	github.com/ccremer/go-command-pipeline v0.18.0
 	github.com/crossplane-contrib/provider-helm v0.10.0
 	github.com/crossplane/crossplane-runtime v0.15.1
-	github.com/go-logr/logr v1.2.3
+	github.com/go-logr/logr v1.2.4
 	github.com/go-logr/zapr v1.2.3
 	github.com/k8up-io/k8up/v2 v2.3.3
 	github.com/lucasepe/codename v0.2.0
